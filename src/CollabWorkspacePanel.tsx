@@ -416,6 +416,7 @@ export function CollabWorkspacePanel({
       return {
         ...p,
         collabWorkspaces: [...p.collabWorkspaces, item],
+        collabAssignedWorkspaceIds: [...new Set([...p.collabAssignedWorkspaceIds, item.id])],
         collabSelectedWorkspaceId: item.id,
       };
     });
@@ -460,8 +461,8 @@ export function CollabWorkspacePanel({
         </div>
         <div className={collabWorkspaceListClass('pt-1', assignedList.length)}>
           {assignedList.length === 0 ? (
-            <p className="text-[11px] px-1 py-1.5" style={{ color: t.textSecondary }}>
-              —
+            <p className="text-[11px] px-1 py-1.5 leading-relaxed" style={{ color: t.textSecondary }}>
+              협동 작업 영역을 생성하거나, 이미 설치한 다른 로봇과 협동작업 영역을 공유하는 경우, 기존 항목에서 선택해주세요.
             </p>
           ) : (
             assignedList.map((w) => {
@@ -576,9 +577,9 @@ export function CollabWorkspacePanel({
           type="button"
           className="h-[38px] px-3 rounded-[10px] text-[12px] font-semibold shrink-0 transition-all duration-150"
           style={{
-            color: objectAccent,
-            background: theme === 'light' ? 'rgba(255,142,43,0.10)' : 'rgba(255,142,43,0.18)',
-            border: `1px solid ${theme === 'light' ? 'rgba(255,142,43,0.35)' : 'rgba(255,142,43,0.30)'}`,
+            color: theme === 'light' ? '#111111' : '#f3f4f6',
+            background: theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.10)',
+            border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.24)' : 'rgba(255,255,255,0.24)'}`,
           }}
           onClick={() => setShowAssignFromExisting((v) => !v)}
         >
