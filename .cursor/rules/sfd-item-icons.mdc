@@ -1,0 +1,11 @@
+---
+description: SFD 항목별 아이콘 인덱스·방향 — 사용자 지정 후 코드에 유지
+alwaysApply: true
+---
+
+# SFD 아이콘 (인덱스·방향)
+
+- `sfd-icon-2026` 파일명 끝 `_숫자.svg`의 숫자가 **아이콘 인덱스**다.
+- 사용자가 **항목 + 인덱스**만 알려주면, 크기·색·회전은 구현 시 알아서 맞춘다.
+- **화살표 등 방향**을 한 번 알려주면, 같은 항목에 대해 다시 묻지 않도록 **`src/sfd/itemIconPreferences.ts`의 `ITEM_ICON_PREFERENCES`에 반드시 기록**한다. 키는 항목 식별자(메뉴 id, 탭 id 등)로 통일한다.
+- 인덱스 → URL은 **`src/sfd/sfdIconIndexRegistry.ts`** (`getSfdIconUrlByIndex`), 렌더는 **`src/sfd/SfdIconByIndex.tsx`** (`SfdIconByIndex`).
