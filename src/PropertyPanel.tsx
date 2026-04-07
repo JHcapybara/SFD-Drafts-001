@@ -901,7 +901,9 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
                       setEePickerOpen(true);
                       return;
                     }
-                    setSelectedIdx(isSelected ? null : i);
+                    // 엔드이펙터 상세 서브레이어와 선택 상태가 흔들리지 않도록
+                    // 리스트 클릭은 항상 "선택" 동작만 수행한다.
+                    if (!isSelected) setSelectedIdx(i);
                   }}
                 >
                   {/* ?? ?? ?? */}

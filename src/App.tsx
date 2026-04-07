@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 import CategoryMenu, { SUB_MODAL_GAP, SUB_MODAL_WIDTH, VIEWPORT_MARGIN } from './CategoryMenu';
 import PropertyPanel from './PropertyPanel';
+import { EndEffectorSubmodalContent } from './EndEffectorSubmodalContent';
 import { useLocale } from './localeContext';
 import { WorkspaceChrome } from './WorkspaceChrome';
 import type { PanelData } from './panelData';
@@ -8,6 +10,7 @@ import { DEFAULT_DATA } from './panelData';
 import { CollabSubModalAnchorContext } from './collabSubModalAnchorContext';
 import type { CollabSubModalAnchorRect } from './collabSubModalAnchorContext';
 import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
+import { POINT_ORANGE } from './pointColorSchemes';
 // 헤더 메타는 menuData의 OBJECTS_MODAL_CONTEXT (상위 로봇 1대). 씬별로 바꾸려면 CategoryMenu에 workspaceContext={...} 전달
 
 // Objects 모달 너비 + 간격
@@ -20,6 +23,7 @@ const PROPERTY_PANEL_WIDTH = 320;
 /** CategoryMenu 서브레이어 기본 폭/간격 (자동 회피 클램프 기준) */
 const SUB_LAYER_WIDTH = SUB_MODAL_WIDTH;
 const SUB_LAYER_GAP = SUB_MODAL_GAP;
+const END_EFFECTOR_SUBLAYER_WIDTH = 320;
 /** false → 항상 펼침(라벨 항상 표시, 이전 UX). true → 기본은 아이콘만, 호버 시 펼침. */
 const CATEGORY_MENU_EXPAND_ON_HOVER = true;
 
@@ -34,6 +38,7 @@ export default function App() {
   const lightInitialX = Math.max(0, window.innerWidth - 348);
   const lightInitialY = WORKSPACE_CONTENT_TOP_PX;
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
   // 라이트 패널 위치 상태 — Objects 모달이 항상 이 위치 기준으로 좌측에 붙어 이동
   const [lightPos, setLightPos] = useState({ x: lightInitialX, y: lightInitialY });
@@ -69,6 +74,7 @@ export default function App() {
   const [eeSelectedIdx, setEeSelectedIdx] = useState<number | null>(null);
   /** 업로드 모션 리스트 선택(파일·웨이포인트) */
   const [selectedMotionUploadKey, setSelectedMotionUploadKey] = useState<string | null>(null);
+  const [eeSubLayerClosed, setEeSubLayerClosed] = useState(false);
 
   const handleMotionCategoryChange = useCallback((categoryId: string) => {
     setMotionActiveCategoryId(categoryId);
@@ -134,7 +140,10 @@ export default function App() {
   }, [selectedObjectId]);
 
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth);
+    const onResize = () => {
+      setViewportWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight);
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -151,8 +160,38 @@ export default function App() {
     selectedObjectId === 'collision' ||
     selectedObjectId === 'collab' ||
     (selectedObjectId === 'manipulator' && hasManipulatorSelection) ||
-    (selectedObjectId === 'endeffector' && hasSelectedEeSlot
+    (selectedObjectId === 'endeffector' && !eeSubLayerClosed && hasSelectedEeSlot
       && (endeffectorActiveCategoryId === 'ee-basic' || endeffectorActiveCategoryId === 'ee-connect'));
+
+  const showEndEffectorSubLayer =
+    showLight &&
+    selectedObjectId === 'endeffector' &&
+    !eeSubLayerClosed &&
+    hasSelectedEeSlot &&
+    (endeffectorActiveCategoryId === 'ee-basic' || endeffectorActiveCategoryId === 'ee-connect');
+  const eeSubLayerRefreshKey = `${selectedObjectId}|${endeffectorActiveCategoryId}|${eeSelectedIdx ?? ''}|${hasSelectedEeSlot ? '1' : '0'}`;
+
+  useEffect(() => {
+    if (selectedObjectId !== 'endeffector') {
+      setEeSubLayerClosed(false);
+      return;
+    }
+    setEeSubLayerClosed(false);
+  }, [eeSubLayerRefreshKey, selectedObjectId]);
+
+  const endEffectorSubLayerLayout = useMemo(() => {
+    const margin = VIEWPORT_MARGIN;
+    const desiredLeft = lightPos.x + PROPERTY_PANEL_WIDTH + SUB_LAYER_GAP;
+    const maxLeft = Math.max(margin, viewportWidth - margin - END_EFFECTOR_SUBLAYER_WIDTH);
+    const left = Math.min(Math.max(desiredLeft, margin), maxLeft);
+    const maxHeight = Math.max(280, viewportHeight - WORKSPACE_CONTENT_TOP_PX - margin);
+    const height = Math.min(540, maxHeight);
+    const top = Math.min(
+      Math.max(lightPos.y, WORKSPACE_CONTENT_TOP_PX),
+      Math.max(WORKSPACE_CONTENT_TOP_PX, viewportHeight - margin - height),
+    );
+    return { left, top, height };
+  }, [lightPos.x, lightPos.y, viewportHeight, viewportWidth]);
 
   const handleLightPosChange = useCallback((x: number, y: number) => {
     if (subLayerOpen) {
@@ -261,7 +300,6 @@ export default function App() {
         theme={uiThemeMode}
         selectedObjectId={selectedObjectId}
         onObjectChange={handleObjectChange}
-        onEndEffectorCategoryChange={handleEndEffectorCategoryChange}
         controlledPos={categoryControlledPos}
         isPropertyPanelOpen={showLight}
         expandOnHover={CATEGORY_MENU_EXPAND_ON_HOVER}
@@ -276,6 +314,66 @@ export default function App() {
         eeSelectedIdx={eeSelectedIdx}
         onCollabSubModalLayoutChange={setCollabSubModalAnchorRect}
       />
+
+      {showEndEffectorSubLayer && (
+        <div
+          role="complementary"
+          aria-label={locale === 'en' ? 'End effector detail settings' : '엔드 이펙터 상세 설정'}
+          className="fixed flex flex-col rounded-[14px] overflow-hidden"
+          style={{
+            left: endEffectorSubLayerLayout.left,
+            top: endEffectorSubLayerLayout.top,
+            width: END_EFFECTOR_SUBLAYER_WIDTH,
+            height: endEffectorSubLayerLayout.height,
+            zIndex: 51,
+            background: uiThemeMode === 'dark' ? 'rgba(16,17,20,0.74)' : 'rgba(252,252,253,0.94)',
+            backdropFilter: uiThemeMode === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: uiThemeMode === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+            border: uiThemeMode === 'dark' ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(0,0,0,0.08)',
+            boxShadow: uiThemeMode === 'dark'
+              ? '0 20px 44px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06) inset'
+              : '0 16px 40px rgba(0,0,0,0.12)',
+          }}
+        >
+          <div
+            className="flex items-center gap-2 px-4 py-4 shrink-0"
+            style={{
+              background: uiThemeMode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+              borderBottom: uiThemeMode === 'dark' ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.08)',
+            }}
+          >
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: POINT_ORANGE }} />
+            <span
+              className="flex-1 min-w-0 text-[12px] font-semibold leading-tight truncate"
+              style={{ color: uiThemeMode === 'dark' ? '#f0f0f0' : '#111111' }}
+            >
+              {locale === 'en' ? 'End effector detail settings' : '엔드 이펙터 상세 설정'}
+            </span>
+            <button
+              type="button"
+              className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0 transition-colors duration-150"
+              style={{
+                background: uiThemeMode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                color: uiThemeMode === 'dark' ? '#e5e7eb' : '#374151',
+              }}
+              aria-label={locale === 'en' ? 'Close end-effector sublayer' : '엔드 이펙터 서브레이어 닫기'}
+              onClick={() => setEeSubLayerClosed(true)}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto sfd-scroll px-4 py-4 flex flex-col gap-2">
+            <EndEffectorSubmodalContent
+              data={panelData}
+              setData={setPanelData}
+              selectedIdx={eeSelectedIdx}
+              theme={uiThemeMode}
+              accentColor={POINT_ORANGE}
+              mode={endeffectorActiveCategoryId === 'ee-connect' ? 'connection' : 'settings'}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── 라이트 프로퍼티 패널 ── */}
       {showLight ? (

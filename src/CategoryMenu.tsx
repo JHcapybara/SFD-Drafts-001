@@ -9,7 +9,6 @@ import { MotionSubmodalContent } from './MotionSubmodalContent';
 import { MotionUploadSubmodalContent } from './MotionUploadSubmodalContent';
 import { CollisionSubmodalContent } from './CollisionSubmodalContent';
 import { CollabSubmodalContent } from './CollabSubmodalContent';
-import { EndEffectorSubmodalContent } from './EndEffectorSubmodalContent';
 import { ManipulatorSubmodalContent } from './ManipulatorSubmodalContent';
 import { accentRgba, getObjectAccent, POINT_ORANGE } from './pointColorSchemes';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
@@ -52,7 +51,6 @@ export const SUB_MODAL_GAP = 8;
 export const VIEWPORT_MARGIN = 8;
 const SUB_MODAL_MIN_HEIGHT = 280;
 const SUB_MODAL_MAX_HEIGHT = 900;
-const SUB_MODAL_MINIMIZED_BUTTON_SIZE = 36;
 const SUB_MODAL_FLOOR_HEIGHT = 160;
 
 function computeSubModalPosition(menuRect: DOMRect, subWidth: number, subHeight: number): { left: number; top: number } {
@@ -114,7 +112,6 @@ interface CategoryMenuProps {
   initialY?: number;
   selectedObjectId: string;
   onObjectChange: (objectId: string) => void;
-  onEndEffectorCategoryChange?: (categoryId: string) => void;
   /** 프로퍼티 패널 열림/최소화 상태 */
   isPropertyPanelOpen?: boolean;
   /** 외부에서 위치를 제어할 때 사용. 제공되면 드래그가 비활성화되고 이 위치를 따름. */
@@ -185,7 +182,6 @@ export default function CategoryMenu({
   initialY = 24,
   selectedObjectId,
   onObjectChange,
-  onEndEffectorCategoryChange,
   isPropertyPanelOpen = true,
   controlledPos,
   expandOnHover = CATEGORY_MENU_EXPAND_ON_HOVER_DEFAULT,
@@ -295,19 +291,7 @@ export default function CategoryMenu({
   const subDraggingRef = useRef(false);
   const subDragOffsetRef = useRef({ x: 0, y: 0 });
   const [isSubDragging, setIsSubDragging] = useState(false);
-  const [subModalMinimized, setSubModalMinimized] = useState(false);
-  const hasSelectedEeSlot =
-    eeSelectedIdx != null &&
-    panelData != null &&
-    panelData.eeSlots[eeSelectedIdx] != null;
-  const isEndEffectorSettingsTab =
-    selectedObjectId === 'endeffector' &&
-    hasSelectedEeSlot &&
-    (endeffectorActiveCategoryId ?? 'ee-basic') === 'ee-basic';
-  const isEndEffectorConnectionTab =
-    selectedObjectId === 'endeffector' &&
-    hasSelectedEeSlot &&
-    endeffectorActiveCategoryId === 'ee-connect';
+  const [subModalClosed, setSubModalClosed] = useState(false);
   const isManipulatorRobotDetail = selectedObjectId === 'manipulator';
   const hasManipulatorSelection =
     panelData != null &&
@@ -315,10 +299,8 @@ export default function CategoryMenu({
     panelData.manipSelectedRobotIdx != null;
   const showSubModal =
     SUB_MODAL_OBJECT_IDS.has(selectedObjectId) ||
-    isEndEffectorSettingsTab ||
-    isEndEffectorConnectionTab ||
     (isManipulatorRobotDetail && hasManipulatorSelection);
-  const showSubModalEffective = showSubModal;
+  const showSubModalEffective = showSubModal && !subModalClosed;
   const selectedObjectDef = objects.find((o) => o.id === selectedObjectId);
   const motionCat = motionActiveCategoryId ?? 'motion-generate';
   const isUploadTab = selectedObjectId === 'motion' && motionCat === 'motion-upload';
@@ -366,14 +348,6 @@ export default function CategoryMenu({
   const effectiveMotionUploadDefault = motionUploadDefault && !anyEditMode;
   const effectiveMotionGenerateDefaults = motionGenerateDefaults && !anyEditMode;
   const effectiveCollisionDefaultsMode = collisionDefaultsMode && !anyEditMode;
-  const selectedEeObjectName =
-    eeSelectedIdx != null && panelData?.eeSlots?.[eeSelectedIdx]
-      ? panelData.eeSlots[eeSelectedIdx]?.objectName ?? null
-      : null;
-  const endEffectorCategories = selectedObjectDef?.id === 'endeffector'
-    ? selectedObjectDef.categories
-    : [];
-  const isEndEffectorSubmodal = isEndEffectorSettingsTab || isEndEffectorConnectionTab;
   const selectedManipRobotName =
     panelData?.manipRobots?.length && panelData.manipSelectedRobotIdx != null
       ? panelData.manipRobots[
@@ -383,27 +357,6 @@ export default function CategoryMenu({
           )
         ]?.manipObjectName ?? null
       : null;
-
-  const subModalMinimizedPos = useMemo(() => {
-    const margin = VIEWPORT_MARGIN;
-    const minTop = WORKSPACE_CONTENT_TOP_PX;
-    const boxW = SUB_MODAL_MINIMIZED_BUTTON_SIZE;
-    const boxH = SUB_MODAL_MINIMIZED_BUTTON_SIZE;
-    let left = margin;
-    let top = minTop;
-    const menuRect = menuRef.current?.getBoundingClientRect();
-    if (menuRect) {
-      // 상태와 무관하게 항상 에딧 메뉴(CategoryMenu) 하단 기준으로 배치
-      left = menuRect.right - boxW;
-      top = menuRect.bottom + SUB_MODAL_GAP;
-    }
-    const maxLeft = Math.max(margin, window.innerWidth - margin - boxW);
-    const maxTop = Math.max(minTop, window.innerHeight - margin - boxH);
-    return {
-      left: Math.min(Math.max(left, margin), maxLeft),
-      top: Math.min(Math.max(top, minTop), maxTop),
-    };
-  }, [showSubModalEffective, selectedObjectId, subModalRefreshKey, renderedLeft, renderedTop]);
 
   const clampSubModalPos = useCallback(() => {
     const subW = subModalRef.current?.offsetWidth ?? SUB_MODAL_WIDTH;
@@ -587,14 +540,14 @@ export default function CategoryMenu({
   }, [isSubDragging, subModalHeightPx]);
 
   useEffect(() => {
-    if (!showSubModalEffective) {
+    if (!showSubModal) {
       setSubModalHeightPx(null);
       setSubResizeEdge(null);
       setIsSubDragging(false);
       subDraggingRef.current = false;
-      setSubModalMinimized(false);
+      setSubModalClosed(false);
     }
-  }, [showSubModalEffective]);
+  }, [showSubModal]);
 
   /** 협동 서브모달 앵커: 크기 변화만 구독. `subModalPos`에 넣지 않음 — 이동 시 cleanup에서 null을 보내 포털↔인라인 전환이 반복되어 루프/크래시가 났음 */
   useLayoutEffect(() => {
@@ -922,30 +875,7 @@ export default function CategoryMenu({
 
     </div>
 
-    {showSubModalEffective && selectedObjectDef && subModalMinimized && (
-      <button
-        type="button"
-        className="fixed z-[52] inline-flex h-9 w-9 items-center justify-center rounded-[10px]"
-        style={{
-          left: subModalMinimizedPos.left,
-          top: subModalMinimizedPos.top,
-          background:
-            theme === 'light'
-              ? 'linear-gradient(135deg, rgba(255,170,84,0.98) 0%, rgba(255,142,43,0.98) 56%, rgba(235,115,21,0.98) 100%)'
-              : 'linear-gradient(135deg, rgba(255,170,84,0.92) 0%, rgba(255,142,43,0.94) 56%, rgba(235,115,21,0.94) 100%)',
-          color: '#fff7ed',
-          border: '1px solid rgba(255,142,43,0.42)',
-          boxShadow: tk.shadow,
-        }}
-        onClick={() => setSubModalMinimized(false)}
-        title="최소화된 상세 설정 열기"
-        aria-label="최소화된 상세 설정 열기"
-      >
-        <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" strokeWidth={2.2} />
-      </button>
-    )}
-
-    {showSubModalEffective && selectedObjectDef && !subModalMinimized && (
+    {showSubModalEffective && selectedObjectDef && (
       <div
         ref={subModalRef}
         role="complementary"
@@ -991,48 +921,13 @@ export default function CategoryMenu({
             el.style.background = tk.objectTabBg;
             el.style.color = tk.textSecondary;
           }}
-          onClick={() => setSubModalMinimized(true)}
-          title="최소화"
-          aria-label="최소화"
+          onClick={() => setSubModalClosed(true)}
+          title="닫기"
+          aria-label="닫기"
         >
           <SfdIconByIndex index={2} color="currentColor" size={12} />
         </button>
-        {selectedObjectId === 'endeffector' && isEndEffectorSubmodal ? (
-          <div
-            className="flex flex-col gap-2 px-4 py-4 shrink-0"
-            style={{
-              background: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
-              borderBottom: `1px solid ${tk.divider}`,
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" style={{ color: selectedObjectDef.color }} strokeWidth={2} />
-              <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
-                {(selectedEeObjectName ?? selectedObjectDef.label)} 상세 설정
-              </span>
-            </div>
-            <div className="flex gap-1 p-0.5 rounded-[8px]" style={{ background: tk.objectTabBg }}>
-              {endEffectorCategories.map((cat) => {
-                const isActive = cat.id === (endeffectorActiveCategoryId ?? 'ee-basic');
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    className="flex-1 min-w-0 px-2 py-1.5 rounded-[7px] text-[12px] font-semibold transition-all duration-150"
-                    style={{
-                      color: isActive ? selectedObjectDef.color : tk.textSecondary,
-                      background: isActive ? tk.objectTabActive : 'transparent',
-                      boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,142,43,0.28)' : 'none',
-                    }}
-                    onClick={() => onEndEffectorCategoryChange?.(cat.id)}
-                  >
-                    {cat.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : isManipulatorRobotDetail ? (
+        {isManipulatorRobotDetail ? (
           <div
             className="flex items-center gap-2 px-4 py-4 shrink-0"
             style={{
@@ -1229,15 +1124,6 @@ export default function CategoryMenu({
                 theme={theme}
               />
             )
-          ) : selectedObjectId === 'endeffector' && isEndEffectorSubmodal && panelData && setPanelData ? (
-            <EndEffectorSubmodalContent
-              data={panelData}
-              setData={setPanelData}
-              selectedIdx={eeSelectedIdx}
-              theme={theme}
-              accentColor={selectedObjectDef.color}
-              mode={isEndEffectorConnectionTab ? 'connection' : 'settings'}
-            />
           ) : isManipulatorRobotDetail && panelData && setPanelData ? (
             <ManipulatorSubmodalContent
               data={panelData}
