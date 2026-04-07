@@ -15,6 +15,7 @@ import {
   Map,
   User,
   Upload,
+  Settings,
   GripHorizontal,
   Play,
   Square,
@@ -1213,35 +1214,28 @@ export function WorkspaceChrome({
             </button>
           ))}
         </div>
-        <div className="flex-1 min-w-0 flex items-center justify-center gap-2.5">
+        <div className="flex-1 min-w-0 flex items-center gap-2.5">
           <div
-            className="h-8 min-w-[250px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center justify-center"
+            className="h-8 min-w-[320px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center gap-2"
             style={{ borderColor: 'rgba(15,23,42,0.12)', color: '#334155', background: 'rgba(255,255,255,0.92)' }}
           >
-            Application name
+            <span className="flex-1 min-w-0 truncate">
+              {locale === 'en' ? 'Mockup: EV Battery Pack Assembly Line 01' : '목업: EV 배터리 팩 조립 라인 01'}
+            </span>
+            <button
+              type="button"
+              className="group relative h-6 w-6 rounded-[7px] border inline-flex items-center justify-center shrink-0 transition-colors duration-150"
+              style={{
+                borderColor: 'rgba(15,23,42,0.14)',
+                color: '#334155',
+                background: 'rgba(255,255,255,0.9)',
+              }}
+              aria-label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'}
+            >
+              <Settings className="w-3.5 h-3.5" strokeWidth={2} />
+              <CustomTooltip label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'} placement="bottom" />
+            </button>
           </div>
-          <button
-            type="button"
-            className="h-7 px-2.5 rounded-[8px] border text-[11px] font-semibold transition-colors duration-150"
-            style={{
-              borderColor: 'rgba(15,23,42,0.14)',
-              color: '#334155',
-              background: 'rgba(255,255,255,0.9)',
-            }}
-          >
-            {locale === 'en' ? 'Left Align' : '좌측 정렬'}
-          </button>
-          <button
-            type="button"
-            className="h-7 px-2.5 rounded-[8px] border text-[11px] font-semibold transition-colors duration-150"
-            style={{
-              borderColor: 'rgba(15,23,42,0.14)',
-              color: '#334155',
-              background: 'rgba(255,255,255,0.9)',
-            }}
-          >
-            {locale === 'en' ? 'Edit Process Info' : '공정 정보 수정'}
-          </button>
           <div className="flex items-center gap-1">
             {headerViewButtons.map((label) => {
               const iconIndex = HEADER_VIEW_ICON_INDEX[label];
