@@ -1,5 +1,5 @@
 export const WORKSPACE_HEADER_TOP_PX = 0;
-export const WORKSPACE_HEADER_HEIGHT_PX = 56;
+export const WORKSPACE_HEADER_HEIGHT_PX = 90;
 export const WORKSPACE_HEADER_GAP_PX = 0;
 
 /** 헤더 영역은 어떤 UI도 침범 금지: 콘텐츠 시작 Y */

@@ -217,12 +217,6 @@ const HEADER_VIEW_ICON_INDEX: Record<HeaderViewKey, number> = {
   'object snap': 175,
   snap: 163,
 };
-const HEADER_ACTION_ICON_INDEX = {
-  comment: 59,
-  share: 43,
-  info: 61,
-  lang: 62,
-} as const;
 const HEADER_LEFT_ICON_INDEX = {
   logo: 111,
   menu: 58,
@@ -284,6 +278,7 @@ export function WorkspaceChrome({
   const [selectedTimelineTarget, setSelectedTimelineTarget] = useState<TimelineTarget>('cobot2');
   const [librarySearch, setLibrarySearch] = useState('');
   const [libraryStage, setLibraryStage] = useState<LibraryStage>('root');
+  const [uiPreviewMode, setUiPreviewMode] = useState<'light' | 'dark'>('light');
   const [selectedRobotType, setSelectedRobotType] = useState('협동 로봇');
   const [selectedBrand, setSelectedBrand] = useState('Universal');
   const [selectedModel, setSelectedModel] = useState('UR10');
@@ -297,6 +292,7 @@ export function WorkspaceChrome({
     defaults.add('manip-plus-axis');
     return defaults;
   });
+  const isDarkPreview = uiPreviewMode === 'dark';
 
   useEffect(() => {
     if (leftMode === 'analysis') setBottomTab('analysis');
@@ -938,9 +934,9 @@ export function WorkspaceChrome({
   ), [renderTimelineTransportBar]);
 
   const renderTreeAreaLayout = useCallback(() => (
-    <div className="h-full flex flex-col border rounded-[10px] overflow-hidden" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.36)' }}>
-      <section className="flex-[3] min-h-0 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-        <div className="h-9 px-3 flex items-center text-[12px] font-semibold" style={{ color: '#111827' }}>
+    <div className="h-full flex flex-col border rounded-[10px] overflow-hidden" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(17,24,39,0.78)' : 'rgba(255,255,255,0.36)' }}>
+      <section className="flex-1 min-h-0">
+        <div className="h-9 px-3 flex items-center text-[12px] font-semibold" style={{ color: isDarkPreview ? '#e5e7eb' : '#111827' }}>
           Design Tree
         </div>
         <div className="h-[calc(100%-36px)] overflow-y-auto sfd-scroll px-2 pb-2">
@@ -949,66 +945,45 @@ export function WorkspaceChrome({
           </div>
         </div>
       </section>
-      <section className="flex-[2] min-h-0 relative">
-        <div className="h-9 px-3 flex items-center text-[12px] font-semibold" style={{ color: '#111827' }}>
-          Robot Cell Tree
-        </div>
-        <div className="px-3 pb-3 flex flex-col gap-2">
-          {['Robot Cell A', 'Robot Cell B', 'Robot Cell C'].map((label) => (
-            <div
-              key={label}
-              className="h-8 rounded-[7px] border px-2 flex items-center text-[11px] font-medium"
-              style={{ borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.54)', color: '#374151' }}
-            >
-              {label}
-            </div>
-          ))}
-        </div>
-        <div
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
-          style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.85)' }}
-          aria-hidden
-        />
-      </section>
     </div>
-  ), [renderTreeNode]);
+  ), [renderTreeNode, isDarkPreview]);
 
   const renderAnalysisAreaLayout = useCallback(() => (
-    <div className="h-full relative flex flex-col border rounded-[10px] overflow-hidden p-3 gap-3" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.34)' }}>
-      <div className="w-[112px] h-8 rounded-[7px] border px-3 flex items-center justify-between text-[11px] font-semibold" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.62)', color: '#111827' }}>
+    <div className="h-full relative flex flex-col border rounded-[10px] overflow-hidden p-3 gap-3" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(17,24,39,0.78)' : 'rgba(255,255,255,0.34)' }}>
+      <div className="w-[112px] h-8 rounded-[7px] border px-3 flex items-center justify-between text-[11px] font-semibold" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.62)', color: isDarkPreview ? '#e5e7eb' : '#111827' }}>
         <span>Robot Cell</span>
         <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
       </div>
-      <div className="text-[12px] font-semibold" style={{ color: '#1f2937' }}>Recommend Solution</div>
-      <div className="h-28 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
-      <div className="h-28 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
-      <div className="mt-2 text-[12px] font-semibold" style={{ color: '#1f2937' }}>Robot Analysis Result</div>
-      <div className="h-36 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
-      <div className="mt-2 text-[12px] font-semibold" style={{ color: '#1f2937' }}>Unresolved Issues</div>
+      <div className="text-[12px] font-semibold" style={{ color: isDarkPreview ? '#e5e7eb' : '#1f2937' }}>Recommend Solution</div>
+      <div className="h-28 rounded-[8px] border" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)' }} />
+      <div className="h-28 rounded-[8px] border" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)' }} />
+      <div className="mt-2 text-[12px] font-semibold" style={{ color: isDarkPreview ? '#e5e7eb' : '#1f2937' }}>Robot Analysis Result</div>
+      <div className="h-36 rounded-[8px] border" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)' }} />
+      <div className="mt-2 text-[12px] font-semibold" style={{ color: isDarkPreview ? '#e5e7eb' : '#1f2937' }}>Unresolved Issues</div>
       <div className="flex flex-col gap-2">
         {Array.from({ length: 4 }).map((_, idx) => (
-          <div key={idx} className="h-10 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
+          <div key={idx} className="h-10 rounded-[8px] border" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)' }} />
         ))}
       </div>
       <div
         className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
-        style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.85)' }}
+        style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.16)', background: isDarkPreview ? 'rgba(17,24,39,0.9)' : 'rgba(255,255,255,0.85)' }}
         aria-hidden
       />
     </div>
-  ), []);
+  ), [isDarkPreview]);
 
   const renderSafetyAiAreaLayout = useCallback(() => (
-    <div className="h-full border rounded-[10px] overflow-hidden relative" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.34)' }}>
-      <div className="absolute inset-x-0 top-0 h-[72%] border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }} />
-      <div className="absolute inset-x-4 bottom-8 h-24 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.5)' }} />
+    <div className="h-full border rounded-[10px] overflow-hidden relative" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)', background: isDarkPreview ? 'rgba(17,24,39,0.78)' : 'rgba(255,255,255,0.34)' }}>
+      <div className="absolute inset-x-0 top-0 h-[72%] border-b" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)' }} />
+      <div className="absolute inset-x-4 bottom-8 h-24 rounded-[8px] border" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)', background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.5)' }} />
       <div
         className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
-        style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.85)' }}
+        style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.16)', background: isDarkPreview ? 'rgba(17,24,39,0.9)' : 'rgba(255,255,255,0.85)' }}
         aria-hidden
       />
     </div>
-  ), []);
+  ), [isDarkPreview]);
 
   return (
     <>
@@ -1018,9 +993,9 @@ export function WorkspaceChrome({
         style={{
           top: WORKSPACE_CONTENT_TOP_PX,
           width: LEFT_GNB_WIDTH,
-          background: 'rgba(255,255,255,0.92)',
-          borderRight: '1px solid rgba(15,23,42,0.1)',
-          boxShadow: '0 8px 20px rgba(15,23,42,0.08)',
+          background: isDarkPreview ? 'rgba(12,14,19,0.96)' : 'rgba(255,255,255,0.92)',
+          borderRight: isDarkPreview ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(15,23,42,0.1)',
+          boxShadow: isDarkPreview ? '0 10px 24px rgba(0,0,0,0.34)' : '0 8px 20px rgba(15,23,42,0.08)',
           backdropFilter: 'blur(14px) saturate(140%)',
         }}
       >
@@ -1036,12 +1011,14 @@ export function WorkspaceChrome({
                   style={{
                     background: active
                       ? accentRgba(POINT_ORANGE, 0.14)
-                      : 'rgba(255,255,255,0.9)',
-                    color: active ? '#9a3412' : '#334155',
-                    borderColor: active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
+                      : (isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)'),
+                    color: active ? '#9a3412' : (isDarkPreview ? '#e5e7eb' : '#334155'),
+                    borderColor: active ? accentRgba(POINT_ORANGE, 0.42) : (isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)'),
                     boxShadow: active
                       ? '0 6px 14px rgba(255,142,43,0.16), inset 0 1px 0 rgba(255,255,255,0.65)'
-                      : '0 6px 14px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.7)',
+                      : (isDarkPreview
+                        ? '0 6px 14px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.08)'
+                        : '0 6px 14px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.7)'),
                     transform: active ? 'translateY(-1px)' : 'translateY(0)',
                   }}
                   onClick={() => {
@@ -1064,10 +1041,10 @@ export function WorkspaceChrome({
           left: leftMenuRight + 2,
           top: `calc(${WORKSPACE_CONTENT_TOP_PX}px + (100vh - ${WORKSPACE_CONTENT_TOP_PX + 8}px) / 2)`,
           transform: 'translateY(-50%)',
-          borderColor: 'rgba(0,0,0,0.14)',
-          background: 'rgba(255,255,255,0.95)',
-          color: '#374151',
-          boxShadow: '0 8px 18px rgba(0,0,0,0.14)',
+          borderColor: isDarkPreview ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
+          background: isDarkPreview ? 'rgba(17,24,39,0.96)' : 'rgba(255,255,255,0.95)',
+          color: isDarkPreview ? '#e5e7eb' : '#374151',
+          boxShadow: isDarkPreview ? '0 8px 18px rgba(0,0,0,0.3)' : '0 8px 18px rgba(0,0,0,0.14)',
         }}
         onClick={() => setLeftOpen((v) => !v)}
       >
@@ -1087,9 +1064,11 @@ export function WorkspaceChrome({
             top: WORKSPACE_CONTENT_TOP_PX,
             bottom: 8,
             width: leftWidth,
-            background: 'rgba(252,252,253,0.92)',
-            border: '1px solid rgba(0,0,0,0.08)',
-            boxShadow: '0 24px 48px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(0,0,0,0.06) inset',
+            background: isDarkPreview ? 'rgba(16,17,20,0.9)' : 'rgba(252,252,253,0.92)',
+            border: isDarkPreview ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
+            boxShadow: isDarkPreview
+              ? '0 24px 48px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.06) inset'
+              : '0 24px 48px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(0,0,0,0.06) inset',
             backdropFilter: 'blur(24px) saturate(180%)',
           }}
         >
@@ -1098,21 +1077,21 @@ export function WorkspaceChrome({
               {modeIcon === FolderTree
                 ? <FolderTree className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />
                 : <ModeIcon className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />}
-              <span className="text-[12px] font-semibold" style={{ color: '#111' }}>
+              <span className="text-[12px] font-semibold" style={{ color: isDarkPreview ? '#f3f4f6' : '#111' }}>
                 {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
               </span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto sfd-scroll p-3">
               {leftMode === 'library' ? (
                 <div className="flex flex-col gap-3">
-                  <div className="h-10 rounded-[8px] border px-3 flex items-center gap-2" style={{ borderColor: 'rgba(0,0,0,0.08)', background: 'rgba(17,24,39,0.06)' }}>
+                  <div className="h-10 rounded-[8px] border px-3 flex items-center gap-2" style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)', background: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)' }}>
                     <Search className="w-4 h-4 text-zinc-500" />
                     <input
                       value={librarySearch}
                       onChange={(e) => setLibrarySearch(e.target.value)}
                       placeholder={locale === 'en' ? 'Search by keyword' : '검색어를 입력해 주세요.'}
                       className="bg-transparent outline-none w-full text-[12px] placeholder:text-zinc-500"
-                      style={{ color: '#111827' }}
+                      style={{ color: isDarkPreview ? '#f3f4f6' : '#111827' }}
                     />
                   </div>
                   {renderLibraryContent()}
@@ -1124,7 +1103,7 @@ export function WorkspaceChrome({
               ) : leftMode === 'safetyai' ? (
                 renderSafetyAiAreaLayout()
               ) : (
-                <div className="rounded-[10px] p-3 text-[11px] leading-relaxed" style={{ background: 'rgba(255,255,255,0.22)', color: '#555' }}>
+                <div className="rounded-[10px] p-3 text-[11px] leading-relaxed" style={{ background: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.22)', color: isDarkPreview ? '#d1d5db' : '#555' }}>
                   {locale === 'en'
                     ? 'Left area placeholder based on selected GNB mode.'
                     : 'Left GNB 모드에 따라 바뀌는 영역입니다.'}
@@ -1146,63 +1125,77 @@ export function WorkspaceChrome({
 
       {/* Header (top_area) */}
       <div
-        className="fixed z-[28] flex flex-col px-2 py-1 gap-1"
+        className="fixed z-[28] flex flex-col px-3 py-2 gap-2"
         style={{
           left: 0,
           right: 0,
           top: WORKSPACE_HEADER_TOP_PX,
           height: WORKSPACE_HEADER_HEIGHT_PX,
-          background: 'rgba(255,255,255,0.92)',
-          border: '1px solid rgba(15,23,42,0.1)',
-          boxShadow: '0 8px 20px rgba(15,23,42,0.08)',
+          background: 'rgba(8,10,14,0.96)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          boxShadow: '0 10px 24px rgba(0,0,0,0.36)',
           backdropFilter: 'blur(14px) saturate(140%)',
         }}
       >
-        <div className="h-6 flex items-center gap-2">
+        <div className="h-8 flex items-center gap-3">
           <button
             type="button"
-            className="h-5 px-2 rounded-[6px] border text-[9px] font-semibold"
+            className="h-7 px-2.5 rounded-[7px] border text-[10px] font-semibold"
             style={{
-              borderColor: 'rgba(15,23,42,0.14)',
-              color: '#1f2937',
-              background: 'rgba(255,255,255,0.96)',
+              borderColor: 'rgba(255,255,255,0.16)',
+              color: '#e5e7eb',
+              background: 'rgba(255,255,255,0.08)',
             }}
           >
             Statics
           </button>
           <div className="flex-1 min-w-0 flex justify-center">
             <div
-              className="h-5 min-w-[300px] max-w-[420px] px-3 border rounded-[6px] text-[10px] font-semibold flex items-center justify-start"
-              style={{ borderColor: 'rgba(15,23,42,0.12)', color: '#334155', background: 'rgba(255,255,255,0.94)' }}
+              className="h-8 min-w-[340px] max-w-[520px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center justify-start"
+              style={{ borderColor: 'rgba(255,255,255,0.18)', color: '#e5e7eb', background: 'rgba(255,255,255,0.08)' }}
             >
               <span className="flex-1 min-w-0 truncate">
                 {locale === 'en' ? 'Mockup: EV Battery Pack Assembly Line 01' : '목업: EV 배터리 팩 조립 라인 01'}
               </span>
               <button
                 type="button"
-                className="group relative h-4.5 w-4.5 rounded-[5px] border inline-flex items-center justify-center shrink-0 transition-colors duration-150"
+                className="group relative h-6 w-6 rounded-[6px] border inline-flex items-center justify-center shrink-0 transition-colors duration-150"
                 style={{
-                  borderColor: 'rgba(15,23,42,0.14)',
-                  color: '#334155',
-                  background: 'rgba(255,255,255,0.9)',
+                  borderColor: 'rgba(255,255,255,0.16)',
+                  color: '#e5e7eb',
+                  background: 'rgba(255,255,255,0.1)',
                 }}
                 aria-label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'}
               >
-                <Settings className="w-3 h-3" strokeWidth={2} />
+                <Settings className="w-3.5 h-3.5" strokeWidth={2} />
                 <CustomTooltip label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'} placement="bottom" />
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <select
+              className="h-7 px-2 rounded-[7px] border text-[10px] font-semibold outline-none"
+              style={{
+                borderColor: 'rgba(255,255,255,0.16)',
+                color: '#e5e7eb',
+                background: 'rgba(255,255,255,0.08)',
+              }}
+              value={uiPreviewMode}
+              onChange={(e) => setUiPreviewMode(e.target.value as 'light' | 'dark')}
+              aria-label={locale === 'en' ? 'UI mode' : 'UI 모드'}
+            >
+              <option value="light">{locale === 'en' ? 'Light' : '라이트'}</option>
+              <option value="dark">{locale === 'en' ? 'Dark' : '다크'}</option>
+            </select>
             {(['comment', 'share', 'plan', 'info'] as const).map((key) => (
               <button
                 key={key}
                 type="button"
-                className="h-5 px-2 rounded-[6px] border text-[9px] font-semibold"
+                className="h-7 px-2.5 rounded-[7px] border text-[10px] font-semibold"
                 style={{
-                  borderColor: 'rgba(15,23,42,0.14)',
-                  color: '#1f2937',
-                  background: 'rgba(255,255,255,0.96)',
+                  borderColor: 'rgba(255,255,255,0.16)',
+                  color: '#e5e7eb',
+                  background: 'rgba(255,255,255,0.08)',
                 }}
               >
                 {key}
@@ -1210,7 +1203,7 @@ export function WorkspaceChrome({
             ))}
           </div>
         </div>
-        <div className="h-6 flex items-center gap-2">
+        <div className="h-8 flex items-center gap-3">
           <div className="flex items-center gap-1.5 shrink-0">
             {([
               { id: 'menu', index: HEADER_LEFT_ICON_INDEX.menu, active: true, ko: '메뉴', en: 'menu' },
@@ -1220,11 +1213,11 @@ export function WorkspaceChrome({
               <button
                 key={item.id}
                 type="button"
-                className="group relative h-5 w-8 rounded-[6px] border transition-colors duration-150 inline-flex items-center justify-center"
+                className="group relative h-7 w-9 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
                 style={{
-                  borderColor: item.active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
-                  color: item.active ? '#9a3412' : '#334155',
-                  background: item.active ? accentRgba(POINT_ORANGE, 0.14) : 'rgba(255,255,255,0.9)',
+                  borderColor: item.active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(255,255,255,0.16)',
+                  color: item.active ? '#9a3412' : '#e5e7eb',
+                  background: item.active ? accentRgba(POINT_ORANGE, 0.18) : 'rgba(255,255,255,0.08)',
                 }}
                 title={locale === 'en' ? item.en : item.ko}
                 aria-label={locale === 'en' ? item.en : item.ko}
@@ -1232,7 +1225,7 @@ export function WorkspaceChrome({
                 <SfdIconByIndex
                   index={item.index}
                   color="currentColor"
-                  size={11}
+                  size={12}
                   style={item.id === 'redo' ? { transform: 'scaleX(-1)', transformOrigin: 'center' } : undefined}
                 />
               </button>
@@ -1247,18 +1240,18 @@ export function WorkspaceChrome({
                 <button
                   key={label}
                   type="button"
-                    className="group relative h-5 w-7 rounded-[6px] border transition-colors duration-150 inline-flex items-center justify-center"
+                    className="group relative h-7 w-8 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
                   style={{
-                    borderColor: isActive ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
-                    color: isActive ? '#9a3412' : '#334155',
+                    borderColor: isActive ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(255,255,255,0.16)',
+                    color: isActive ? '#9a3412' : '#e5e7eb',
                     background: isActive
-                      ? accentRgba(POINT_ORANGE, 0.14)
-                      : 'rgba(255,255,255,0.9)',
+                      ? accentRgba(POINT_ORANGE, 0.18)
+                      : 'rgba(255,255,255,0.08)',
                   }}
                   title={label}
                   aria-label={label}
                 >
-                  <SfdIconByIndex index={iconIndex} color="currentColor" size={11} />
+                  <SfdIconByIndex index={iconIndex} color="currentColor" size={12} />
                 </button>
               );
             })}
@@ -1266,9 +1259,9 @@ export function WorkspaceChrome({
           </div>
           <button
             type="button"
-            className="h-5 px-2.5 text-[9px] rounded-[6px] border font-semibold shrink-0"
+            className="h-8 px-3 text-[11px] rounded-[8px] border font-semibold shrink-0"
             style={{
-              borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(15,23,42,0.14)',
+              borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(255,255,255,0.16)',
               color: '#ffffff',
               background: isRiskMode ? '#f59e0b' : POINT_ORANGE,
             }}
@@ -1288,9 +1281,9 @@ export function WorkspaceChrome({
           height: bottomOpen ? bottomHeight : BOTTOM_HEIGHT_COLLAPSED,
           width: bottomOpen ? undefined : collapsedTimelineWidth,
           transform: bottomOpen ? undefined : 'translateX(-50%)',
-          background: bottomOpen ? 'rgba(255,255,255,0.95)' : 'transparent',
-          border: bottomOpen ? '1px solid rgba(0,0,0,0.12)' : 'none',
-          boxShadow: bottomOpen ? '0 18px 44px rgba(0,0,0,0.16)' : 'none',
+          background: bottomOpen ? (isDarkPreview ? 'rgba(10,12,16,0.96)' : 'rgba(255,255,255,0.95)') : 'transparent',
+          border: bottomOpen ? (isDarkPreview ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(0,0,0,0.12)') : 'none',
+          boxShadow: bottomOpen ? (isDarkPreview ? '0 18px 44px rgba(0,0,0,0.35)' : '0 18px 44px rgba(0,0,0,0.16)') : 'none',
           backdropFilter: bottomOpen ? 'blur(18px) saturate(150%)' : 'none',
           transition: 'height 200ms ease',
         }}
@@ -1312,7 +1305,11 @@ export function WorkspaceChrome({
               ) : (
                 <div
                   className="h-full rounded-[10px] border p-3 text-[11px] leading-relaxed overflow-y-auto sfd-scroll"
-                  style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.94)', color: '#374151' }}
+                  style={{
+                    borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)',
+                    background: isDarkPreview ? 'rgba(17,24,39,0.92)' : 'rgba(255,255,255,0.94)',
+                    color: isDarkPreview ? '#d1d5db' : '#374151',
+                  }}
                 >
                   {locale === 'en'
                     ? 'Analysis chart/table area. Default when Analysis mode is active.'
@@ -1330,9 +1327,9 @@ export function WorkspaceChrome({
             left: '50%',
             top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
             transform: 'translate(-120%, -100%)',
-            background: 'rgba(255,255,255,0.98)',
-            border: '1px solid rgba(15,23,42,0.12)',
-            boxShadow: '0 10px 22px rgba(15,23,42,0.16)',
+            background: isDarkPreview ? 'rgba(17,24,39,0.96)' : 'rgba(255,255,255,0.98)',
+            border: isDarkPreview ? '1px solid rgba(255,255,255,0.16)' : '1px solid rgba(15,23,42,0.12)',
+            boxShadow: isDarkPreview ? '0 10px 22px rgba(0,0,0,0.34)' : '0 10px 22px rgba(15,23,42,0.16)',
           }}
         >
           {([
@@ -1347,7 +1344,7 @@ export function WorkspaceChrome({
                 className="px-3 h-6 rounded-[7px] text-[11px] font-semibold"
                 style={{
                   background: active ? accentRgba(POINT_ORANGE, 0.18) : 'transparent',
-                  color: active ? '#9a3412' : '#4b5563',
+                  color: active ? '#9a3412' : (isDarkPreview ? '#d1d5db' : '#4b5563'),
                   border: active ? `1px solid ${accentRgba(POINT_ORANGE, 0.4)}` : '1px solid transparent',
                 }}
                 onClick={() => setBottomTab(tab.id)}
@@ -1366,10 +1363,10 @@ export function WorkspaceChrome({
             left: '50%',
             top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
             transform: 'translate(-50%, -100%)',
-            borderColor: 'rgba(15,23,42,0.14)',
-            background: 'rgba(255,255,255,0.98)',
-            color: '#334155',
-            boxShadow: '0 10px 22px rgba(15,23,42,0.16)',
+            borderColor: isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)',
+            background: isDarkPreview ? 'rgba(17,24,39,0.96)' : 'rgba(255,255,255,0.98)',
+            color: isDarkPreview ? '#e5e7eb' : '#334155',
+            boxShadow: isDarkPreview ? '0 10px 22px rgba(0,0,0,0.34)' : '0 10px 22px rgba(15,23,42,0.16)',
           }}
           onClick={() => setBottomOpen(false)}
           aria-label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'}
