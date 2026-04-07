@@ -27,6 +27,10 @@ export type ItemIconPreference = {
  */
 export const ITEM_ICON_PREFERENCES: Record<string, ItemIconPreference> = {
   'chevron:accordion-dropdown': { iconIndex: 55, direction: 'up' },
+  'workspace-header:logo': { iconIndex: 111 },
+  'workspace-header:menu': { iconIndex: 58 },
+  'workspace-header:undo': { iconIndex: 157 },
+  'workspace-header:redo': { iconIndex: 157, direction: 'left' },
   'category-menu:manipulator': { iconIndex: 33 },
   'category-menu:endeffector': { iconIndex: 36 },
   'category-menu:motion': { iconIndex: 34 },

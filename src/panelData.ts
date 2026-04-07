@@ -235,7 +235,7 @@ export interface ManipRobotItem {
 export interface PanelData {
   manipRobots: ManipRobotItem[];
   /** `manipRobots` 인덱스 */
-  manipSelectedRobotIdx: number;
+  manipSelectedRobotIdx: number | null;
   eeSlots: (EeSlot | null)[];
   pathType: string; blendRadius: string;
   maxSpeed: string; acceleration: string; jerk: string;
@@ -662,7 +662,7 @@ export const DEFAULT_DATA: PanelData = {
       },
     },
   ],
-  manipSelectedRobotIdx: 0,
+  manipSelectedRobotIdx: null,
   eeSlots: [
     {
       objectName: 'object_name',

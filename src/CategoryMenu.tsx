@@ -300,11 +300,15 @@ export default function CategoryMenu({
   const isEndEffectorConnectionTab =
     selectedObjectId === 'endeffector' && endeffectorActiveCategoryId === 'ee-connect';
   const isManipulatorRobotDetail = selectedObjectId === 'manipulator';
+  const hasManipulatorSelection =
+    panelData != null &&
+    panelData.manipRobots.length > 0 &&
+    panelData.manipSelectedRobotIdx != null;
   const showSubModal =
     SUB_MODAL_OBJECT_IDS.has(selectedObjectId) ||
     isEndEffectorSettingsTab ||
     isEndEffectorConnectionTab ||
-    isManipulatorRobotDetail;
+    (isManipulatorRobotDetail && hasManipulatorSelection);
   const showSubModalEffective = showSubModal;
   const selectedObjectDef = objects.find((o) => o.id === selectedObjectId);
   const motionCat = motionActiveCategoryId ?? 'motion-generate';

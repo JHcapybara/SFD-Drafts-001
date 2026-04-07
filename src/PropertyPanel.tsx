@@ -1459,7 +1459,9 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
   const isDark = t === DARK;
   const { slotActiveBg } = accentSlotStyles(accentColor, isDark);
   const robots = data.manipRobots;
-  const sel = Math.min(Math.max(0, data.manipSelectedRobotIdx), Math.max(0, robots.length - 1));
+  const sel = data.manipSelectedRobotIdx == null
+    ? -1
+    : Math.min(Math.max(0, data.manipSelectedRobotIdx), Math.max(0, robots.length - 1));
   const isSingle = robots.length <= 1;
   const listHint = isSingle ? L.manipListHintSingle : L.manipListHintMultiple;
 
@@ -2023,6 +2025,7 @@ export default function PropertyPanel({
             {isManipulatorObject
               ? (() => {
                   const robots = data.manipRobots;
+                  if (data.manipSelectedRobotIdx == null) return L.manipListPanelSubtitle;
                   const idx = Math.min(Math.max(0, data.manipSelectedRobotIdx), Math.max(0, robots.length - 1));
                   const r = robots[idx];
                   return r ? `${r.manipObjectName} · ${r.manipModel}` : L.manipListPanelSubtitle;

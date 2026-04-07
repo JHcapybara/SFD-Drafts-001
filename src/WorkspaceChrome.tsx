@@ -17,9 +17,7 @@ import {
   Upload,
   GripHorizontal,
   Play,
-  Pause,
   Square,
-  SkipBack,
   Repeat,
 } from 'lucide-react';
 import { accentRgba, POINT_ORANGE } from './pointColorSchemes';
@@ -34,8 +32,8 @@ export type LeftMode = 'library' | 'tree' | 'analysis' | 'riskassessment' | 'saf
 type BottomTab = 'timeline' | 'analysis';
 type TreeNodeType = 'cell' | 'manipulator' | 'gripper' | 'zone' | 'impact' | 'axis' | 'mobile';
 type LibraryStage = 'root' | 'brands' | 'models';
-type HeaderBtnTone = 'default' | 'active' | 'ghost';
 type HeaderViewKey = 'grid' | 'view' | 'rotate' | 'layout' | 'scale' | 'ruler' | 'object snap' | 'snap';
+type TimelineTarget = 'additional' | 'cobot1' | 'cobot2' | 'mobile' | 'mobile_ee' | 'manipulator';
 
 interface TreeNodeItem {
   id: string;
@@ -224,6 +222,40 @@ const HEADER_ACTION_ICON_INDEX = {
   info: 61,
   lang: 62,
 } as const;
+const HEADER_LEFT_ICON_INDEX = {
+  logo: 111,
+  menu: 58,
+  undo: 157,
+  redo: 157,
+} as const;
+
+function CustomTooltip({
+  label,
+  placement = 'bottom',
+}: {
+  label: string;
+  placement?: 'bottom' | 'right' | 'top';
+}) {
+  const placementClass = placement === 'right'
+    ? 'left-[calc(100%+8px)] top-1/2 -translate-y-1/2'
+    : placement === 'top'
+      ? 'left-1/2 bottom-[calc(100%+8px)] -translate-x-1/2'
+      : 'left-1/2 top-[calc(100%+8px)] -translate-x-1/2';
+  return (
+    <span
+      className={`pointer-events-none absolute ${placementClass} rounded-[8px] border px-2.5 py-1.5 text-[11px] font-semibold leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0`}
+      style={{
+        borderColor: 'rgba(15,23,42,0.14)',
+        color: '#0f172a',
+        background: 'rgba(255,255,255,0.98)',
+        boxShadow: '0 8px 18px rgba(15,23,42,0.16)',
+      }}
+      aria-hidden
+    >
+      {label}
+    </span>
+  );
+}
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
@@ -247,8 +279,8 @@ export function WorkspaceChrome({
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
   const [playbackMenuOpen, setPlaybackMenuOpen] = useState(false);
   const [timelineView, setTimelineView] = useState<'overview' | 'detail'>('overview');
-  const [timelineCollapsedTree, setTimelineCollapsedTree] = useState(false);
-  const [selectedTimelineTarget, setSelectedTimelineTarget] = useState<'cobot2' | 'manipulator'>('cobot2');
+  const [timelineCollapsedTree] = useState(false);
+  const [selectedTimelineTarget, setSelectedTimelineTarget] = useState<TimelineTarget>('cobot2');
   const [librarySearch, setLibrarySearch] = useState('');
   const [libraryStage, setLibraryStage] = useState<LibraryStage>('root');
   const [selectedRobotType, setSelectedRobotType] = useState('협동 로봇');
@@ -332,9 +364,6 @@ export function WorkspaceChrome({
   const primaryHeaderActionLabel = isRiskMode ? 'Report Issue' : 'Analysis';
   const leftMenuRight = leftOpen ? LEFT_GNB_WIDTH + 8 + leftWidth : LEFT_GNB_WIDTH + 2;
   const collapsedTimelineWidth = Math.min(BOTTOM_COLLAPSED_WIDTH, Math.max(300, window.innerWidth - 24));
-  const headerNavButtons = locale === 'en'
-    ? ['menu', 'undo', 'redo']
-    : ['menu', 'undo', 'redo'];
   const headerViewButtons = locale === 'en'
     ? (['grid', 'view', 'rotate', 'layout', 'scale', 'ruler', 'object snap', 'snap'] as const)
     : (['grid', 'view', 'rotate', 'layout', 'scale', 'ruler', 'object snap', 'snap'] as const);
@@ -566,8 +595,19 @@ export function WorkspaceChrome({
     label: string,
     segments: Array<{ w: number; tone?: 'blue' | 'cyan' | 'green'; text: string }>,
     compact = false,
+    onClick?: () => void,
   ) => (
-    <div className={`${compact ? 'h-7' : 'h-8'} grid grid-cols-[58px_1fr] border-b`} style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+    <button
+      type="button"
+      className={`${compact ? 'h-7' : 'h-8'} w-full grid grid-cols-[58px_1fr] border-b text-left transition-colors duration-150`}
+      style={{
+        borderColor: 'rgba(0,0,0,0.08)',
+        cursor: onClick ? 'pointer' : 'default',
+        background: 'transparent',
+      }}
+      onClick={onClick}
+      disabled={!onClick}
+    >
       <div className="px-2 text-[10px] font-semibold flex items-center border-r truncate" style={{ borderColor: 'rgba(0,0,0,0.08)', color: '#374151' }}>
         {label}
       </div>
@@ -586,7 +626,7 @@ export function WorkspaceChrome({
           );
         })}
       </div>
-    </div>
+    </button>
   ), []);
 
   const renderTimelineTransportBar = useCallback((compact = false) => (
@@ -679,72 +719,58 @@ export function WorkspaceChrome({
 
   const renderTimelineOverview = useCallback(() => (
     <div className="h-full rounded-[10px] overflow-hidden border" style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.94)' }}>
-      <div className="h-[72px] px-2 py-1 border-b flex flex-col gap-1" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-        <div className="h-6 flex items-center gap-2">
-          <button
-            type="button"
-            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
-            style={{ borderColor: accentRgba(POINT_ORANGE, 0.45), background: accentRgba(POINT_ORANGE, 0.2), color: '#9a3412' }}
-            onClick={() => setTimelineView('overview')}
-          >
-            전체 보기
-          </button>
-          <button
-            type="button"
-            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
-            style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.72)', color: '#4b5563' }}
-            onClick={() => {
-              setTimelineView('detail');
-              setSelectedTimelineTarget('cobot2');
-            }}
-          >
-            상세 보기
-          </button>
-          <button
-            type="button"
-            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
-            style={{
-              borderColor: timelineCollapsedTree ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
-              background: timelineCollapsedTree ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
-              color: timelineCollapsedTree ? '#9a3412' : '#4b5563',
-            }}
-            onClick={() => setTimelineCollapsedTree((v) => !v)}
-          >
-            결합 객체 트리 접기
-          </button>
-          <div className="flex-1" />
-          <div className="text-[10px] font-semibold" style={{ color: '#6b7280' }}>00:00.00/01:38</div>
-        </div>
+      <div className="h-[46px] px-2 py-1 border-b flex flex-col gap-1 justify-center" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
         {renderTimelineTransportBar(true)}
       </div>
       {renderTimelineRuler()}
-      <div className="h-[calc(100%-112px)] overflow-y-auto sfd-scroll">
+      <div className="h-[calc(100%-86px)] overflow-y-auto sfd-scroll">
         {renderTimelineRow('Additional', [
           { w: 14, text: 'Axis-Point 1' }, { w: 14, text: 'Axis-Point 2' }, { w: 14, text: 'Axis-Point 3' }, { w: 30, text: 'Axis-Point 5' },
-        ])}
+        ], false, () => {
+          setSelectedTimelineTarget('additional');
+          setTimelineView('detail');
+        })}
         {renderTimelineRow('COBOT1', [
           { w: 16, tone: 'cyan', text: 'Waypoint2' }, { w: 16, tone: 'cyan', text: 'Waypoint5' }, { w: 16, tone: 'cyan', text: 'Waypoint7' }, { w: 18, tone: 'cyan', text: 'Waypoint9' },
-        ])}
+        ], false, () => {
+          setSelectedTimelineTarget('cobot1');
+          setTimelineView('detail');
+        })}
         {renderTimelineRow('COBOT2', [
           { w: 13, tone: 'cyan', text: 'Waypoint2' }, { w: 13, tone: 'cyan', text: 'Waypoint3' }, { w: 13, tone: 'cyan', text: 'Waypoint4' }, { w: 13, tone: 'cyan', text: 'Waypoint6' }, { w: 14, tone: 'cyan', text: 'Waypoint8' }, { w: 16, tone: 'cyan', text: 'Waypoint9' },
-        ])}
+        ], false, () => {
+          setSelectedTimelineTarget('cobot2');
+          setTimelineView('detail');
+        })}
         {!timelineCollapsedTree ? (
           <>
             {renderTimelineRow('MOBILE', [
               { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' }, { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' },
-            ])}
+            ], false, () => {
+              setSelectedTimelineTarget('mobile');
+              setTimelineView('detail');
+            })}
             {renderTimelineRow('MOBILE_EE', [
               { w: 22, tone: 'green', text: '파지 해제' }, { w: 22, tone: 'green', text: '이동' }, { w: 22, tone: 'green', text: '재파지' },
-            ])}
+            ], false, () => {
+              setSelectedTimelineTarget('mobile_ee');
+              setTimelineView('detail');
+            })}
           </>
         ) : (
           <div className="border-b" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
             {renderTimelineRow('MOBILE', [
               { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' }, { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' },
-            ], true)}
+            ], true, () => {
+              setSelectedTimelineTarget('mobile');
+              setTimelineView('detail');
+            })}
             {renderTimelineRow('└ EE', [
               { w: 22, tone: 'green', text: '파지 해제' }, { w: 22, tone: 'green', text: '이동' }, { w: 22, tone: 'green', text: '재파지' },
-            ], true)}
+            ], true, () => {
+              setSelectedTimelineTarget('mobile_ee');
+              setTimelineView('detail');
+            })}
           </div>
         )}
       </div>
@@ -775,13 +801,13 @@ export function WorkspaceChrome({
             type="button"
             className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
             style={{
-              borderColor: selectedTimelineTarget === 'manipulator' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
-              background: selectedTimelineTarget === 'manipulator' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
-              color: selectedTimelineTarget === 'manipulator' ? '#9a3412' : '#4b5563',
+              borderColor: selectedTimelineTarget === 'additional' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
+              background: selectedTimelineTarget === 'additional' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
+              color: selectedTimelineTarget === 'additional' ? '#9a3412' : '#4b5563',
             }}
-            onClick={() => setSelectedTimelineTarget('manipulator')}
+            onClick={() => setSelectedTimelineTarget('additional')}
           >
-            매니퓰레이터
+            Additional
           </button>
           <button
             type="button"
@@ -794,6 +820,18 @@ export function WorkspaceChrome({
             onClick={() => setSelectedTimelineTarget('cobot2')}
           >
             COBOT2
+          </button>
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{
+              borderColor: selectedTimelineTarget === 'mobile' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
+              background: selectedTimelineTarget === 'mobile' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
+              color: selectedTimelineTarget === 'mobile' ? '#9a3412' : '#4b5563',
+            }}
+            onClick={() => setSelectedTimelineTarget('mobile')}
+          >
+            MOBILE
           </button>
           <div className="flex-1" />
           <button
@@ -808,7 +846,7 @@ export function WorkspaceChrome({
       </div>
       {renderTimelineRuler()}
       <div className="h-[calc(100%-112px)] overflow-y-auto sfd-scroll">
-        {selectedTimelineTarget === 'manipulator' ? (
+        {selectedTimelineTarget === 'additional' ? (
           <>
             {renderTimelineRow('Axis', [
               { w: 13, text: 'Axis Point 1' }, { w: 13, text: 'Axis Point 2' }, { w: 13, text: 'Axis Point 3' }, { w: 13, text: 'Axis Point 4' }, { w: 13, text: 'Axis Point 5' }, { w: 13, text: 'Axis Point 6' },
@@ -825,6 +863,33 @@ export function WorkspaceChrome({
                 툴 체인지
               </div>
             </div>
+          </>
+        ) : selectedTimelineTarget === 'cobot1' ? (
+          <>
+            {renderTimelineRow('COBOT1', [
+              { w: 18, tone: 'cyan', text: 'Waypoint1' }, { w: 18, tone: 'cyan', text: 'Waypoint4' }, { w: 18, tone: 'cyan', text: 'Waypoint8' },
+            ])}
+            {renderTimelineRow('EE', [
+              { w: 22, tone: 'blue', text: 'SEG10' }, { w: 22, tone: 'blue', text: 'SEG18' }, { w: 22, tone: 'blue', text: 'SEG24' },
+            ])}
+          </>
+        ) : selectedTimelineTarget === 'mobile' ? (
+          <>
+            {renderTimelineRow('MOBILE', [
+              { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' }, { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' },
+            ])}
+            {renderTimelineRow('경로', [
+              { w: 22, tone: 'green', text: 'Path-A' }, { w: 22, tone: 'green', text: 'Path-B' }, { w: 22, tone: 'green', text: 'Path-C' },
+            ])}
+          </>
+        ) : selectedTimelineTarget === 'mobile_ee' ? (
+          <>
+            {renderTimelineRow('MOBILE_EE', [
+              { w: 22, tone: 'green', text: '파지 해제' }, { w: 22, tone: 'green', text: '이동' }, { w: 22, tone: 'green', text: '재파지' },
+            ])}
+            {renderTimelineRow('도구', [
+              { w: 20, tone: 'blue', text: 'Tool-A' }, { w: 20, tone: 'blue', text: 'Tool-B' }, { w: 20, tone: 'blue', text: 'Tool-C' },
+            ])}
           </>
         ) : (
           <>
@@ -870,30 +935,6 @@ export function WorkspaceChrome({
       {renderTimelineTransportBar(true)}
     </div>
   ), [renderTimelineTransportBar]);
-
-  const renderHeaderButton = useCallback((label: string, tone: HeaderBtnTone = 'default') => {
-    const isActive = tone === 'active';
-    const isGhost = tone === 'ghost';
-    return (
-      <button
-        key={label}
-        type="button"
-        className="h-7 px-2.5 text-[10px] rounded-[7px] border font-medium tracking-[0.01em] transition-colors duration-150"
-        style={{
-          borderColor: isActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(0,0,0,0.12)',
-          color: isActive ? '#9a3412' : '#1f2937',
-          background: isGhost
-            ? 'transparent'
-            : isActive
-              ? `linear-gradient(180deg, ${accentRgba(POINT_ORANGE, 0.24)} 0%, ${accentRgba(POINT_ORANGE, 0.12)} 100%)`
-              : 'rgba(255,255,255,0.62)',
-          boxShadow: isGhost ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.6)',
-        }}
-      >
-        {label}
-      </button>
-    );
-  }, []);
 
   const renderTreeAreaLayout = useCallback(() => (
     <div className="h-full flex flex-col border rounded-[10px] overflow-hidden" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.36)' }}>
@@ -972,41 +1013,43 @@ export function WorkspaceChrome({
     <>
       {/* Left GNB */}
       <div
-        className="fixed left-2 bottom-2 z-[30]"
+        className="fixed left-0 bottom-0 z-[30]"
         style={{
           top: WORKSPACE_CONTENT_TOP_PX,
           width: LEFT_GNB_WIDTH,
-          background: 'rgba(255,255,255,0.38)',
-          border: '1px solid rgba(0,0,0,0.08)',
-          boxShadow: '0 10px 26px rgba(0,0,0,0.1)',
-          backdropFilter: 'blur(12px) saturate(150%)',
-          borderRadius: 14,
+          background: 'rgba(255,255,255,0.92)',
+          borderRight: '1px solid rgba(15,23,42,0.1)',
+          boxShadow: '0 8px 20px rgba(15,23,42,0.08)',
+          backdropFilter: 'blur(14px) saturate(140%)',
         }}
       >
         <div className="h-full flex flex-col py-2.5">
-          <div className="flex-1 min-h-0 overflow-y-auto sfd-scroll px-1.5 flex flex-col gap-2.5">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden sfd-scroll px-1.5 flex flex-col gap-2.5">
             {modeDefs.map(({ id, labelKo, labelEn, Icon }) => {
               const active = leftMode === id;
               return (
                 <button
                   key={id}
                   type="button"
-                  className="h-12 rounded-[12px] flex items-center justify-center transition-all duration-150 border"
+                  className="group relative h-12 rounded-[12px] flex items-center justify-center transition-all duration-150 border"
                   style={{
                     background: active
-                      ? 'linear-gradient(140deg, rgba(255,162,74,0.98) 0%, rgba(255,122,18,0.98) 100%)'
-                      : 'rgba(255,255,255,0.94)',
-                    color: active ? '#ffffff' : '#374151',
-                    borderColor: active ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(0,0,0,0.12)',
+                      ? accentRgba(POINT_ORANGE, 0.14)
+                      : 'rgba(255,255,255,0.9)',
+                    color: active ? '#9a3412' : '#334155',
+                    borderColor: active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
                     boxShadow: active
-                      ? '0 10px 22px rgba(255,107,0,0.3), inset 0 1px 0 rgba(255,255,255,0.24)'
-                      : '0 6px 14px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5)',
+                      ? '0 6px 14px rgba(255,142,43,0.16), inset 0 1px 0 rgba(255,255,255,0.65)'
+                      : '0 6px 14px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.7)',
                     transform: active ? 'translateY(-1px)' : 'translateY(0)',
                   }}
-                  title={locale === 'en' ? labelEn : labelKo}
-                  onClick={() => setLeftMode(id)}
+                  onClick={() => {
+                    setLeftMode(id);
+                    if (!leftOpen) setLeftOpen(true);
+                  }}
                 >
-                  <Icon className="w-5.5 h-5.5" strokeWidth={2.3} style={active ? { filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))' } : undefined} />
+                  <Icon className="w-4.5 h-4.5" strokeWidth={2.1} />
+                  <CustomTooltip label={locale === 'en' ? labelEn : labelKo} placement="right" />
                 </button>
               );
             })}
@@ -1018,28 +1061,20 @@ export function WorkspaceChrome({
         className="group fixed z-[31] h-6 w-12 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
         style={{
           left: leftMenuRight + 2,
-          top: WORKSPACE_CONTENT_TOP_PX + 16,
+          top: `calc(${WORKSPACE_CONTENT_TOP_PX}px + (100vh - ${WORKSPACE_CONTENT_TOP_PX + 8}px) / 2)`,
+          transform: 'translateY(-50%)',
           borderColor: 'rgba(0,0,0,0.14)',
           background: 'rgba(255,255,255,0.95)',
           color: '#374151',
           boxShadow: '0 8px 18px rgba(0,0,0,0.14)',
         }}
         onClick={() => setLeftOpen((v) => !v)}
-        title={leftOpen ? (locale === 'en' ? 'Hide left menu' : '좌측 메뉴 숨기기') : (locale === 'en' ? 'Show left menu' : '좌측 메뉴 표시')}
       >
         {leftOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        <span
-          className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
-          style={{
-            borderColor: 'rgba(0,0,0,0.12)',
-            color: '#111827',
-            background: 'rgba(255,255,255,0.96)',
-            boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
-          }}
-          aria-hidden
-        >
-          {leftOpen ? (locale === 'en' ? 'Hide' : '숨김') : (locale === 'en' ? 'Show' : '표시')}
-        </span>
+        <CustomTooltip
+          label={leftOpen ? (locale === 'en' ? 'Hide left menu' : '좌측 메뉴 숨기기') : (locale === 'en' ? 'Show left menu' : '좌측 메뉴 표시')}
+          placement="right"
+        />
       </button>
 
       {/* Left Area panel */}
@@ -1110,29 +1145,103 @@ export function WorkspaceChrome({
 
       {/* Header (top_area) */}
       <div
-        className="fixed z-[28] flex items-center px-3 gap-2"
+        className="fixed z-[28] flex items-center px-3 gap-3"
         style={{
           left: 0,
           right: 0,
           top: WORKSPACE_HEADER_TOP_PX,
           height: WORKSPACE_HEADER_HEIGHT_PX,
-          background: 'rgba(8,10,14,0.96)',
-          border: '1px solid rgba(255,255,255,0.14)',
-          boxShadow: '0 8px 22px rgba(0,0,0,0.35)',
+          background: 'rgba(255,255,255,0.92)',
+          border: '1px solid rgba(15,23,42,0.1)',
+          boxShadow: '0 8px 20px rgba(15,23,42,0.08)',
           backdropFilter: 'blur(14px) saturate(140%)',
         }}
       >
-        <div className="flex items-center gap-1 shrink-0">
-          {renderHeaderButton('Statics', 'active')}
-          {headerNavButtons.map((label) => renderHeaderButton(label, label === 'menu' ? 'active' : 'default'))}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            className="group relative h-8 w-8 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
+            style={{
+              borderColor: 'rgba(15,23,42,0.14)',
+              color: '#334155',
+              background: 'rgba(255,255,255,0.92)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)',
+            }}
+            title={locale === 'en' ? 'Company logo' : '회사 로고'}
+            aria-label={locale === 'en' ? 'Company logo' : '회사 로고'}
+          >
+            <SfdIconByIndex index={HEADER_LEFT_ICON_INDEX.logo} color="currentColor" size={14} />
+          </button>
+          {([
+            { id: 'menu', index: HEADER_LEFT_ICON_INDEX.menu, active: true, ko: '메뉴', en: 'menu' },
+            { id: 'undo', index: HEADER_LEFT_ICON_INDEX.undo, active: false, ko: '실행 취소', en: 'undo' },
+            { id: 'redo', index: HEADER_LEFT_ICON_INDEX.redo, active: false, ko: '다시 실행', en: 'redo', flipX: true },
+          ] as const).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
+              style={{
+                borderColor: item.active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
+                color: item.active ? '#9a3412' : '#334155',
+                background: item.active
+                  ? accentRgba(POINT_ORANGE, 0.14)
+                  : 'rgba(255,255,255,0.9)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+              }}
+              title={locale === 'en' ? item.en : item.ko}
+              aria-label={locale === 'en' ? item.en : item.ko}
+            >
+              <SfdIconByIndex
+                index={item.index}
+                color="currentColor"
+                size={13}
+                style={item.id === 'redo' ? { transform: 'scaleX(-1)', transformOrigin: 'center' } : undefined}
+              />
+              <span
+                className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
+                style={{
+                  borderColor: 'rgba(15,23,42,0.12)',
+                  color: '#111827',
+                  background: 'rgba(255,255,255,0.98)',
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+                }}
+                aria-hidden
+              >
+                {locale === 'en' ? item.en : item.ko}
+              </span>
+            </button>
+          ))}
         </div>
-        <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
+        <div className="flex-1 min-w-0 flex items-center justify-center gap-2.5">
           <div
-            className="h-8 min-w-[240px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center justify-center"
-            style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#e5e7eb', background: 'rgba(255,255,255,0.08)' }}
+            className="h-8 min-w-[250px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center justify-center"
+            style={{ borderColor: 'rgba(15,23,42,0.12)', color: '#334155', background: 'rgba(255,255,255,0.92)' }}
           >
             Application name
           </div>
+          <button
+            type="button"
+            className="h-7 px-2.5 rounded-[8px] border text-[11px] font-semibold transition-colors duration-150"
+            style={{
+              borderColor: 'rgba(15,23,42,0.14)',
+              color: '#334155',
+              background: 'rgba(255,255,255,0.9)',
+            }}
+          >
+            {locale === 'en' ? 'Left Align' : '좌측 정렬'}
+          </button>
+          <button
+            type="button"
+            className="h-7 px-2.5 rounded-[8px] border text-[11px] font-semibold transition-colors duration-150"
+            style={{
+              borderColor: 'rgba(15,23,42,0.14)',
+              color: '#334155',
+              background: 'rgba(255,255,255,0.9)',
+            }}
+          >
+            {locale === 'en' ? 'Edit Process Info' : '공정 정보 수정'}
+          </button>
           <div className="flex items-center gap-1">
             {headerViewButtons.map((label) => {
               const iconIndex = HEADER_VIEW_ICON_INDEX[label];
@@ -1143,12 +1252,12 @@ export function WorkspaceChrome({
                   type="button"
                   className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
                   style={{
-                    borderColor: isActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(255,255,255,0.14)',
-                    color: isActive ? '#fed7aa' : '#cbd5e1',
+                    borderColor: isActive ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
+                    color: isActive ? '#9a3412' : '#334155',
                     background: isActive
-                      ? `linear-gradient(180deg, ${accentRgba(POINT_ORANGE, 0.24)} 0%, ${accentRgba(POINT_ORANGE, 0.12)} 100%)`
-                      : 'rgba(255,255,255,0.06)',
-                    boxShadow: isActive ? 'inset 0 1px 0 rgba(255,255,255,0.3)' : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+                      ? accentRgba(POINT_ORANGE, 0.14)
+                      : 'rgba(255,255,255,0.9)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
                   }}
                   title={label}
                   aria-label={label}
@@ -1157,9 +1266,9 @@ export function WorkspaceChrome({
                   <span
                     className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
                     style={{
-                      borderColor: 'rgba(255,255,255,0.18)',
-                      color: '#e5e7eb',
-                      background: 'rgba(17,24,39,0.96)',
+                      borderColor: 'rgba(15,23,42,0.12)',
+                      color: '#111827',
+                      background: 'rgba(255,255,255,0.98)',
                       boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
                     }}
                     aria-hidden
@@ -1172,28 +1281,26 @@ export function WorkspaceChrome({
           </div>
           <button
             type="button"
-            className="h-8 px-3.5 text-[10px] rounded-[8px] border font-semibold"
+            className="h-8 px-3.5 text-[11px] rounded-[10px] border font-semibold"
             style={{
-              borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.55) : 'rgba(255,255,255,0.18)',
-              color: '#fff7ed',
-              background: isRiskMode
-                ? `linear-gradient(180deg, ${accentRgba('#f59e0b', 0.3)} 0%, ${accentRgba('#f59e0b', 0.14)} 100%)`
-                : `linear-gradient(180deg, ${accentRgba(POINT_ORANGE, 0.32)} 0%, ${accentRgba(POINT_ORANGE, 0.14)} 100%)`,
-              boxShadow: '0 6px 16px rgba(255,142,43,0.26), inset 0 1px 0 rgba(255,255,255,0.22)',
+              borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(15,23,42,0.14)',
+              color: '#ffffff',
+              background: isRiskMode ? '#f59e0b' : POINT_ORANGE,
+              boxShadow: '0 4px 12px rgba(255,142,43,0.22)',
             }}
           >
             {primaryHeaderActionLabel}
           </button>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            className="h-8 px-3 rounded-[8px] border font-semibold text-[10px] tracking-[0.02em] transition-colors duration-150"
+            className="h-8 px-3.5 rounded-[10px] border font-semibold text-[11px] tracking-[0.02em] transition-colors duration-150"
             style={{
-              borderColor: 'rgba(147,51,234,0.6)',
-              color: '#f5e8ff',
-              background: 'linear-gradient(135deg, rgba(168,85,247,0.38) 0%, rgba(236,72,153,0.34) 100%)',
-              boxShadow: '0 8px 18px rgba(168,85,247,0.28), inset 0 1px 0 rgba(255,255,255,0.18)',
+              borderColor: 'rgba(15,23,42,0.14)',
+              color: '#ffffff',
+              background: '#7c3aed',
+              boxShadow: '0 4px 12px rgba(124,58,237,0.24)',
             }}
             title={locale === 'en' ? 'Upgrade to paid tier' : '유료 티어 전환'}
           >
@@ -1205,10 +1312,10 @@ export function WorkspaceChrome({
               type="button"
               className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
               style={{
-                borderColor: 'rgba(255,255,255,0.14)',
-                color: '#cbd5e1',
-                background: 'rgba(255,255,255,0.06)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+                borderColor: 'rgba(15,23,42,0.14)',
+                color: '#334155',
+                background: 'rgba(255,255,255,0.9)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
               }}
               title={key}
               aria-label={key}
@@ -1217,9 +1324,9 @@ export function WorkspaceChrome({
               <span
                 className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
                 style={{
-                  borderColor: 'rgba(255,255,255,0.18)',
-                  color: '#e5e7eb',
-                  background: 'rgba(17,24,39,0.96)',
+                  borderColor: 'rgba(15,23,42,0.12)',
+                  color: '#111827',
+                  background: 'rgba(255,255,255,0.98)',
                   boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
                 }}
                 aria-hidden
@@ -1232,10 +1339,10 @@ export function WorkspaceChrome({
             type="button"
             className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
             style={{
-              borderColor: 'rgba(255,255,255,0.14)',
-              color: '#cbd5e1',
-              background: 'rgba(255,255,255,0.06)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+              borderColor: 'rgba(15,23,42,0.14)',
+              color: '#334155',
+              background: 'rgba(255,255,255,0.9)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
             }}
             onClick={onToggleLocale}
             title={locale === 'ko' ? '언어 변경' : 'Switch language'}
@@ -1245,9 +1352,9 @@ export function WorkspaceChrome({
             <span
               className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
               style={{
-                borderColor: 'rgba(255,255,255,0.18)',
-                color: '#e5e7eb',
-                background: 'rgba(17,24,39,0.96)',
+                borderColor: 'rgba(15,23,42,0.12)',
+                color: '#111827',
+                background: 'rgba(255,255,255,0.98)',
                 boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
               }}
               aria-hidden
@@ -1286,65 +1393,7 @@ export function WorkspaceChrome({
             >
               <GripHorizontal className="w-4 h-4 text-zinc-400" />
             </div>
-            <div className="h-10 px-3 flex items-center gap-2 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.74)' }}>
-              <button
-                type="button"
-                className="group relative h-6 w-12 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
-                style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.95)', color: '#374151' }}
-                onClick={() => setBottomOpen((v) => !v)}
-                title={bottomOpen ? (locale === 'en' ? 'Collapse' : '접기') : (locale === 'en' ? 'Expand' : '펼치기')}
-              >
-                {bottomOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-                <span
-                  className="pointer-events-none absolute left-1/2 bottom-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
-                  style={{
-                    borderColor: 'rgba(0,0,0,0.12)',
-                    color: '#111827',
-                    background: 'rgba(255,255,255,0.96)',
-                    boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
-                  }}
-                  aria-hidden
-                >
-                  타임라인 접기
-                </span>
-              </button>
-              <div className="flex items-center gap-1">
-                {([
-                  { id: 'timeline', ko: '타임라인', en: 'Timeline' },
-                  { id: 'analysis', ko: '분석', en: 'Analysis' },
-                ] as const).map((tab) => {
-                  const active = bottomTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      className="px-3 h-7 rounded-[8px] text-[11px] font-semibold"
-                      style={{
-                        background: active ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.78)',
-                        color: active ? '#9a3412' : '#4b5563',
-                        border: active ? `1px solid ${accentRgba(POINT_ORANGE, 0.45)}` : '1px solid rgba(0,0,0,0.14)',
-                      }}
-                      onClick={() => setBottomTab(tab.id)}
-                    >
-                      {locale === 'en' ? tab.en : tab.ko}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="flex-1" />
-              <div className="flex items-center gap-1.5">
-                <button type="button" className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.06)', color: '#4b5563' }}>
-                  <SkipBack className="w-3.5 h-3.5" />
-                </button>
-                <button type="button" className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: accentRgba(POINT_ORANGE, 0.22), color: '#9a3412' }}>
-                  {bottomTab === 'timeline' ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                </button>
-                <button type="button" className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.06)', color: '#4b5563' }}>
-                  <Repeat className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-            <div className="h-[calc(100%-48px)]">
+            <div className="h-[calc(100%-8px)]">
               {bottomTab === 'timeline' ? (
                 timelineView === 'overview' ? renderTimelineOverview() : renderTimelineDetail()
               ) : (
@@ -1361,6 +1410,61 @@ export function WorkspaceChrome({
           </>
         )}
       </div>
+      {bottomOpen && (
+        <div
+          className="fixed z-[29] h-8 rounded-[10px] p-1 inline-flex items-center gap-1"
+          style={{
+            left: '50%',
+            top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
+            transform: 'translate(-120%, -100%)',
+            background: 'rgba(255,255,255,0.98)',
+            border: '1px solid rgba(15,23,42,0.12)',
+            boxShadow: '0 10px 22px rgba(15,23,42,0.16)',
+          }}
+        >
+          {([
+            { id: 'timeline', ko: '타임라인', en: 'Timeline' },
+            { id: 'analysis', ko: '분석', en: 'Analysis' },
+          ] as const).map((tab) => {
+            const active = bottomTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                className="px-3 h-6 rounded-[7px] text-[11px] font-semibold"
+                style={{
+                  background: active ? accentRgba(POINT_ORANGE, 0.18) : 'transparent',
+                  color: active ? '#9a3412' : '#4b5563',
+                  border: active ? `1px solid ${accentRgba(POINT_ORANGE, 0.4)}` : '1px solid transparent',
+                }}
+                onClick={() => setBottomTab(tab.id)}
+              >
+                {locale === 'en' ? tab.en : tab.ko}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {bottomOpen && (
+        <button
+          type="button"
+          className="group fixed z-[29] h-8 w-14 rounded-[10px] border transition-colors duration-150 inline-flex items-center justify-center"
+          style={{
+            left: '50%',
+            top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
+            transform: 'translate(-50%, -100%)',
+            borderColor: 'rgba(15,23,42,0.14)',
+            background: 'rgba(255,255,255,0.98)',
+            color: '#334155',
+            boxShadow: '0 10px 22px rgba(15,23,42,0.16)',
+          }}
+          onClick={() => setBottomOpen(false)}
+          aria-label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'}
+        >
+          <ChevronDown className="w-3.5 h-3.5" />
+          <CustomTooltip label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'} placement="top" />
+        </button>
+      )}
     </>
   );
 }

@@ -127,7 +127,9 @@ export function ManipulatorSubmodalContent({
   const t: Tokens = theme === 'light' ? LIGHT : DARK;
   const [subTab, setSubTab] = useState<ManipSubTab>('detail');
   const robots = data.manipRobots;
-  const idx = robots.length === 0 ? -1 : Math.min(Math.max(0, data.manipSelectedRobotIdx), robots.length - 1);
+  const idx = data.manipSelectedRobotIdx == null || robots.length === 0
+    ? -1
+    : Math.min(Math.max(0, data.manipSelectedRobotIdx), robots.length - 1);
   const robot = idx >= 0 ? robots[idx] : null;
   const monitorBadgeBg = accentRgba(accentColor, 0.22);
   const monitorBadgeColor = accentColor;
