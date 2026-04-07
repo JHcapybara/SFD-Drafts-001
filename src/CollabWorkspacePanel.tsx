@@ -288,13 +288,23 @@ export function CollabWorkspaceEditSection({
         createPortal(
           <div
             className="fixed inset-0 z-[210] flex items-center justify-center p-3"
-            style={{ background: 'rgba(0,0,0,0.45)' }}
+            style={{
+              background: theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.45)',
+              backdropFilter: theme === 'dark' ? 'blur(8px) saturate(130%)' : undefined,
+              WebkitBackdropFilter: theme === 'dark' ? 'blur(8px) saturate(130%)' : undefined,
+            }}
             onClick={() => setColorId(null)}
             role="presentation"
           >
             <div
               className="w-full max-w-[300px] rounded-[14px] p-3 flex flex-col gap-3"
-              style={{ background: t.panelBg, border: `1px solid ${t.panelBorder}`, boxShadow: t.panelShadow }}
+              style={{
+                background: t.panelBg,
+                border: `1px solid ${t.panelBorder}`,
+                boxShadow: t.panelShadow,
+                backdropFilter: theme === 'dark' ? 'blur(24px) saturate(160%)' : undefined,
+                WebkitBackdropFilter: theme === 'dark' ? 'blur(24px) saturate(160%)' : undefined,
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between gap-2">

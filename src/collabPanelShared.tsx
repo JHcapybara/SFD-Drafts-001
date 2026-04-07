@@ -181,6 +181,8 @@ export function CollabBodyPartPicker({
                     theme === 'light'
                       ? '0 16px 48px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)'
                       : '0 16px 48px rgba(0,0,0,0.45)',
+                  backdropFilter: theme === 'dark' ? 'blur(22px) saturate(160%)' : 'blur(12px) saturate(145%)',
+                  WebkitBackdropFilter: theme === 'dark' ? 'blur(22px) saturate(160%)' : 'blur(12px) saturate(145%)',
                 }}
               >
                 {COLLAB_BODY_PART_OPTIONS.map((opt) => {

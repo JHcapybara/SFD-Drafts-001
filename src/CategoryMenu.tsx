@@ -53,6 +53,7 @@ export const VIEWPORT_MARGIN = 8;
 const SUB_MODAL_MIN_HEIGHT = 280;
 const SUB_MODAL_MAX_HEIGHT = 900;
 const SUB_MODAL_MINIMIZED_BUTTON_SIZE = 36;
+const SUB_MODAL_FLOOR_HEIGHT = 160;
 
 function computeSubModalPosition(menuRect: DOMRect, subWidth: number, subHeight: number): { left: number; top: number } {
   const vw = window.innerWidth;
@@ -151,17 +152,17 @@ interface CategoryMenuProps {
 
 // ── 디자인 토큰 ──────────────────────────────────
 const DARK = {
-  bg: 'rgba(16,17,20,0.85)',
+  bg: 'rgba(16,17,20,0.74)',
   border: 'rgba(255,255,255,0.09)',
-  shadow: '0 16px 40px rgba(0,0,0,0.5)',
+  shadow: '0 20px 44px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
   textPrimary: '#f0f0f0',
-  textSecondary: '#777',
-  itemHover: 'rgba(255,255,255,0.06)',
-  activeItem: 'rgba(255,255,255,0.08)',
-  divider: 'rgba(255,255,255,0.06)',
+  textSecondary: '#b4bac6',
+  itemHover: 'rgba(255,255,255,0.10)',
+  activeItem: 'rgba(255,255,255,0.14)',
+  divider: 'rgba(255,255,255,0.12)',
   objectTabBg: 'rgba(255,255,255,0.04)',
-  objectTabActive: 'rgba(255,255,255,0.10)',
-  grip: 'rgba(255,255,255,0.18)',
+  objectTabActive: 'rgba(255,255,255,0.14)',
+  grip: 'rgba(255,255,255,0.3)',
 };
 
 const LIGHT = {
@@ -295,10 +296,18 @@ export default function CategoryMenu({
   const subDragOffsetRef = useRef({ x: 0, y: 0 });
   const [isSubDragging, setIsSubDragging] = useState(false);
   const [subModalMinimized, setSubModalMinimized] = useState(false);
+  const hasSelectedEeSlot =
+    eeSelectedIdx != null &&
+    panelData != null &&
+    panelData.eeSlots[eeSelectedIdx] != null;
   const isEndEffectorSettingsTab =
-    selectedObjectId === 'endeffector' && (endeffectorActiveCategoryId ?? 'ee-basic') === 'ee-basic';
+    selectedObjectId === 'endeffector' &&
+    hasSelectedEeSlot &&
+    (endeffectorActiveCategoryId ?? 'ee-basic') === 'ee-basic';
   const isEndEffectorConnectionTab =
-    selectedObjectId === 'endeffector' && endeffectorActiveCategoryId === 'ee-connect';
+    selectedObjectId === 'endeffector' &&
+    hasSelectedEeSlot &&
+    endeffectorActiveCategoryId === 'ee-connect';
   const isManipulatorRobotDetail = selectedObjectId === 'manipulator';
   const hasManipulatorSelection =
     panelData != null &&
@@ -337,7 +346,18 @@ export default function CategoryMenu({
   const dockSubToPanel = subModalDockToPropertyPanel != null;
   const subModalRefreshKey = `${selectedObjectId}|${motionCat}|${motionSequenceSelectedId ?? ''}|${selectedMotionUploadKey ?? ''}|${collisionActiveCategoryId ?? ''}|${panelData?.selectedCollisionAreaId ?? ''}|${endeffectorActiveCategoryId ?? ''}|${eeSelectedIdx ?? ''}|${panelData?.manipSelectedRobotIdx ?? ''}`;
   const anyEditMode = motionUploadReadonly || motionGenerateEdit || collisionEditMode;
-  const subModalMaxHeightPx = SUB_MODAL_MAX_HEIGHT;
+
+  const getSubModalHeightBounds = useCallback((top: number) => {
+    const margin = VIEWPORT_MARGIN;
+    const minTop = WORKSPACE_CONTENT_TOP_PX;
+    const safeTop = Math.max(minTop, top);
+    const viewportMax = Math.max(SUB_MODAL_FLOOR_HEIGHT, window.innerHeight - margin - safeTop);
+    const maxH = Math.min(SUB_MODAL_MAX_HEIGHT, viewportMax);
+    const minH = Math.min(SUB_MODAL_MIN_HEIGHT, maxH);
+    return { minH, maxH };
+  }, []);
+  const subModalMaxHeightPx = getSubModalHeightBounds(subModalPos.top).maxH;
+  const subModalMinHeightPx = getSubModalHeightBounds(subModalPos.top).minH;
 
   /**
    * 기본값 모드가 켜져 있어도 편집 모드가 활성화되면 편집 모드를 우선 표시.
@@ -392,12 +412,18 @@ export default function CategoryMenu({
     const minTop = WORKSPACE_CONTENT_TOP_PX;
     const maxLeft = Math.max(margin, window.innerWidth - margin - subW);
     const maxTop = Math.max(minTop, window.innerHeight - margin - subH);
+    let nextTopForBounds = subModalPos.top;
     setSubModalPos((p) => {
       const left = Math.min(Math.max(p.left, margin), maxLeft);
       const top = Math.min(Math.max(p.top, minTop), maxTop);
+      nextTopForBounds = top;
       return p.left === left && p.top === top ? p : { left, top };
     });
-  }, [subModalHeightPx]);
+    const { maxH } = getSubModalHeightBounds(nextTopForBounds);
+    if (subH > maxH + 0.5) {
+      setSubModalHeightPx(maxH);
+    }
+  }, [getSubModalHeightBounds, subModalHeightPx, subModalPos.top]);
 
   useEffect(() => {
     if (!subResizeEdge) return;
@@ -408,18 +434,12 @@ export default function CategoryMenu({
       const start = subResizeRef.current;
       if (subResizeEdge === 'bottom') {
         const dy = e.clientY - start.clientY;
-        const maxH = Math.min(
-          SUB_MODAL_MAX_HEIGHT,
-          Math.max(minH, window.innerHeight - margin - start.top),
-        );
+        const { minH, maxH } = getSubModalHeightBounds(start.top);
         const nextH = Math.min(Math.max(start.height + dy, minH), maxH);
         setSubModalHeightPx(nextH);
       } else {
         const dy = e.clientY - start.clientY;
-        const maxH = Math.min(
-          SUB_MODAL_MAX_HEIGHT,
-          Math.max(minH, window.innerHeight - minTop - margin),
-        );
+        const { minH, maxH } = getSubModalHeightBounds(start.top);
         let nextTop = start.top + dy;
         let nextH = start.height - dy;
         if (nextH < minH) {
@@ -448,7 +468,7 @@ export default function CategoryMenu({
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
-  }, [subResizeEdge]);
+  }, [getSubModalHeightBounds, subResizeEdge]);
 
   const startSubTopResize = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -473,7 +493,11 @@ export default function CategoryMenu({
   useLayoutEffect(() => {
     if (!showSubModalEffective) return;
     function placeSubModalAtDefault() {
-      const subH = subModalRef.current?.offsetHeight ?? subModalHeightPx ?? SUB_MODAL_MIN_HEIGHT;
+      const fallbackTop = dockSubToPanel && subModalDockToPropertyPanel
+        ? subModalDockToPropertyPanel.top
+        : (menuRef.current?.getBoundingClientRect().top ?? WORKSPACE_CONTENT_TOP_PX);
+      const { minH } = getSubModalHeightBounds(fallbackTop);
+      const subH = subModalRef.current?.offsetHeight ?? subModalHeightPx ?? minH;
       let left: number;
       let top: number;
       if (dockSubToPanel && subModalDockToPropertyPanel) {
@@ -486,12 +510,31 @@ export default function CategoryMenu({
         if (!menuRef.current) return;
         ({ left, top } = computeSubModalPosition(menuRef.current.getBoundingClientRect(), SUB_MODAL_WIDTH, subH));
       }
-      setSubModalPos({ left, top });
+      setSubModalPos((prev) => (prev.left === left && prev.top === top ? prev : { left, top }));
+      const { minH: fitMinH, maxH: fitMaxH } = getSubModalHeightBounds(top);
+      if (subModalHeightPx != null) {
+        const clampedH = Math.min(Math.max(subModalHeightPx, fitMinH), fitMaxH);
+        if (Math.abs(clampedH - subModalHeightPx) > 0.5) {
+          setSubModalHeightPx(clampedH);
+        }
+      } else {
+        const renderedH = subModalRef.current?.offsetHeight;
+        if (renderedH != null && renderedH > fitMaxH + 0.5) {
+          setSubModalHeightPx(fitMaxH);
+        }
+      }
     }
     placeSubModalAtDefault();
     const id = requestAnimationFrame(() => placeSubModalAtDefault());
     return () => cancelAnimationFrame(id);
-  }, [showSubModalEffective, subModalRefreshKey]);
+  }, [
+    dockSubToPanel,
+    getSubModalHeightBounds,
+    showSubModalEffective,
+    subModalDockToPropertyPanel,
+    subModalHeightPx,
+    subModalRefreshKey,
+  ]);
 
   useEffect(() => {
     if (!showSubModalEffective) return;
@@ -552,11 +595,6 @@ export default function CategoryMenu({
       setSubModalMinimized(false);
     }
   }, [showSubModalEffective]);
-
-  useEffect(() => {
-    if (!showSubModalEffective) return;
-    setSubModalMinimized(false);
-  }, [subModalRefreshKey, showSubModalEffective]);
 
   /** 협동 서브모달 앵커: 크기 변화만 구독. `subModalPos`에 넣지 않음 — 이동 시 cleanup에서 null을 보내 포털↔인라인 전환이 반복되어 루프/크래시가 났음 */
   useLayoutEffect(() => {
@@ -623,8 +661,8 @@ export default function CategoryMenu({
         zIndex: 49,
         width: panelWidth,
         background: tk.bg,
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        backdropFilter: theme === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: theme === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
         border: `1px solid ${tk.border}`,
         boxShadow: tk.shadow,
         transition: 'left 0.2s ease, width 0.2s ease',
@@ -919,11 +957,11 @@ export default function CategoryMenu({
           width: SUB_MODAL_WIDTH,
           zIndex: 51,
           height: subModalHeightPx ?? undefined,
-          minHeight: `${SUB_MODAL_MIN_HEIGHT}px`,
+          minHeight: `${Math.floor(subModalMinHeightPx)}px`,
           maxHeight: `${Math.floor(subModalMaxHeightPx)}px`,
           background: tk.bg,
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          backdropFilter: theme === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: theme === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
           border: `1px solid ${tk.border}`,
           boxShadow: tk.shadow,
         }}
@@ -1080,7 +1118,7 @@ export default function CategoryMenu({
               className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] px-2 py-0.5 rounded-[5px] leading-none"
               style={{
                 background: theme === 'light' ? 'rgba(255,142,43,0.28)' : 'rgba(255,142,43,0.22)',
-                color: theme === 'light' ? '#9a3412' : '#fdba74',
+                color: theme === 'light' ? POINT_ORANGE : '#fdba74',
                 border: theme === 'light' ? '1px solid rgba(255,142,43,0.35)' : '1px solid rgba(255,142,43,0.25)',
               }}
             >
@@ -1188,6 +1226,7 @@ export default function CategoryMenu({
                 data={panelData}
                 setData={setPanelData}
                 selectedMotionSeqId={motionSequenceSelectedId}
+                theme={theme}
               />
             )
           ) : selectedObjectId === 'endeffector' && isEndEffectorSubmodal && panelData && setPanelData ? (

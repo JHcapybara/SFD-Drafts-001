@@ -4,7 +4,7 @@ import type { MotionSeqItem, MotionTcpPos, MotionTcpRot, PanelData } from './pan
 import { MOTION_ADD_DEFAULTS, MOTION_JOINT_COUNT, mergeMotionJointAnglesDeg } from './panelData';
 import { useLocale } from './localeContext';
 import { accentRgba, getObjectAccent } from './pointColorSchemes';
-import { Section, InputField, DropdownField, LIGHT, type Tokens } from './PropertyPanel';
+import { Section, InputField, DropdownField, LIGHT, DARK, type Tokens } from './PropertyPanel';
 
 type MoveVariant = 'MoveL' | 'MoveJ';
 type SpeedBasis = 'time' | 'speed';
@@ -397,15 +397,17 @@ export function MotionSubmodalContent({
   data,
   setData,
   selectedMotionSeqId = null,
+  theme = 'light',
 }: {
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
   /** null: 모션 생성 기본값 · id: 해당 행 편집 */
   selectedMotionSeqId?: string | null;
+  theme?: 'light' | 'dark';
 }) {
   const { L, pointScheme } = useLocale();
   const motionAccent = getObjectAccent('motion', pointScheme);
-  const t: Tokens = LIGHT;
+  const t: Tokens = theme === 'dark' ? DARK : LIGHT;
   const d = MOTION_ADD_DEFAULTS;
   const defaultsMode = selectedMotionSeqId == null;
 

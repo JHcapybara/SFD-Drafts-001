@@ -160,7 +160,12 @@ export default function EeModelPickerModal({ open, slotIndex, onClose, onPick, t
   const node = (
     <div
       className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ zIndex: 200, background: 'rgba(0,0,0,0.52)' }}
+      style={{
+        zIndex: 200,
+        background: isDark ? 'rgba(0,0,0,0.44)' : 'rgba(0,0,0,0.52)',
+        backdropFilter: isDark ? 'blur(8px) saturate(130%)' : undefined,
+        WebkitBackdropFilter: isDark ? 'blur(8px) saturate(130%)' : undefined,
+      }}
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -170,8 +175,8 @@ export default function EeModelPickerModal({ open, slotIndex, onClose, onPick, t
         className="w-full max-w-[400px] max-h-[min(92vh,720px)] flex flex-col rounded-[16px] overflow-hidden shadow-2xl"
         style={{
           background: t.panelBg,
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          backdropFilter: isDark ? 'blur(28px) saturate(165%)' : 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: isDark ? 'blur(28px) saturate(165%)' : 'blur(20px) saturate(180%)',
           border: `1px solid ${t.panelBorder}`,
         }}
         role="dialog"
