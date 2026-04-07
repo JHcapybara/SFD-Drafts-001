@@ -2,31 +2,37 @@ import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } fr
 import CategoryMenu, { SUB_MODAL_GAP, SUB_MODAL_WIDTH, VIEWPORT_MARGIN } from './CategoryMenu';
 import PropertyPanel from './PropertyPanel';
 import { useLocale } from './localeContext';
+import { WorkspaceChrome } from './WorkspaceChrome';
 import type { PanelData } from './panelData';
 import { DEFAULT_DATA } from './panelData';
 import { CollabSubModalAnchorContext } from './collabSubModalAnchorContext';
 import type { CollabSubModalAnchorRect } from './collabSubModalAnchorContext';
+import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
 // 헤더 메타는 menuData의 OBJECTS_MODAL_CONTEXT (상위 로봇 1대). 씬별로 바꾸려면 CategoryMenu에 workspaceContext={...} 전달
 
 // Objects 모달 너비 + 간격
 const CATEGORY_MENU_WIDTH = 200;
 const CATEGORY_MENU_GAP = 8;
+const FULL_MINIMIZED_RIGHT_MARGIN = 12;
+const FULL_MINIMIZED_TOP_GAP = 12;
 /** PropertyPanel `w-[320px]` 과 동일 (서브모달 도킹용) */
 const PROPERTY_PANEL_WIDTH = 320;
 /** false → 항상 펼침(라벨 항상 표시, 이전 UX). true → 기본은 아이콘만, 호버 시 펼침. */
 const CATEGORY_MENU_EXPAND_ON_HOVER = true;
 
 export default function App() {
-  const { locale, toggleLocale, L } = useLocale();
+  const { locale, toggleLocale } = useLocale();
   const [showLight, setShowLight] = useState(true);
 
   // 선택된 오브젝트 상태 (PropertyPanel 탭 구성에 사용)
   const [selectedObjectId, setSelectedObjectId] = useState('manipulator');
 
   const lightInitialX = Math.max(0, window.innerWidth - 348);
+  const lightInitialY = WORKSPACE_CONTENT_TOP_PX;
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
 
   // 라이트 패널 위치 상태 — Objects 모달이 항상 이 위치 기준으로 좌측에 붙어 이동
-  const [lightPos, setLightPos] = useState({ x: lightInitialX, y: 24 });
+  const [lightPos, setLightPos] = useState({ x: lightInitialX, y: lightInitialY });
   const lightPosRef = useRef(lightPos);
   lightPosRef.current = lightPos;
 
@@ -105,8 +111,14 @@ export default function App() {
     }
   }, [selectedObjectId]);
 
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const handleLightPosChange = useCallback((x: number, y: number) => {
-    setLightPos({ x, y });
+    setLightPos({ x, y: Math.max(WORKSPACE_CONTENT_TOP_PX, y) });
   }, []);
 
   /** 협동 CategoryMenu 서브모달 아래에 워크스페이스 편집 패널을 붙일 때 사용 */
@@ -126,8 +138,9 @@ export default function App() {
     function clampGroupForSubLayer() {
       setLightPos((prev) => {
         const vw = window.innerWidth;
-        const rawMax =
-          vw - VIEWPORT_MARGIN - PROPERTY_PANEL_WIDTH - SUB_MODAL_GAP - SUB_MODAL_WIDTH;
+        // 프로퍼티 패널은 서브레이어 영역을 침범해도 우측으로 이동 가능해야 함.
+        // 따라서 우측 클램프는 패널 자체 너비만 기준으로 제한한다.
+        const rawMax = vw - VIEWPORT_MARGIN - PROPERTY_PANEL_WIDTH;
         const maxLightX = Math.max(0, rawMax);
         const minLightX = VIEWPORT_MARGIN + CATEGORY_MENU_WIDTH + CATEGORY_MENU_GAP;
 
@@ -149,10 +162,15 @@ export default function App() {
   }, [showLight, subLayerOpen, lightPos.x, lightPos.y]);
 
   // Objects 모달은 라이트 패널 왼쪽에 붙어있음
-  const categoryControlledPos = {
-    x: Math.max(0, lightPos.x - CATEGORY_MENU_WIDTH - CATEGORY_MENU_GAP),
-    y: lightPos.y,
-  };
+  const categoryControlledPos = showLight
+    ? {
+        x: Math.max(0, lightPos.x - CATEGORY_MENU_WIDTH - CATEGORY_MENU_GAP),
+        y: lightPos.y,
+      }
+    : {
+        x: Math.max(0, viewportWidth - CATEGORY_MENU_WIDTH - FULL_MINIMIZED_RIGHT_MARGIN),
+        y: WORKSPACE_CONTENT_TOP_PX + FULL_MINIMIZED_TOP_GAP,
+      };
 
   /** 모션/충돌/협동 서브 모달 도킹: 헤더 드래그 중에는 드래그 시작 시 패널 위치 기준(서브가 패널을 따라가지 않음) */
   const subModalDockToPropertyPanel = useMemo(() => {
@@ -170,28 +188,15 @@ export default function App() {
       <img src="/bg-viewport.png" alt="viewport background"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
 
-      <button
-        type="button"
-        onClick={toggleLocale}
-        className="absolute top-4 right-4 z-40 px-3 py-2 rounded-[10px] text-[12px] font-semibold shadow-md transition-colors duration-150"
-        style={{
-          background: 'rgba(252,252,253,0.92)',
-          color: '#111',
-          border: '1px solid rgba(0,0,0,0.10)',
-          backdropFilter: 'blur(12px)',
-        }}
-        aria-label={L.langSwitchAria}
-        title={L.langSwitchAria}
-      >
-        {locale === 'ko' ? L.langCurrentEn : L.langCurrentKo}
-      </button>
+      <WorkspaceChrome locale={locale} rightPanelVisible={showLight} onToggleLocale={toggleLocale} />
 
       {/* ── 카테고리 메뉴 (Objects 모달) — 라이트 패널 좌측에 붙어 이동 ── */}
       <CategoryMenu
         theme="light"
         selectedObjectId={selectedObjectId}
         onObjectChange={handleObjectChange}
-        controlledPos={showLight ? categoryControlledPos : undefined}
+        onEndEffectorCategoryChange={handleEndEffectorCategoryChange}
+        controlledPos={categoryControlledPos}
         isPropertyPanelOpen={showLight}
         expandOnHover={CATEGORY_MENU_EXPAND_ON_HOVER}
         subModalDockToPropertyPanel={subModalDockToPropertyPanel}
@@ -211,7 +216,7 @@ export default function App() {
         <PropertyPanel
           theme="light"
           initialX={lightInitialX}
-          initialY={24}
+          initialY={lightInitialY}
           syncedPosition={lightPos}
           onHeaderDragChange={onPropertyHeaderDragChange}
           selectedObjectId={selectedObjectId}
@@ -226,6 +231,7 @@ export default function App() {
           onMotionCategoryChange={handleMotionCategoryChange}
           onCollisionCategoryChange={handleCollisionCategoryChange}
           onEndEffectorCategoryChange={handleEndEffectorCategoryChange}
+          endeffectorActiveCategoryId={endeffectorActiveCategoryId}
           selectedEeIdx={eeSelectedIdx}
           setSelectedEeIdx={setEeSelectedIdx}
         />

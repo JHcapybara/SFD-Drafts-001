@@ -1,0 +1,1041 @@
+## 후보1. 통합 관리형
+
+트리는 1개만 있고, 셀 안전 판단에 필요한 개념을 그룹화하여 규칙에 맞게 표현되는 UI이다.
+
+- 셀
+    - 머니퓰레이터
+        - 그리퍼
+            
+            L 그리퍼 1
+            
+            L 그리퍼 충돌예상부위
+            
+            L 그리퍼 2
+            
+            L 그리퍼 충돌예상부위
+            
+            ..
+            
+        - 모션 설정
+            
+            L 모션 파일명
+            
+        
+        L 운전 영역
+        
+        L 최대운전영역
+        
+        L 협동작업영역
+        
+        L 로봇 충돌예상부위 
+        
+    - 모바일 머니퓰레이터
+        - 모바일
+            
+            L 경로 설정
+            
+            L 모바일 1 운전 구역 1
+            
+            L 모바일 1 작업 구역 1
+            
+        - 머니퓰레이터
+            - 그리퍼
+                
+                L 그리퍼 1
+                
+                L 그리퍼 충돌예상부위
+                
+                L 그리퍼 2
+                
+                L 그리퍼 충돌예상부위
+                
+                ..
+                
+            - 모션 설정
+                
+                L 모션 파일명
+                
+            
+            L 운전 영역
+            
+            L 최대운전영역
+            
+            L 협동작업영역
+            
+    - 머니퓰레이터 + 부가축
+        - 머니퓰레이터
+            - 그리퍼
+                
+                L 그리퍼 1
+                
+                L 그리퍼 충돌예상부위
+                
+                L 그리퍼 2
+                
+                L 그리퍼 충돌예상부위
+                
+                ..
+                
+            - 모션 설정
+                
+                L 모션 파일명
+                
+            
+            L 운전 영역
+            
+            L 최대운전영역
+            
+            L 협동작업영역
+            
+        - 부가축 1
+            
+            L 경로 설정
+            
+        - 부가축 2
+            
+            L 경로 설정
+            
+    - 부가축 + 모바일 + 머니퓰레이터
+        - 머니퓰레이터
+            - 그리퍼
+                
+                L 그리퍼 1
+                
+                L 그리퍼 충돌예상부위
+                
+                L 그리퍼 2
+                
+                L 그리퍼 충돌예상부위
+                
+                ..
+                
+            - 모션 설정
+                
+                L 모션 파일명
+                
+            
+            L 운전 영역
+            
+            L 최대운전영역
+            
+            L 협동작업영역
+            
+        - 모바일
+            
+            L 경로 설정
+            
+            L 모바일 1 운전 구역 1
+            
+            L 모바일 1 작업 구역 1
+            
+        - 부가축 1
+            
+            L 경로 설정
+            
+    - 모바일
+        
+        L 경로 설정
+        
+        L 모바일 1 운전 구역 1
+        
+        L 모바일 1 작업 구역 1
+        
+    - 모바일 + 부가축
+        - 모바일
+            
+            L 경로 설정
+            
+            L 모바일 1 운전 구역 1
+            
+            L 모바일 1 작업 구역 1
+            
+        - 부가축 1
+            
+            L 경로 설정
+            
+    
+    ---
+    
+    - 로봇 셀 안전 분석 조건
+        - 비상정지 버튼
+            
+            L 비상정지 버튼(0정지) 
+            
+            L 로봇 1 
+            
+            L 비상정지 버튼(1정지) 
+            
+            L 로봇 2, 로봇 3
+            
+            L 비상정지 버튼(0정지) 
+            
+            L 셀 abc
+            
+        - 펜스 그룹
+            
+            L 펜스 1
+            
+            L 안전 설치 거리
+            
+            L 펜스 2
+            
+            L 안전 설치 거리
+            
+        - 레이저 스캐너
+            
+            L 레이저 스캐너 1
+            
+            L 감지영역 1 🔗 로봇 1 
+            
+            L 감지영역 2 🔗 로봇 2, 로봇 3
+            
+            L 안전 정지 거리 
+            
+            L 레이저 스캐너 2
+            
+            L 감지영역 3 🔗 로봇 4
+            
+            L 감지영역 4 🔗 로봇 5, 로봇 6
+            
+            L 안전 정지 거리 
+            
+        - 라이트커튼
+            
+            L 라이트 커튼 1
+            
+            L 감지영역
+            
+            L 안전 설치 거리
+            
+            L 라이트 커튼 2
+            
+            L 감지영역
+            
+            L 안전 설치 거리
+            
+        - 안전매트
+            
+            L 안전매트 1
+            
+            L 감지영역
+            
+            L 안전 정지 거리
+            
+        - 라이다 센서
+            
+            L 라이다 1
+            
+            L 감지영역 1 
+            
+            L 로봇 1 
+            
+            L 감지영역 2 
+            
+            L  로봇 2
+            
+            L 로봇 3
+            
+            L 안전 정지 거리 
+            
+            L 라이다 2
+            
+            L 감지영역 3 
+            
+            L  로봇 4
+            
+            L 감지영역 4 
+            
+            L 로봇 5
+            
+            L 로봇 6
+            
+            L 안전 정지 거리 
+            
+    
+    설비
+    
+    설비
+    
+
+---
+
+- 셀 미지정 그룹
+    
+    레이저 스캐너
+    
+    설비
+    
+    설비 
+    
+    설비
+    
+    - 머니퓰레이터 + 부가축
+    - 부가축 + 모바일 + 머니퓰레이터
+        - 머니퓰레이터
+            - 그리퍼
+                
+                L 그리퍼 1
+                
+                L 그리퍼 충돌예상부위
+                
+                L 그리퍼 2
+                
+                L 그리퍼 충돌예상부위
+                
+                ..
+                
+            - 모션 설정
+                
+                L 모션 파일명
+                
+            
+            L 운전 영역
+            
+            L 최대운전영역
+            
+            L 협동작업영역
+            
+        - 모바일
+            
+            L 경로 설정
+            
+            L 모바일 1 운전 구역 1
+            
+            L 모바일 1 작업 구역 1
+            
+        - 부가축 1
+            
+            L 경로 설정
+
+
+
+
+### 후보2. 통합 관리형
+
+트리는 2개가 있는 데 하나는 설계 트리, 다른 하나는 안전(셀) 안전 판단에 필요한 개념을 그룹화하여 규칙에 맞게 표현되는 UI이다.
+
+
+- 모바일  (mobile platform)
+    
+    L 경로 설정
+    
+    - 부가축 (Added Axis)
+        
+        L 경로 설정
+        
+        - 머니퓰레이터
+            - 그리퍼
+                
+                L 그리퍼 1
+                
+                L 그리퍼 2
+                
+                ..
+                
+            - 모션 설정
+                
+                L 모션 파일명
+                
+        - 부가축
+            
+            L 경로 설정                                       
+            
+
+레이저 스캐너
+
+설비
+
+설비 
+
+설비 
+
+---
+
+- 셀
+    - 머니퓰레이터
+        - 동력 힘 제한 모드 (PFL)
+            - 충돌예상부위
+                
+                L 로봇1 충돌예상부위 1
+                
+                - 그리퍼 충돌예상부위
+                    
+                    L 그리퍼1 충돌예상부위 
+                    
+                    L 그리퍼2 충돌예상부위 
+                    
+            - 협동작업영역
+                
+                L 협동작업영역 1
+                
+                L 협동작업영역 2
+                
+        
+        L 운전 영역
+        
+        L 최대운전영역
+        
+    - 모바일 머니퓰레이터
+        - 모바일
+            
+            L 모바일 1 운전 구역 1
+            
+            L 모바일 1 작업 구역 1
+            
+        - 머니퓰레이터
+            
+            L 운전 영역
+            
+            L 최대운전영역
+            
+            L 협동작업영역
+            
+        - 동력 힘 제한 모드 (PFL)
+            - 충돌예상부위
+                
+                L 모바일  충돌예상부위
+                
+                L 머니퓰레이터 충돌예상부위 
+                
+                - 그리퍼 충돌예상부위
+                    
+                    L 그리퍼1 충돌예상부위 
+                    
+                    L 그리퍼2 충돌예상부위 
+                    
+            - 협동작업영역
+                
+                L 협동작업영역 1
+                
+                L 협동작업영역 2
+                
+    - 머니퓰레이터 + 부가축
+        - 머니퓰레이터
+            
+            L 운전 영역
+            
+            L 최대운전영역
+            
+            L 협동작업영역
+            
+        - 부가축 1
+            
+            L 경로 설정
+            
+        - 부가축 2
+            
+            L 경로 설정
+            
+        - 동력 힘 제한 모드 (PFL)
+            - 충돌예상부위
+                
+                L 모바일  충돌예상부위
+                
+                L 머니퓰레이터 충돌예상부위 
+                
+                - 그리퍼 충돌예상부위
+                    
+                    L 그리퍼1 충돌예상부위 
+                    
+                    L 그리퍼2 충돌예상부위 
+                    
+                - 부가축 충돌예상부위
+                    
+                    L 부가축1 충돌예상부위 
+                    
+                    L 부가축2 충돌예상부위 
+                    
+                - ~~작업대상물 충돌예상부위~~
+                    
+                    ~~L 작업대상물 충돌예상부위 1~~
+                    
+                    ~~L 작업대상물 충돌예상부위 2~~
+                    
+            - 협동작업영역
+                
+                L 협동작업영역 1
+                
+                L 협동작업영역 2
+                
+    - 부가축 + 모바일 + 머니퓰레이터
+        - 머니퓰레이터
+            
+            L 운전 영역
+            
+            L 최대운전영역
+            
+            L 협동작업영역
+            
+        - 모바일
+            
+            L 경로 설정
+            
+            L 모바일 1 운전 구역 1
+            
+            L 모바일 1 작업 구역 1
+            
+        - 부가축 1
+            
+            L 경로 설정
+            
+        - 동력 힘 제한 모드 (PFL)
+            - 충돌예상부위
+                
+                L 모바일  충돌예상부위
+                
+                L 머니퓰레이터 충돌예상부위 
+                
+                - 그리퍼 충돌예상부위
+                    
+                    L 그리퍼1 충돌예상부위 
+                    
+                    L 그리퍼2 충돌예상부위 
+                    
+                - 부가축 충돌예상부위
+                    
+                    L 부가축1 충돌예상부위 
+                    
+                    L 부가축2 충돌예상부위 
+                    
+                - ~~작업대상물 충돌예상부위~~
+                    
+                    ~~L 작업대상물 충돌예상부위 1~~
+                    
+                    ~~L 작업대상물 충돌예상부위 2~~
+                    
+            - 협동작업영역
+                
+                L 협동작업영역 1
+                
+                L 협동작업영역 2
+                
+    - 모바일
+        
+        L 경로 설정
+        
+        L 모바일 1 운전 구역 1
+        
+        L 모바일 1 작업 구역 1
+        
+        - 동력 힘 제한 모드 (PFL)
+            - 충돌예상부위
+                
+                L 모바일  충돌예상부위
+
+            - 협동작업영역
+                
+                L 협동작업영역 1
+                
+                L 협동작업영역 2
+                
+    - 모바일 + 부가축
+        - 모바일
+            
+            L 경로 설정
+            
+            L 모바일 1 운전 구역 1
+            
+            L 모바일 1 작업 구역 1
+            
+        - 부가축 1
+            
+            L 경로 설정
+            
+        - 동력 힘 제한 모드 (PFL)
+            - 충돌예상부위
+                
+                L 모바일  충돌예상부위
+                
+                - 부가축 충돌예상부위
+                    
+                    L 부가축1 충돌예상부위 
+                    
+                    L 부가축2 충돌예상부위 
+                    
+
+                    
+            - 협동작업영역
+                
+                L 협동작업영역 1
+                
+                L 협동작업영역 2
+                
+    
+    ---
+    
+    - 로봇 셀 안전 분석 조건
+        - 비상정지 버튼
+            
+            L 비상정지 버튼(0정지) 
+            
+            L 로봇 1 
+            
+            L 비상정지 버튼(1정지) 
+            
+            L 로봇 2, 로봇 3
+            
+            L 비상정지 버튼(0정지) 
+            
+            L 셀 abc
+            
+        - 펜스 그룹
+            
+            L 펜스 1
+            
+            L 안전 설치 거리
+            
+            L 펜스 2
+            
+            L 안전 설치 거리
+            
+        - 레이저 스캐너
+            
+            L 레이저 스캐너 1
+            
+            L 감지영역 1 🔗 로봇 1 
+            
+            L 감지영역 2 🔗 로봇 2, 로봇 3
+            
+            L 안전 정지 거리 
+            
+            L 레이저 스캐너 2
+            
+            L 감지영역 3 🔗 로봇 4
+            
+            L 감지영역 4 🔗 로봇 5, 로봇 6
+            
+            L 안전 정지 거리 
+            
+        - 라이트커튼
+            
+            L 라이트 커튼 1
+            
+            L 감지영역
+            
+            L 안전 설치 거리
+            
+            L 라이트 커튼 2
+            
+            L 감지영역
+            
+            L 안전 설치 거리
+            
+        - 안전매트
+            
+            L 안전매트 1
+            
+            L 감지영역
+            
+            L 안전 정지 거리
+            
+        - 라이다 센서
+            
+            L 라이다 1
+            
+            L 감지영역 1 
+            
+            L 로봇 1 
+            
+            L 감지영역 2 
+            
+            L  로봇 2
+            
+            L 로봇 3
+            
+            L 안전 정지 거리 
+            
+            L 라이다 2
+            
+            L 감지영역 3 
+            
+            L  로봇 4
+            
+            L 감지영역 4 
+            
+            L 로봇 5
+            
+            L 로봇 6
+            
+            L 안전 정지 거리 
+            
+    
+    ---
+    
+    - 기타 설비 그룹
+        
+        설비
+        
+        설비
+
+##셀 트리 아이콘 관련 정책##
+
+셀 트리 객체 리스트에 호버 하면 잠금 아이콘과 숨기기 아이콘이 노출된다. 
+잠금 아이콘을 누르면 트리에서도 호버하지않아도 잠금 아이콘이 노출된다.
+숨기기 아이콘도 동일하다. 
+
+PFL 분석이 진행된 로봇은 CRI값이 노출된다. 
+"CRI:0.7" 이런식으로 노출된다.
+
+1.0 초과이면 빨간색, 1.0이하이면 초록색으로 노출된다. 
+
+* 특이사항 *
+- 로봇 객체 (모바일, 머니퓰레이터, 부가축) 는 유료로 사용하는 경우 '유료 아이콘'도 함께 노출된다. 
+
+-아이콘 표현 순서
+* CRI>유료>잠금>숨기기
+
+##셀 트리 기능 정책##
+
+셀 트리에서 객체를 다중선택하고 마우스에서 우클릭하면 "셀 그룹으로 만들기" 메뉴가 노출된다.
+셀 그룹으로 만들기 메뉴를 누르면 셀 그룹 이름 입력 창이 노출된다. 
+셀 입력창에서 셀 그룹 이름을 입력하고 확인 버튼을 누르면 셀 그룹이 생성된다.
+
+셀 트리에서 생성된 셀 내부에 있는 객체를 Tree에서 밖으로 끌어내면, 셀에서 제외하겠냐는 문구가 노출되고 취소 버튼과 확인 버튼이 노출된다.
+취소 버튼을 누르면 셀에서 제외되지 않고 확인 버튼을 누르면 셀에서 제외된다.
+
+기본 기능 목록과 처리
+
+1. 셀 그룹 할당 > 클릭 시 셀 목록 노출 > 선택하면 해당 셀로 위치 변경 
+2. 개념 객체 그룹에 대한 포커스 처리 > 카메라 중앙에 객체 노출 
+3. 단 실제 객체가 그룹화된 경우에는 그룹에 대한 포커스는 하지않는다. 
+(ex 충돌예상부위 그룹, 모션 설정 그룹) 
+4. 이름 변경 > 셀 Tree에서 마우스 우클릭 후 이름 변경 시 셀 그룹 이름 변경 가능 
+5. 숨기기/보이기 > 숨기기 보이기 하면 3D화면에서 숨기기/보이기 설계 트리에도 반영 
+6. 잠금/잠금 해제 > 잠금, 잠금 해제 시 3D화면에서 숨기기/보이기 설계 트리에도 반영 
+7. 삭제 > 삭제 시 설계 트리에서도 삭제
+8. 복사 > 복사 시 같은 셀 내에 복사
+9. 객체 순서 바꾸기 > 객체 순서 바꾸기 하면 셀 내부에 있는 객체 순서 바꾸기 가능
+
+우클릭 했을때 드롭 메뉴에는 기본 기능 목록에 있는 메뉴가 노출된다.
+아래 순서대로 노출됨. 
+
+
+##예외 정책##
+1. 셀 클릭 시에는 셀 그룹 할당 노출 안함.  '셀 해제' 기능 추가 노출되고 클릭 시 셀 내부에 있는 객체들이 모두 셀 미지정 그룹으로 이동된다.
+2. 셀 해제 전에는 모달로 셀을 해제하겠냐는 메세지를 띄워 사용자의 확인을 받고 진행한다. 
+3. 셀 해제 후에는 셀 그룹 할당 노출된다. 
+4. 로봇 하위에 있는 객체들은 우클릭 시 셀 그룹 할당 메뉴 노출 안함.
+5. '~영역'이라고 노출되는 모든 항목은 삭제,복사 기능 노출 안함. 단, 협동작업영역에만 노출함. 
+
+
+
+
+
+
+
+
+##tree 셀 정의 흐름## 
+
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#d9d9d9','lineColor':'#f24822'}} }%%
+flowchart LR
+    scene1[현재 Scene<br/>설치 기준으로<br/>1번 로봇일때]
+    node[로봇 형태가<br/>고정식인가<br/>모바일 인가?]
+    n1[저장된 이름으로<br/>자동으로 1개의 셀로 판단<br/>셀 목록 만들어두기]
+    n1_1[자동으로 셀 1개로<br/>생성]
+    node_1[추가 로봇 설치<br/>&amp;#40;복사 포함&amp;#41;]
+    node_2[로봇 형태가<br/>고정식인가<br/>모바일인가?]
+    node_3[기존 로봇 셀에 함께<br/>등록]
+    n1_2[모바일 로봇과 다른 셀 1개에 할당]
+    node_4[기존의 로봇과<br/>결합되었는가?]
+    node_5[기존 로봇 셀에 함께<br/>등록 &amp;#40;당연하지!&amp;#41;]
+    usermessage[&amp;#91;User 정의 분기&amp;#93;<br/><br/>&amp;#42;Message&amp;#40;문구는 예시입니다&amp;#41;: 기존 로봇 셀과<br/>함께 작업하는 로봇인가요?<br/>&amp;#40;예&amp;#41; &amp;#40;아니오&amp;#41;]
+    node_6[기존 로봇 셀에 함께<br/>등록]
+    node_7[새로운 셀 생성]
+    usermessage_1[&amp;#91;User 정의 분기&amp;#93;<br/><br/>&amp;#42;Message&amp;#40;문구는 예시입니다&amp;#41;:<br/>어떤 작업을 진행하는 로봇셀 인가요?<br/><br/>작업이름 : 어쩌구 입력<br/><br/>&amp;#40;저장&amp;#41; &amp;#40;나중에 입력하기&amp;#41;]
+    scene1 ==> usermessage_1
+    node ==|고정식|==> n1
+    node ==|모바일|==> n1_1
+    n1_1 ==> node_1
+    node_2 ==|모바일|==> n1_2
+    node_1 ==> node_4
+    node_4 ==|yes|==> node_5
+    node_4 ==|no|==> node_2
+    node_2 ==|고정식|==> usermessage
+    usermessage ==|예|==> node_3
+    usermessage ==|아니오|==> node_7
+    usermessage_1 ==> node
+
+    style scene1 fill:#d9d9d9,fill-opacity:1,stroke:#f24822,stroke-opacity:0,stroke-width:4px
+    style node fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style n1 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style n1_1 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style node_1 fill:#d9d9d9,fill-opacity:1,stroke:#f24822,stroke-opacity:0,stroke-width:4px
+    style node_2 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style node_3 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style n1_2 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style node_4 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style node_5 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style usermessage fill:#ffecbd,fill-opacity:1,stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    style node_6 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style node_7 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style usermessage_1 fill:#ffecbd,fill-opacity:1,stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    linkStyle 0 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 1 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 2 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 3 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 4 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 5 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 6 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 7 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 8 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 9 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 10 stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    linkStyle 11 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    %% node-meta:scene1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLtmITsnqwgU2NlbmUg4oCo7ISk7LmYIOq4sOykgOycvOuhnCAx67KIIOuhnOu0h+ydvOuVjCIsInBvc2l0aW9uIjp7IngiOjc5NjMuNTY4MzU5Mzc1LCJ5IjotMzc0OX0sInNpemUiOnsid2lkdGgiOjgwNiwiaGVpZ2h0Ijo1Mjh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6Iu2YhOyerCBTY2VuZSDigKjshKTsuZgg6riw7KSA7Jy866GcIFxuMeuyiCDroZzrtIfsnbzrlYwiLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjoyNn1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMSJdfSwic3R5bGUiOnsiZmlsbCI6IiNkOWQ5ZDkiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiI2YyNDgyMiIsInN0cm9rZU9wYWNpdHkiOjAsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:node eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLroZzrtIcg7ZiV7YOc6rCAIOqzoOygleyLneyduOqwgCDrqqjrsJTsnbwg7J246rCAPyIsInBvc2l0aW9uIjp7IngiOjgwMjYuNTY4MzU5Mzc1LCJ5IjotMTgzNH0sInNpemUiOnsid2lkdGgiOjY3MiwiaGVpZ2h0Ijo1Mjh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IuuhnOu0hyDtmJXtg5zqsIAgXG7qs6DsoJXsi53snbjqsIAgXG7rqqjrsJTsnbwg7J246rCAPyIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjIyfV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:n1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLsoIDsnqXrkJwg7J2066aE7Jy866GcIOyekOuPmeycvOuhnCAx6rCc7J2YIOyFgOuhnCDtjJDri6jigKjshYAg66qp66GdIOunjOuTpOyWtOuRkOq4sCIsInBvc2l0aW9uIjp7IngiOjgwMjYuNTY4MzU5Mzc1LCJ5IjotOTcwfSwic2l6ZSI6eyJ3aWR0aCI6NjcyLCJoZWlnaHQiOjUyOH0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi7KCA7J6l65CcIOydtOumhOycvOuhnCBcbuyekOuPmeycvOuhnCAx6rCc7J2YIOyFgOuhnCDtjJDri6jigKjshYAg66qp66GdIOunjOuTpOyWtOuRkOq4sCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjM1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:n1_1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLsnpDrj5nsnLzroZwg7IWAIDHqsJzroZwg7IOd7ISxIiwicG9zaXRpb24iOnsieCI6OTE2My41NjgzNTkzNzUsInkiOi0xODM0fSwic2l6ZSI6eyJ3aWR0aCI6NjcyLCJoZWlnaHQiOjUyOH0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi7J6Q64+Z7Jy866GcIOyFgCAx6rCc66GcXG7sg53shLEiLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjoxM31dfSwiY2xhc3NMaXN0IjpbImF1dG9fMiJdfSwic3R5bGUiOnsiZmlsbCI6IiNjNmZhZjYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzVhZDhjYyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:node_1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLstpTqsIAg66Gc67SHIOyEpOy5mOKAqCjrs7Xsgqwg7Y+s7ZWoKSIsInBvc2l0aW9uIjp7IngiOjEwMTA3LjU2ODM1OTM3NSwieSI6LTE4MTZ9LCJzaXplIjp7IndpZHRoIjo4MDYsImhlaWdodCI6NDkzfSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiLstpTqsIAg66Gc67SHIOyEpOy5mOKAqCjrs7Xsgqwg7Y+s7ZWoKSIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjE2fV19LCJjbGFzc0xpc3QiOlsiYXV0b18xIl19LCJzdHlsZSI6eyJmaWxsIjoiI2Q5ZDlkOSIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZjI0ODIyIiwic3Ryb2tlT3BhY2l0eSI6MCwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:node_2 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLroZzrtIcg7ZiV7YOc6rCAIOqzoOygleyLneyduOqwgCDrqqjrsJTsnbzsnbjqsIA/IiwicG9zaXRpb24iOnsieCI6MTI2MjEuNTY4MzU5Mzc1LCJ5IjotMTgzNH0sInNpemUiOnsid2lkdGgiOjY3MiwiaGVpZ2h0Ijo1Mjh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IuuhnOu0hyDtmJXtg5zqsIAgXG7qs6DsoJXsi53snbjqsIAgXG7rqqjrsJTsnbzsnbjqsIA/IiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MjF9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzIiXX0sInN0eWxlIjp7ImZpbGwiOiIjYzZmYWY2IiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:node_3 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLquLDsobQg66Gc67SHIOyFgOyXkCDtlajqu5gg65Ox66GdIiwicG9zaXRpb24iOnsieCI6MTM4MzUuNTY4MzU5Mzc1LCJ5IjotOTQ2fSwic2l6ZSI6eyJ3aWR0aCI6NjcyLCJoZWlnaHQiOjUyOH0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi6riw7KG0IOuhnOu0hyDshYDsl5Ag7ZWo6ruYXG7rk7HroZ0iLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjoxNH1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMiJdfSwic3R5bGUiOnsiZmlsbCI6IiNjNmZhZjYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzVhZDhjYyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:n1_2 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLrqqjrsJTsnbwg66Gc67SH6rO8IOuLpOuluCDshYAgMeqwnOyXkCDtlaDri7kiLCJwb3NpdGlvbiI6eyJ4IjoxMzgzNS41NjgzNTkzNzUsInkiOi0xODQyfSwic2l6ZSI6eyJ3aWR0aCI6NjcyLCJoZWlnaHQiOjUyOH0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi66qo67CU7J28IOuhnOu0h+qzvCDri6Trpbgg7IWAIDHqsJzsl5Ag7ZWg64u5IiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MTl9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzIiXX0sInN0eWxlIjp7ImZpbGwiOiIjYzZmYWY2IiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:node_4 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLquLDsobTsnZgg66Gc67SH6rO8IOqysO2VqeuQmOyXiOuKlOqwgD8iLCJwb3NpdGlvbiI6eyJ4IjoxMTM0My41NjgzNTkzNzUsInkiOi0xODM0fSwic2l6ZSI6eyJ3aWR0aCI6NjcyLCJoZWlnaHQiOjUyOH0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi6riw7KG07J2YIOuhnOu0h+qzvFxu6rKw7ZWp65CY7JeI64qU6rCAPyIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjE1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:node_5 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLquLDsobQg66Gc67SHIOyFgOyXkCDtlajqu5gg65Ox66GdICjri7nsl7DtlZjsp4AhKSIsInBvc2l0aW9uIjp7IngiOjExMzQzLjU2ODM1OTM3NSwieSI6LTk3MH0sInNpemUiOnsid2lkdGgiOjY3MiwiaGVpZ2h0Ijo1Mjh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6Iuq4sOyhtCDroZzrtIcg7IWA7JeQIO2VqOq7mFxu65Ox66GdICjri7nsl7DtlZjsp4AhKSIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjIyfV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:usermessage eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqOKAqCpNZXNzYWdlKOusuOq1rOuKlCDsmIjsi5zsnoXri4jri6QpOiDquLDsobQg66Gc67SHIOyFgOqzvCDtlajqu5gg7J6R7JeF7ZWY64qUIOuhnOu0h+yduOqwgOyalD8g4oCoKOyYiCkgKOyVhOuLiOyYpCkiLCJwb3NpdGlvbiI6eyJ4IjoxMjM4OS41NjgzNTkzNzUsInkiOi0xMDYxfSwic2l6ZSI6eyJ3aWR0aCI6MTEzNiwiaGVpZ2h0Ijo3NTh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IltVc2VyIOygleydmCDrtoTquLBd4oCo4oCoKk1lc3NhZ2Uo66y46rWs64qUIOyYiOyLnOyeheuLiOuLpCk6IOq4sOyhtCDroZzrtIcg7IWA6rO8XG7tlajqu5gg7J6R7JeF7ZWY64qUIOuhnOu0h+yduOqwgOyalD8g4oCoKOyYiCkgKOyVhOuLiOyYpCkiLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjo2OX1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMyJdfSwic3R5bGUiOnsiZmlsbCI6IiNmZmVjYmQiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiI2ZmYzk0MyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:node_6 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLquLDsobQg66Gc67SHIOyFgOyXkCDtlajqu5gg65Ox66GdIiwicG9zaXRpb24iOnsieCI6MTM4MzUuNTY4MzU5Mzc1LCJ5IjotOTQ2fSwic2l6ZSI6eyJ3aWR0aCI6NjcyLCJoZWlnaHQiOjUyOH0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi6riw7KG0IOuhnOu0hyDshYDsl5Ag7ZWo6ruYXG7rk7HroZ0iLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjoxNH1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMiJdfSwic3R5bGUiOnsiZmlsbCI6IiNjNmZhZjYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzVhZDhjYyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:node_7 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLsg4jroZzsmrQg7IWAIOyDneyEsSIsInBvc2l0aW9uIjp7IngiOjEzODM1LjU2ODM1OTM3NSwieSI6LTI0NX0sInNpemUiOnsid2lkdGgiOjY3MiwiaGVpZ2h0Ijo1Mjh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IuyDiOuhnOyatCDshYAg7IOd7ISxIiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6OH1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMiJdfSwic3R5bGUiOnsiZmlsbCI6IiNjNmZhZjYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzVhZDhjYyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:usermessage_1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqOKAqCpNZXNzYWdlKOusuOq1rOuKlCDsmIjsi5zsnoXri4jri6QpOiDigKjslrTrlqQg7J6R7JeF7J2EIOynhO2Wie2VmOuKlCDroZzrtIfshYAg7J246rCA7JqUPyDigKjigKjsnpHsl4XsnbTrpoQgOiDslrTsqYzqtawg7J6F66Cl4oCo4oCo4oCoKOyggOyepSkgKOuCmOykkeyXkCDsnoXroKXtlZjquLApIOKAqCIsInBvc2l0aW9uIjp7IngiOjc3OTguNTY4MzU5Mzc1LCJ5IjotMjkzM30sInNpemUiOnsid2lkdGgiOjExMzYsImhlaWdodCI6NzU4fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqOKAqCpNZXNzYWdlKOusuOq1rOuKlCDsmIjsi5zsnoXri4jri6QpOiDigKjslrTrlqQg7J6R7JeF7J2EIOynhO2Wie2VmOuKlCDroZzrtIfshYAg7J246rCA7JqUPyDigKjigKjsnpHsl4XsnbTrpoQgOiDslrTsqYzqtawg7J6F66Cl4oCo4oCo4oCoKOyggOyepSkgKOuCmOykkeyXkCDsnoXroKXtlZjquLApIOKAqCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjkyfV19LCJjbGFzc0xpc3QiOlsiYXV0b18zIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZWNiZCIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZmZjOTQzIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% edge-meta:0 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJTVFJBSUdIVCIsImNvcm5lclJhZGl1cyI6NH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:1 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:2 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:3 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:4 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:5 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:6 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:7 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:8 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:9 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:10 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiNmZmM5NDMiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:11 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    classDef auto_1 fill:#d9d9d9,stroke:#f24822,stroke-width:4px
+    classDef auto_2 fill:#c6faf6,stroke:#5ad8cc,stroke-width:4px
+    classDef auto_3 fill:#ffecbd,stroke:#ffc943,stroke-width:4px
+    class scene1,node_1 auto_1
+    class node,n1,n1_1,node_2,node_3,n1_2,node_4,node_5,node_6,node_7 auto_2
+    class usermessage,usermessage_1 auto_3
+subgraph node [셀 정의 기능_설치시점 추가]
+    direction TB
+    scene1
+    node
+    n1
+    n1_1
+    node_1
+    node_2
+    node_3
+    n1_2
+    node_4
+    node_5
+    usermessage
+    node_6
+    node_7
+    usermessage_1
+end
+
+
+
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#ffffff','lineColor':'#f24822'}} }%%
+flowchart TB
+    node[분석 모드 진입]
+    start[고정식 셀 판단 Start]
+    n1[고정식 셀<br/>1개 판단 완료]
+    n1_1[고정식 셀<br/>1개 판단 완료]
+    node_1[독립셀로 판단 완료]
+    node_2[고정식+ 모바일<br/>연합된 셀로 판단완료]
+    node_3[복수 셀로 정의 완료]
+    node_4[로봇 종류가<br/>모바일 로봇인가?]
+    n1_2[설치된 로봇이<br/>1대 인가?]
+    usermessage2[&amp;#91;User 정의 분기&amp;#93;<br/><br/>&amp;#42;Message: 셀이 2개<br/>이상인가요? &amp;#40;로봇들의 비상정지 버튼 범위를 물어보는 질문등&amp;#41;]
+    n1_3[자동으로 1개의 셀로 판단<br/>셀 목록 만들어두기]
+    usermessage[&amp;#91;User 정의 분기&amp;#93;<br/>셀 정의 모드 진입<br/><br/>&amp;#42;Message: 셀 범위를<br/>드래그 하여 지정해주세요.]
+    n1_4[자동으로 1개의 셀로 판단<br/>셀 목록 만들어두기]
+    n11[모바일은 로봇은<br/>설치하는 순간 독립 셀 1개로 판단<br/><br/>&amp;#40;&amp;#42;모바일로봇과 결합된 로봇과 부가축이 있어도 1개의 셀&amp;#41;]
+    usermessage_1[&amp;#91;User 정의 분기&amp;#93;<br/><br/>&amp;#42;Message: 해당 모바일 로봇과 함께 작업하는 셀&amp;#40;구역&amp;#41; 이 있나요?]
+    usermessage_2[&amp;#91;User 정의 분기&amp;#93;<br/><br/>&amp;#42;Message: 모바일 로봇이 함께 작업하는 셀을 선택하시거나<br/> 혹은 모바일 로봇이 작업하는 구역을 그려주세요.<br/><br/>화면에서는 정의된 고정식 셀을 선택하거나<br/>모바일 로봇 작업 구역을 드래그 방식으로 정의]
+    algorithm[&amp;#91;Algorithm 자동판단&amp;#93;<br/><br/>서로 다른 로봇 셀에서<br/>최대운전영역이 겹치는가?]
+    algorithm_1[&amp;#91;Algorithm 자동판단&amp;#93;<br/><br/>서로 다른 셀에서<br/>로봇 외 다른 객체가<br/>중복되어있는가?]
+    exui[서로 다른 셀에 중복된<br/>다른 객체&amp;#40;ex펜스, 레이저 스캐너&amp;#41;<br/>가 있음을 인지할 수 있도록 UI 처리]
+    algorithmwaypoint[&amp;#91;Algorithm 자동판단&amp;#93;<br/><br/>최대운전영역이 겹쳐져있는 로봇들이<br/>동시간 대에 움직이는가?<br/>&amp;#40;waypoint  정보로 판단&amp;#41;]
+    algorithm1[&amp;#91;Algorithm 자동판단&amp;#93;<br/><br/>1개의 셀 내에<br/>산업용 로봇이 포함되어있는가?]
+    node_5[&amp;#91;로봇 셀 판단 전 사전 입력 정보&amp;#93;를<br/>입력했다는 가정하에 시작.<br/>&amp;#40;입력 안되었다면, 안내해서 입력하게 만들었다는 가정&amp;#41;<br/><br/>로봇 설치 &amp;#40;베이스 위치&amp;#41;<br/>그리퍼&amp;#40;머니퓰레이터 쓰는 경우&amp;#41;<br/>로봇 모션 혹은 경로 설계 데이터]
+    algorithm_2[&amp;#91;Algorithm 자동판단&amp;#93;<br/><br/>서로 다른 셀로 판단하여 처리]
+    message2buttoniso1021822[&amp;#91;안내&amp;#93;<br/><br/>&amp;#42;Message:<br/><br/>서로 다른 로봇이 운전 영역을 공유하므로 비상정지 시 함께 멈춰야 합니다. 개별 정지 시 2차 충돌 위험으로 안전검사 통과가 어려울 수 있습니다.<br/>셀 범위를 수정하시겠습니까?<br/>&amp;#91;로봇 셀 범위 수정하기&amp;#93; - button<br/><br/>&amp;#91;관련 표준 및 법령&amp;#93;<br/>ISO 10218-2: 동일한 작업 공간 내에서 겹치는 로봇들은<br/>하나의 시스템으로 분류되어야 합니다.<br/><br/>안전검사 고시: 영역 중첩 시 한 대만 정지하면 움직이는 로봇에 의한 2차 충돌 및 끼임 사고가 발생할 수 있어, 안전하지 못한 정지로 판단되어 안전검사 불합격 사유가될 수 있습니다.]
+    n12113[&amp;#91;안내&amp;#93;<br/><br/>두 로봇이 같은 시간에 중첩된 영역으로 들어오는 것이 확인되었습니다.<br/>그대로 가동할 경우 물리적 충돌이 발생할 수 있습니다.<br/> 아래 두 가지 방법 중 현장에 맞는 방식을 선택해 보세요!&amp;quot;<br/><br/>방법 1. 소프트웨어 제한 영역 설정 안내<br/><br/>방법 2. 제어적으로 1대가 작업 시에 1대가 대기상태로 만들기<br/><br/>방법 3. .... 기타 등등 &amp;#40;여기는 도움이 필요해요ㅠ&amp;#41;]
+    message4[&amp;#91;안내&amp;#93;<br/><br/>&amp;#42;Message:<br/>협동운전을 하지않는 ’산업용 로봇’이 포함된<br/> 로봇 셀은 4면을 로봇 동작 중<br/>작업자가 접근할 수 없도록 ‘펜스’로 방호해주시기 바랍니다.]
+    algorithm_3[&amp;#91;Algorithm 자동판단&amp;#93;<br/>고정식 셀 내부에서 모바일이<br/> 진입하여 작업하는가?]
+    usermessage2 ==|no|==> n1_3
+    n1_2 ==|yes|==> n1_4
+    node ==> node_4
+    n1_2 ==|no|==> usermessage2
+    node_4 ==|고정식|==> n1_2
+    node_4 ==|모바일 로봇|==> n11
+    n11 ==> usermessage_1
+    usermessage_1 ==|yes|==> usermessage_2
+    algorithm ==|no|==> algorithm_1
+    algorithm_1 ==|yes|==> exui
+    node_5 ==> node
+    algorithm_1 ==|no|==> algorithm_2
+    algorithmwaypoint ==|no|==> message2buttoniso1021822
+    algorithmwaypoint ==|yes|==> n12113
+    algorithm1 ==|yes|==> message4
+    usermessage ==> algorithm1
+    algorithm1 ==|no&amp;#40;협동운전 로봇만 있을때&amp;#41;|==> algorithm
+    algorithm ==|yes|==> algorithmwaypoint
+    message2buttoniso1021822 ==|로봇 셀 범위 수정하기 버튼 클릭 시|==> usermessage
+    algorithm_2 ==> node_3
+    usermessage2 ==> start
+    exui ==> node_3
+    usermessage_2 ==> algorithm_3
+    algorithm_3 ==|yes|==> node_2
+    algorithm_3 ==|no|==> node_1
+    usermessage_1 ==|no|==> node_1
+    n1_4 ==> n1
+    n1_3 ==> n1_1
+
+    style node fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style start fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style n1 fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style n1_1 fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style node_1 fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style node_2 fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style node_3 fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style node_4 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style n1_2 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style usermessage2 fill:#ffecbd,fill-opacity:1,stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    style n1_3 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style usermessage fill:#cdf4d3,fill-opacity:1,stroke:#66d575,stroke-opacity:1,stroke-width:4px
+    style n1_4 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style n11 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style usermessage_1 fill:#ffecbd,fill-opacity:1,stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    style usermessage_2 fill:#cdf4d3,fill-opacity:1,stroke:#66d575,stroke-opacity:1,stroke-width:4px
+    style algorithm fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style algorithm_1 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style exui fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style algorithmwaypoint fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style algorithm1 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style node_5 fill:#ffffff,fill-opacity:1,stroke:#f24822,stroke-opacity:1,stroke-width:4px
+    style algorithm_2 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    style message2buttoniso1021822 fill:#ffecbd,fill-opacity:1,stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    style n12113 fill:#ffecbd,fill-opacity:1,stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    style message4 fill:#ffecbd,fill-opacity:1,stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    style algorithm_3 fill:#c6faf6,fill-opacity:1,stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 0 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 1 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 2 stroke:#242424,stroke-opacity:1,stroke-width:4px
+    linkStyle 3 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 4 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 5 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 6 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 7 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 8 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 9 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 10 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 11 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 12 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 13 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 14 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 15 stroke:#66d575,stroke-opacity:1,stroke-width:4px
+    linkStyle 16 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 17 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 18 stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    linkStyle 19 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 20 stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    linkStyle 21 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 22 stroke:#66d575,stroke-opacity:1,stroke-width:4px
+    linkStyle 23 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 24 stroke:#5ad8cc,stroke-opacity:1,stroke-width:4px
+    linkStyle 25 stroke:#ffc943,stroke-opacity:1,stroke-width:4px
+    linkStyle 26 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    linkStyle 27 stroke:#757575,stroke-opacity:1,stroke-width:4px
+    %% node-meta:node eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLrtoTshJ0g66qo65OcIOynhOyehSIsInBvc2l0aW9uIjp7IngiOjc5NjkuNjI1OTc2NTYyNSwieSI6MjUxNy4yOTczNjMyODEyNX0sInNpemUiOnsid2lkdGgiOjEyNTMuOTc4MTQ5NDE0MDYyNSwiaGVpZ2h0IjoyNDguOTI4NjY1MTYxMTMyOH0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi67aE7ISdIOuqqOuTnCDsp4TsnoUiLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjo4fV19LCJjbGFzc0xpc3QiOlsiYXV0b18xIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZmZmZiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZjI0ODIyIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:start eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLqs6DsoJXsi50g7IWAIO2MkOuLqCBTdGFydCIsInBvc2l0aW9uIjp7IngiOjc5NjQuOTU4MDA3ODEyNSwieSI6NjMzMC41NzMyNDIxODc1fSwic2l6ZSI6eyJ3aWR0aCI6MTI1My45NzgxNDk0MTQwNjI1LCJoZWlnaHQiOjI0OC45Mjg2NjUxNjExMzI4fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiLqs6DsoJXsi50g7IWAIO2MkOuLqCBTdGFydCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjE0fV19LCJjbGFzc0xpc3QiOlsiYXV0b18xIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZmZmZiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZjI0ODIyIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:n1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLqs6DsoJXsi50g7IWAIOKAqDHqsJwg7YyQ64uoIOyZhOujjCIsInBvc2l0aW9uIjp7IngiOjExODM3LjM1NTQ2ODc1LCJ5Ijo0MjM4LjAxNjYwMTU2MjV9LCJzaXplIjp7IndpZHRoIjoxMjUzLjk3ODE0OTQxNDA2MjUsImhlaWdodCI6NDkwLjA3ODMwODEwNTQ2ODc1fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiLqs6DsoJXsi50g7IWAIOKAqDHqsJwg7YyQ64uoIOyZhOujjCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjE1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18xIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZmZmZiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZjI0ODIyIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:n1_1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLqs6DsoJXsi50g7IWAIOKAqDHqsJwg7YyQ64uoIOyZhOujjCIsInBvc2l0aW9uIjp7IngiOjExODM3LjM1NTQ2ODc1LCJ5Ijo1NDA2LjQyNTc4MTI1fSwic2l6ZSI6eyJ3aWR0aCI6MTI1My45NzgxNDk0MTQwNjI1LCJoZWlnaHQiOjQ5MC4wNzgzMDgxMDU0Njg3NX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi6rOg7KCV7IudIOyFgCDigKgx6rCcIO2MkOuLqCDsmYTro4wiLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjoxNX1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMSJdfSwic3R5bGUiOnsiZmlsbCI6IiNmZmZmZmYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiI2YyNDgyMiIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:node_1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLrj4Xrpr3shYDroZwg7YyQ64uoIOyZhOujjCIsInBvc2l0aW9uIjp7IngiOjE2NzQ2LjY5NTMxMjUsInkiOjc2NzQuNzg4MDg1OTM3NX0sInNpemUiOnsid2lkdGgiOjE1ODUuMzY0NTAxOTUzMTI1LCJoZWlnaHQiOjQyNC43MzQ1Mjc1ODc4OTA2fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiLrj4Xrpr3shYDroZwg7YyQ64uoIOyZhOujjCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjEwfV19LCJjbGFzc0xpc3QiOlsiYXV0b18xIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZmZmZiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZjI0ODIyIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:node_2 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLqs6DsoJXsi50rIOuqqOuwlOydvCDsl7DtlanrkJwg7IWA66GcIO2MkOuLqOyZhOujjCIsInBvc2l0aW9uIjp7IngiOjE5MTU2LjYzNjcxODc1LCJ5Ijo2NjA3LjUwNTg1OTM3NX0sInNpemUiOnsid2lkdGgiOjE1ODUuMzY0NTAxOTUzMTI1LCJoZWlnaHQiOjQyNC43MzQ1Mjc1ODc4OTA2fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiLqs6DsoJXsi50rIOuqqOuwlOydvCBcbuyXsO2VqeuQnCDshYDroZwg7YyQ64uo7JmE66OMIiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MjF9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzEiXX0sInN0eWxlIjp7ImZpbGwiOiIjZmZmZmZmIiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiNmMjQ4MjIiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:node_3 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLrs7XsiJgg7IWA66GcIOygleydmCDsmYTro4wiLCJwb3NpdGlvbiI6eyJ4Ijo3OTY2LjUxMzY3MTg3NSwieSI6MTYwOTQuODAwNzgxMjV9LCJzaXplIjp7IndpZHRoIjoxMjUzLjk3ODE0OTQxNDA2MjUsImhlaWdodCI6MjQ4LjkyODY2NTE2MTEzMjh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IuuzteyImCDshYDroZwg7KCV7J2YIOyZhOujjCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjExfV19LCJjbGFzc0xpc3QiOlsiYXV0b18xIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZmZmZiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZjI0ODIyIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:node_4 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLroZzrtIcg7KKF66WY6rCAIOuqqOuwlOydvCDroZzrtIfsnbjqsIA/IiwicG9zaXRpb24iOnsieCI6ODA2OS4xOTcyNjU2MjUsInkiOjI5NjUuMzY5MTQwNjI1fSwic2l6ZSI6eyJ3aWR0aCI6MTA0NS41MDAzNjYyMTA5Mzc1LCJoZWlnaHQiOjgyMS40NjQ1OTk2MDkzNzV9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IuuhnOu0hyDsooXrpZjqsIBcbuuqqOuwlOydvCDroZzrtIfsnbjqsIA/IiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MTZ9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzIiXX0sInN0eWxlIjp7ImZpbGwiOiIjYzZmYWY2IiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:n1_2 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLshKTsuZjrkJwg66Gc67SH7J20IDHrjIAg7J246rCAPyIsInBvc2l0aW9uIjp7IngiOjgwNjkuMTk3MjY1NjI1LCJ5Ijo0MTg1LjExOTE0MDYyNX0sInNpemUiOnsid2lkdGgiOjEwNDUuNTAwMzY2MjEwOTM3NSwiaGVpZ2h0Ijo1OTcuNDI4ODMzMDA3ODEyNX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi7ISk7LmY65CcIOuhnOu0h+ydtFxuMeuMgCDsnbjqsIA/IiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MTR9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzIiXX0sInN0eWxlIjp7ImZpbGwiOiIjYzZmYWY2IiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:usermessage2 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqOKAqCpNZXNzYWdlOiDshYDsnbQgMuqwnCDsnbTsg4HsnbjqsIDsmpQ/ICjroZzrtIfrk6TsnZgg67mE7IOB7KCV7KeAIOuyhO2KvCDrspTsnITrpbwg66y87Ja067O064qUIOyniOusuOuTsSkiLCJwb3NpdGlvbiI6eyJ4Ijo3NzE0LjQ3MzYzMjgxMjUsInkiOjUxMzEuMDQ4ODI4MTI1fSwic2l6ZSI6eyJ3aWR0aCI6MTc1My4zOTEzNTc0MjE4NzUsImhlaWdodCI6MTA0MC44MzMwMDc4MTI1fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqOKAqCpNZXNzYWdlOiDshYDsnbQgMuqwnCBcbuydtOyDgeyduOqwgOyalD8gKOuhnOu0h+uTpOydmCDruYTsg4HsoJXsp4Ag67KE7Yq8IOuylOychOulvCDrrLzslrTrs7TripQg7KeI66y465OxKSIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjY1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18zIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZWNiZCIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZmZjOTQzIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:n1_3 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLsnpDrj5nsnLzroZwgMeqwnOydmCDshYDroZwg7YyQ64uo4oCo7IWAIOuqqeuhnSDrp4zrk6TslrTrkZDquLAiLCJwb3NpdGlvbiI6eyJ4IjoxMDQ4My44MDQ2ODc1LCJ5Ijo1MzUzLjUyODMyMDMxMjV9LCJzaXplIjp7IndpZHRoIjoxMDQ1LjUwMDM2NjIxMDkzNzUsImhlaWdodCI6NTk3LjQyODgzMzAwNzgxMjV9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IuyekOuPmeycvOuhnCAx6rCc7J2YIOyFgOuhnCDtjJDri6jigKjshYAg66qp66GdIOunjOuTpOyWtOuRkOq4sCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjI1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:usermessage eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqOyFgCDsoJXsnZgg66qo65OcIOynhOyehSDigKggKk1lc3NhZ2U6IOyFgCDrspTsnITrpbwg65Oc656Y6re4IO2VmOyXrCDsp4DsoJXtlbTso7zshLjsmpQuIiwicG9zaXRpb24iOnsieCI6ODA3My44NjQyNTc4MTI1LCJ5Ijo3MDEyLjAxNTYyNX0sInNpemUiOnsid2lkdGgiOjEwNDUuNTAwMzY2MjEwOTM3NSwiaGVpZ2h0Ijo1OTcuNDI4ODMzMDA3ODEyNX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0IjoiW1VzZXIg7KCV7J2YIOu2hOq4sF3igKjshYAg7KCV7J2YIOuqqOuTnCDsp4TsnoUg4oCoXG4qTWVzc2FnZTog7IWAIOuylOychOulvCBcbuuTnOuemOq3uCDtlZjsl6wg7KeA7KCV7ZW07KO87IS47JqULiIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjU3fV19LCJjbGFzc0xpc3QiOlsiYXV0b180Il19LCJzdHlsZSI6eyJmaWxsIjoiI2NkZjRkMyIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNjZkNTc1Iiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:n1_4 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLsnpDrj5nsnLzroZwgMeqwnOydmCDshYDroZwg7YyQ64uo4oCo7IWAIOuqqeuhnSDrp4zrk6TslrTrkZDquLAiLCJwb3NpdGlvbiI6eyJ4IjoxMDQ4My44MDQ2ODc1LCJ5Ijo0MTg1LjExOTE0MDYyNX0sInNpemUiOnsid2lkdGgiOjEwNDUuNTAwMzY2MjEwOTM3NSwiaGVpZ2h0Ijo1OTcuNDI4ODMzMDA3ODEyNX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi7J6Q64+Z7Jy866GcIDHqsJzsnZgg7IWA66GcIO2MkOuLqOKAqOyFgCDrqqnroZ0g66eM65Ok7Ja065GQ6riwIiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MjV9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzIiXX0sInN0eWxlIjp7ImZpbGwiOiIjYzZmYWY2IiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:n11 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLrqqjrsJTsnbzsnYAg66Gc67SH7J2AIOyEpOy5mO2VmOuKlCDsiJzqsIQg64+F66a9IOyFgCAx6rCc66GcIO2MkOuLqOKAqOKAqCgq66qo67CU7J2866Gc67SH6rO8IOqysO2VqeuQnCDroZzrtIfqs7wg67aA6rCA7LaV7J20IOyeiOyWtOuPhCAx6rCc7J2YIOyFgCkiLCJwb3NpdGlvbiI6eyJ4IjoxNjU0Mi4xMDU0Njg3NSwieSI6Mjk2NS4zNjkxNDA2MjV9LCJzaXplIjp7IndpZHRoIjoxOTkxLjQyOTMyMTI4OTA2MjUsImhlaWdodCI6ODIxLjQ2NDU5OTYwOTM3NX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0Ijoi66qo67CU7J287J2AIOuhnOu0h+ydgCBcbuyEpOy5mO2VmOuKlCDsiJzqsIQg64+F66a9IOyFgCAx6rCc66GcIO2MkOuLqOKAqOKAqCgq66qo67CU7J2866Gc67SH6rO8IOqysO2VqeuQnCDroZzrtIfqs7wg67aA6rCA7LaV7J20IOyeiOyWtOuPhCAx6rCc7J2YIOyFgCkiLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjo2M31dfSwiY2xhc3NMaXN0IjpbImF1dG9fMiJdfSwic3R5bGUiOnsiZmlsbCI6IiNjNmZhZjYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzVhZDhjYyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:usermessage_1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqOKAqCpNZXNzYWdlOiDtlbTri7kg66qo67CU7J28IOuhnOu0h+qzvCDtlajqu5gg7J6R7JeF7ZWY64qUIOyFgCjqtazsl60pIOydtCDsnojrgpjsmpQ/IiwicG9zaXRpb24iOnsieCI6MTY1NDIuODg0NzY1NjI1LCJ5Ijo0MDczLjEwMTU2MjV9LCJzaXplIjp7IndpZHRoIjoxOTkxLjQyOTMyMTI4OTA2MjUsImhlaWdodCI6ODIxLjQ2NDU5OTYwOTM3NX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0IjoiW1VzZXIg7KCV7J2YIOu2hOq4sF3igKjigKgqTWVzc2FnZTog7ZW064u5IOuqqOuwlOydvCDroZzrtIfqs7wg7ZWo6ruYIOyekeyXhe2VmOuKlCDshYAo6rWs7JetKSDsnbQg7J6I64KY7JqUPyIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjU1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18zIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZWNiZCIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZmZjOTQzIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:usermessage_2 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbVXNlciDsoJXsnZgg67aE6riwXeKAqCAqTWVzc2FnZTog66qo67CU7J28IOuhnOu0h+ydtCDtlajqu5gg7J6R7JeF7ZWY64qUIOyFgOydhCDshKDtg53tlZjsi5zqsbDrgpgg7Zi57J2AIOuqqOuwlOydvCDroZzrtIfsnbQg7J6R7JeF7ZWY64qUIOq1rOyXreydhCDqt7jroKTso7zshLjsmpQu4oCo4oCo7ZmU66m07JeQ7ISc64qUIOygleydmOuQnCDqs6DsoJXsi50g7IWA7J2EIOyEoO2Dne2VmOqxsOuCmCDrqqjrsJTsnbwg66Gc67SHIOyekeyXhSDqtazsl63snYQg65Oc656Y6re4IOuwqeyLneycvOuhnCDsoJXsnZgiLCJwb3NpdGlvbiI6eyJ4IjoxNjQwOS44NjMyODEyNSwieSI6NTI0MS41MTA3NDIxODc1fSwic2l6ZSI6eyJ3aWR0aCI6MjI1Ny40NzE5MjM4MjgxMjUsImhlaWdodCI6ODIxLjQ2NDU5OTYwOTM3NX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0IjoiW1VzZXIg7KCV7J2YIOu2hOq4sF3igKhcbipNZXNzYWdlOiDrqqjrsJTsnbwg66Gc67SH7J20IO2VqOq7mCDsnpHsl4XtlZjripQg7IWA7J2EIOyEoO2Dne2VmOyLnOqxsOuCmFxuIO2YueydgCDrqqjrsJTsnbwg66Gc67SH7J20IOyekeyXhe2VmOuKlCDqtazsl63snYQg6re466Ck7KO87IS47JqULuKAqOKAqO2ZlOuptOyXkOyEnOuKlCDsoJXsnZjrkJwg6rOg7KCV7IudIOyFgOydhCDshKDtg53tlZjqsbDrgphcbuuqqOuwlOydvCDroZzrtIcg7J6R7JeFIOq1rOyXreydhCDrk5zrnpjqt7gg67Cp7Iud7Jy866GcIOygleydmCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjEyN31dfSwiY2xhc3NMaXN0IjpbImF1dG9fNCJdfSwic3R5bGUiOnsiZmlsbCI6IiNjZGY0ZDMiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzY2ZDU3NSIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:algorithm eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjigKjshJzroZwg64uk66W4IOuhnOu0hyDshYDsl5DshJwg7LWc64yA7Jq07KCE7JiB7Jet7J20IOqyuey5mOuKlOqwgD8iLCJwb3NpdGlvbiI6eyJ4Ijo3ODAzLjE1NDI5Njg3NSwieSI6OTk3MS45MzI2MTcxODc1fSwic2l6ZSI6eyJ3aWR0aCI6MTU4NS4zNjQ1MDE5NTMxMjUsImhlaWdodCI6ODg2LjgwODQxMDY0NDUzMTJ9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IltBbGdvcml0aG0g7J6Q64+Z7YyQ64uoXeKAqOKAqOyEnOuhnCDri6Trpbgg66Gc67SHIOyFgOyXkOyEnFxu7LWc64yA7Jq07KCE7JiB7Jet7J20IOqyuey5mOuKlOqwgD8iLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjo0NH1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMiJdfSwic3R5bGUiOnsiZmlsbCI6IiNjNmZhZjYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzVhZDhjYyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:algorithm_1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjigKjshJzroZwg64uk66W4IOyFgOyXkOyEnCDroZzrtIcg7Jm4IOuLpOuluCDqsJ3ssrTqsIAg4oCo7KSR67O165CY7Ja07J6I64qU6rCAPyIsInBvc2l0aW9uIjp7IngiOjc3MTcuNTg1NDQ5MjE4NzUsInkiOjEzMzMxLjY5MTQwNjI1fSwic2l6ZSI6eyJ3aWR0aCI6MTc1My4zOTEzNTc0MjE4NzUsImhlaWdodCI6MTA5NS4yODYxMzI4MTI1fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjigKjshJzroZwg64uk66W4IOyFgOyXkOyEnCBcbuuhnOu0hyDsmbgg64uk66W4IOqwneyytOqwgCDigKjspJHrs7XrkJjslrTsnojripTqsIA/IiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6NTB9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzIiXX0sInN0eWxlIjp7ImZpbGwiOiIjYzZmYWY2IiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:exui eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiLshJzroZwg64uk66W4IOyFgOyXkCDspJHrs7XrkJwg64uk66W4IOqwneyytChleO2OnOyKpCwg66CI7J207KCAIOyKpOy6kOuEiCnigKjqsIAg7J6I7J2M7J2EIOyduOyngO2VoCDsiJgg7J6I64+E66GdIFVJIOyymOumrCIsInBvc2l0aW9uIjp7IngiOjEwMzE1Ljc3ODMyMDMxMjUsInkiOjEzNTgxLjM5ODQzNzV9LCJzaXplIjp7IndpZHRoIjoxMzIyLjQzMzU5Mzc1LCJoZWlnaHQiOjU5Ny40Mjg4MzMwMDc4MTI1fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiLshJzroZwg64uk66W4IOyFgOyXkCDspJHrs7XrkJwgXG7ri6Trpbgg6rCd7LK0KGV47Y6c7IqkLCDroIjsnbTsoIAg7Iqk7LqQ64SIKeKAqOqwgCDsnojsnYzsnYQg7J247KeA7ZWgIOyImCDsnojrj4TroZ0gVUkg7LKY66asIiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6NTZ9XX0sImNsYXNzTGlzdCI6WyJhdXRvXzIiXX0sInN0eWxlIjp7ImZpbGwiOiIjYzZmYWY2IiwiZmlsbE9wYWNpdHkiOjEsInN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% node-meta:algorithmwaypoint eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjigKjstZzrjIDsmrTsoITsmIHsl63snbQg6rK57LOQ7KC47J6I64qUIOuhnOu0h+uTpOydtCDrj5nsi5zqsIQg64yA7JeQIOybgOyngeydtOuKlOqwgD/igKgod2F5cG9pbnQg7KCV67O066GcIO2MkOuLqCkiLCJwb3NpdGlvbiI6eyJ4IjoxMDA5NC44NTM1MTU2MjUsInkiOjk4NTkuMTM3Njk1MzEyNX0sInNpemUiOnsid2lkdGgiOjE5OTEuNDI5MzIxMjg5MDYyNSwiaGVpZ2h0IjoxMTEyLjQwMDAyNDQxNDA2MjV9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IltBbGdvcml0aG0g7J6Q64+Z7YyQ64uoXeKAqOKAqOy1nOuMgOyatOyghOyYgeyXreydtCDqsrnss5DsoLjsnojripQg66Gc67SH65Ok7J20IFxu64+Z7Iuc6rCEIOuMgOyXkCDsm4Dsp4HsnbTripTqsIA/4oCoKHdheXBvaW50ICDsoJXrs7TroZwg7YyQ64uoKSIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjcwfV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:algorithm1 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjigKgx6rCc7J2YIOyFgCDrgrTsl5Ag7IKw7JeF7JqpIOuhnOu0h+ydtCDtj6ztlajrkJjslrTsnojripTqsIA/IiwicG9zaXRpb24iOnsieCI6NzYwMiwieSI6Nzk0Mi4zODY3MTg3NX0sInNpemUiOnsid2lkdGgiOjE5OTEuNDI5MzIxMjg5MDYyNSwiaGVpZ2h0IjoxMTEyLjQwMDAyNDQxNDA2MjV9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IltBbGdvcml0aG0g7J6Q64+Z7YyQ64uoXeKAqOKAqDHqsJzsnZgg7IWAIOuCtOyXkCBcbuyCsOyXheyaqSDroZzrtIfsnbQg7Y+s7ZWo65CY7Ja07J6I64qU6rCAPyIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjQ0fV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:node_5 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJb66Gc67SHIOyFgCDtjJDri6gg7KCEIOyCrOyghCDsnoXroKUg7KCV67O0XeulvCDsnoXroKXtlojri6TripQg6rCA7KCV7ZWY7JeQIOyLnOyekS7igKgo7J6F66ClIOyViOuQmOyXiOuLpOuptCwg7JWI64K07ZW07IScIOyeheugpe2VmOqyjCDrp4zrk6Tsl4jri6TripQg6rCA7KCVKeKAqCDroZzrtIcg7ISk7LmYICjrsqDsnbTsiqQg7JyE7LmYKSDqt7jrpqztjbwo66i464uI7ZOw66CI7J207YSwIOyTsOuKlCDqsr3smrApIOuhnOu0hyDrqqjshZgg7Zi57J2AIOqyveuhnCDshKTqs4Qg642w7J207YSwIiwicG9zaXRpb24iOnsieCI6NzgzNy4zODIzMjQyMTg3NSwieSI6MTM1Mn0sInNpemUiOnsid2lkdGgiOjE1MTguNDY0ODQzNzUsImhlaWdodCI6ODY4LjEzODczMjkxMDE1NjJ9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IlvroZzrtIcg7IWAIO2MkOuLqCDsoIQg7IKs7KCEIOyeheugpSDsoJXrs7Rd66W8IFxu7J6F66Cl7ZaI64uk64qUIOqwgOygle2VmOyXkCDsi5zsnpEu4oCoKOyeheugpSDslYjrkJjsl4jri6TrqbQsIOyViOuCtO2VtOyEnCDsnoXroKXtlZjqsowg66eM65Ok7JeI64uk64qUIOqwgOyglSnigKhcbuuhnOu0hyDshKTsuZggKOuyoOydtOyKpCDsnITsuZgpXG7qt7jrpqztjbwo66i464uI7ZOw66CI7J207YSwIOyTsOuKlCDqsr3smrApXG7roZzrtIcg66qo7IWYIO2YueydgCDqsr3roZwg7ISk6rOEIOuNsOydtO2EsCIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjEyMX1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMSJdfSwic3R5bGUiOnsiZmlsbCI6IiNmZmZmZmYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiI2YyNDgyMiIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:algorithm_2 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjigKjshJzroZwg64uk66W4IOyFgOuhnCDtjJDri6jtlZjsl6wg7LKY66asIiwicG9zaXRpb24iOnsieCI6ODAxNC43NDQxNDA2MjUsInkiOjE0ODk5Ljk0MTQwNjI1fSwic2l6ZSI6eyJ3aWR0aCI6MTE1Ny41MTgzMTA1NDY4NzUsImhlaWdodCI6Nzk2LjU3MTcxNjMwODU5Mzh9LCJyb3RhdGlvbiI6MCwicmljaFRleHQiOnsidGV4dCI6IltBbGdvcml0aG0g7J6Q64+Z7YyQ64uoXeKAqOKAqOyEnOuhnCDri6Trpbgg7IWA66GcIO2MkOuLqO2VmOyXrCDsspjrpqwiLCJydW5zIjpbeyJzdGFydCI6MCwiZW5kIjozNH1dfSwiY2xhc3NMaXN0IjpbImF1dG9fMiJdfSwic3R5bGUiOnsiZmlsbCI6IiNjNmZhZjYiLCJmaWxsT3BhY2l0eSI6MSwic3Ryb2tlIjoiIzVhZDhjYyIsInN0cm9rZU9wYWNpdHkiOjEsInN0cm9rZVdpZHRoIjo0fX0=
+    %% node-meta:message2buttoniso1021822 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJb7JWI64K0XeKAqOKAqCpNZXNzYWdlOiDigKgg7ISc66GcIOuLpOuluCDroZzrtIfsnbQg7Jq07KCEIOyYgeyXreydhCDqs7XsnKDtlZjrr4DroZwg67mE7IOB7KCV7KeAIOyLnCDtlajqu5gg66mI7Law7JW8IO2VqeuLiOuLpC4g6rCc67OEIOygleyngCDsi5wgMuywqCDstqnrj4wg7JyE7ZeY7Jy866GcIOyViOyghOqygOyCrCDthrXqs7zqsIAg7Ja066Ck7Jq4IOyImCDsnojsirXri4jri6Qu4oCo7IWAIOuylOychOulvCDsiJjsoJXtlZjsi5zqsqDsirXri4jquYw/IOKAqFvroZzrtIcg7IWAIOuylOychCDsiJjsoJXtlZjquLBdIC0gYnV0dG9uIOKAqOKAqFvqtIDroKgg7ZGc7KSAIOuwjyDrspXroLld4oCoSVNPIDEwMjE4LTI6IOuPmeydvO2VnCDsnpHsl4Ug6rO16rCEIOuCtOyXkOyEnCDqsrnsuZjripQg66Gc67SH65Ok7J2AIO2VmOuCmOydmCDsi5zsiqTthZzsnLzroZwg67aE66WY65CY7Ja07JW8IO2VqeuLiOuLpC7igKgg7JWI7KCE6rKA7IKsIOqzoOyLnDog7JiB7JetIOykkeyyqSDsi5wg7ZWcIOuMgOunjCDsoJXsp4DtlZjrqbQg7JuA7KeB7J2064qUIOuhnOu0h+yXkCDsnZjtlZwgMuywqCDstqnrj4wg67CPIOuBvOyehCDsgqzqs6DqsIAg67Cc7IOd7ZWgIOyImCDsnojslrQsIOyViOyghO2VmOyngCDrqrvtlZwg7KCV7KeA66GcIO2MkOuLqOuQmOyWtCDslYjsoITqsoDsgqwg67aI7ZWp6rKpIOyCrOycoOqwgOuQoCDsiJgg7J6I7Iq164uI64ukLiIsInBvc2l0aW9uIjp7IngiOjEyOTYwLjY0NTUwNzgxMjUsInkiOjk1MDkuMDgyMDMxMjV9LCJzaXplIjp7IndpZHRoIjoyMzg5LjcxNTMzMjAzMTI1LCJoZWlnaHQiOjE4MTQuMDY3NjI2OTUzMTI1fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiJb7JWI64K0XeKAqOKAqCpNZXNzYWdlOiDigKhcbuyEnOuhnCDri6Trpbgg66Gc67SH7J20IOyatOyghCDsmIHsl63snYQg6rO17Jyg7ZWY66+A66GcIOu5hOyDgeygleyngCDsi5wg7ZWo6ruYIOupiOy2sOyVvCDtlanri4jri6QuIOqwnOuzhCDsoJXsp4Ag7IucIDLssKgg7Lap64+MIOychO2XmOycvOuhnCDslYjsoITqsoDsgqwg7Ya16rO86rCAIOyWtOugpOyauCDsiJgg7J6I7Iq164uI64ukLuKAqOyFgCDrspTsnITrpbwg7IiY7KCV7ZWY7Iuc6rKg7Iq164uI6rmMPyDigKhb66Gc67SHIOyFgCDrspTsnIQg7IiY7KCV7ZWY6riwXSAtIGJ1dHRvblxu4oCo4oCoW+q0gOugqCDtkZzspIAg67CPIOuyleuguV3igKhJU08gMTAyMTgtMjog64+Z7J287ZWcIOyekeyXhSDqs7XqsIQg64K07JeQ7IScIOqyuey5mOuKlCDroZzrtIfrk6TsnYAgXG7tlZjrgpjsnZgg7Iuc7Iqk7YWc7Jy866GcIOu2hOulmOuQmOyWtOyVvCDtlanri4jri6Qu4oCoXG7slYjsoITqsoDsgqwg6rOg7IucOiDsmIHsl60g7KSR7LKpIOyLnCDtlZwg64yA66eMIOygleyngO2VmOuptCDsm4Dsp4HsnbTripQg66Gc67SH7JeQIOydmO2VnCAy7LCoIOy2qeuPjCDrsI8g64G87J6EIOyCrOqzoOqwgCDrsJzsg53tlaAg7IiYIOyeiOyWtCwg7JWI7KCE7ZWY7KeAIOuqu+2VnCDsoJXsp4DroZwg7YyQ64uo65CY7Ja0IOyViOyghOqygOyCrCDrtojtlanqsqkg7IKs7Jyg6rCA65CgIOyImCDsnojsirXri4jri6QuIiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MzE3fV19LCJjbGFzc0xpc3QiOlsiYXV0b18zIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZWNiZCIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZmZjOTQzIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:n12113 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJb7JWI64K0XeKAqOKAqOuRkCDroZzrtIfsnbQg6rCZ7J2AIOyLnOqwhOyXkCDspJHssqnrkJwg7JiB7Jet7Jy866GcIOuTpOyWtOyYpOuKlCDqsoPsnbQg7ZmV7J2465CY7JeI7Iq164uI64ukLiDqt7jrjIDroZwg6rCA64+Z7ZWgIOqyveyasCDrrLzrpqzsoIEg7Lap64+M7J20IOuwnOyDne2VoCDsiJgg7J6I7Iq164uI64ukLiDslYTrnpgg65GQIOqwgOyngCDrsKnrspUg7KSRIO2YhOyepeyXkCDrp57ripQg67Cp7Iud7J2EIOyEoO2Dne2VtCDrs7TshLjsmpQhXCLigKjigKjrsKnrspUgMS4g7IaM7ZSE7Yq47Juo7Ja0IOygnO2VnCDsmIHsl60g7ISk7KCVIOyViOuCtOKAqOKAqOuwqeuylSAyLiDsoJzslrTsoIHsnLzroZwgMeuMgOqwgCDsnpHsl4Ug7Iuc7JeQIDHrjIDqsIAg64yA6riw7IOB7YOc66GcIOunjOuTpOq4sCDigKjigKjrsKnrspUgMy4gLi4uLiDquLDtg4Ag65Ox65OxICjsl6zquLDripQg64+E7JuA7J20IO2VhOyalO2VtOyalOOFoCnigKgiLCJwb3NpdGlvbiI6eyJ4IjoxMDA5NC44NTM1MTU2MjUsInkiOjExNjU3LjY0NjQ4NDM3NX0sInNpemUiOnsid2lkdGgiOjE5OTEuNDI5MzIxMjg5MDYyNSwiaGVpZ2h0IjoxMzk0LjAwMDQ4ODI4MTI1fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiJb7JWI64K0XeKAqOKAqOuRkCDroZzrtIfsnbQg6rCZ7J2AIOyLnOqwhOyXkCDspJHssqnrkJwg7JiB7Jet7Jy866GcIOuTpOyWtOyYpOuKlCDqsoPsnbQg7ZmV7J2465CY7JeI7Iq164uI64ukLiBcbuq3uOuMgOuhnCDqsIDrj5ntlaAg6rK97JqwIOusvOumrOyggSDstqnrj4zsnbQg67Cc7IOd7ZWgIOyImCDsnojsirXri4jri6QuXG4g7JWE656YIOuRkCDqsIDsp4Ag67Cp67KVIOykkSDtmITsnqXsl5Ag66ee64qUIOuwqeyLneydhCDshKDtg53tlbQg67O07IS47JqUIVwi4oCo4oCo67Cp67KVIDEuIOyGjO2UhO2KuOybqOyWtCDsoJztlZwg7JiB7JetIOyEpOyglSDslYjrgrTigKjigKjrsKnrspUgMi4g7KCc7Ja07KCB7Jy866GcIDHrjIDqsIAg7J6R7JeFIOyLnOyXkCAx64yA6rCAIOuMgOq4sOyDge2DnOuhnCDrp4zrk6TquLAg4oCo4oCo67Cp67KVIDMuIC4uLi4g6riw7YOAIOuTseuTsSAo7Jes6riw64qUIOuPhOybgOydtCDtlYTsmpTtlbTsmpTjhaAp4oCoIiwicnVucyI6W3sic3RhcnQiOjAsImVuZCI6MjA5fV19LCJjbGFzc0xpc3QiOlsiYXV0b18zIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZWNiZCIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZmZjOTQzIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:message4 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJb7JWI64K0XeKAqOKAqCpNZXNzYWdlOiDtmJHrj5nsmrTsoITsnYQg7ZWY7KeA7JWK64qUIOKAmeyCsOyXheyaqSDroZzrtIfigJnsnbQg7Y+s7ZWo65CcIOuhnOu0hyDshYDsnYAgNOuptOydhCDroZzrtIcg64+Z7J6RIOykkSDsnpHsl4XsnpDqsIAg7KCR6re87ZWgIOyImCDsl4brj4TroZ0g4oCY7Y6c7Iqk4oCZ66GcIOuwqe2YuO2VtOyjvOyLnOq4sCDrsJTrno3ri4jri6QuIiwicG9zaXRpb24iOnsieCI6MTAzMTUuMzIyMjY1NjI1LCJ5Ijo3OTQyLjM4NjcxODc1fSwic2l6ZSI6eyJ3aWR0aCI6MTk5MS40MjkzMjEyODkwNjI1LCJoZWlnaHQiOjExMTIuNDAwMDI0NDE0MDYyNX0sInJvdGF0aW9uIjowLCJyaWNoVGV4dCI6eyJ0ZXh0IjoiW+yViOuCtF3igKjigKgqTWVzc2FnZTogXG7tmJHrj5nsmrTsoITsnYQg7ZWY7KeA7JWK64qUIOKAmeyCsOyXheyaqSDroZzrtIfigJnsnbQg7Y+s7ZWo65CcXG4g66Gc67SHIOyFgOydgCA066m07J2EIOuhnOu0hyDrj5nsnpEg7KSRIFxu7J6R7JeF7J6Q6rCAIOygkeq3vO2VoCDsiJgg7JeG64+E66GdIOKAmO2OnOyKpOKAmeuhnCDrsKntmLjtlbTso7zsi5zquLAg67CU656N64uI64ukLiIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjk1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18zIl19LCJzdHlsZSI6eyJmaWxsIjoiI2ZmZWNiZCIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjZmZjOTQzIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% node-meta:algorithm_3 eyJtZXRhZGF0YSI6eyJub2RlVHlwZSI6IlNIQVBFX1dJVEhfVEVYVCIsIm5hbWUiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjqs6DsoJXsi50g7IWAIOuCtOu2gOyXkOyEnCDrqqjrsJTsnbzsnbQg7KeE7J6F7ZWY7JesIOyekeyXhe2VmOuKlOqwgD8iLCJwb3NpdGlvbiI6eyJ4IjoxNjQwOS44NjMyODEyNSwieSI6NjQwOS45MTk5MjE4NzV9LCJzaXplIjp7IndpZHRoIjoyMjU3LjQ3MTkyMzgyODEyNSwiaGVpZ2h0Ijo4MjEuNDY0NTk5NjA5Mzc1fSwicm90YXRpb24iOjAsInJpY2hUZXh0Ijp7InRleHQiOiJbQWxnb3JpdGhtIOyekOuPme2MkOuLqF3igKjqs6DsoJXsi50g7IWAIOuCtOu2gOyXkOyEnCDrqqjrsJTsnbzsnbRcbiDsp4TsnoXtlZjsl6wg7J6R7JeF7ZWY64qU6rCAPyIsInJ1bnMiOlt7InN0YXJ0IjowLCJlbmQiOjQ1fV19LCJjbGFzc0xpc3QiOlsiYXV0b18yIl19LCJzdHlsZSI6eyJmaWxsIjoiI2M2ZmFmNiIsImZpbGxPcGFjaXR5IjoxLCJzdHJva2UiOiIjNWFkOGNjIiwic3Ryb2tlT3BhY2l0eSI6MSwic3Ryb2tlV2lkdGgiOjR9fQ==
+    %% edge-meta:0 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:1 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:2 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiMyNDI0MjQiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:3 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:4 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:5 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:6 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:7 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:8 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:9 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:10 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:11 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:12 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:13 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:14 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:15 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM2NmQ1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:16 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:17 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:18 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiNmZmM5NDMiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:19 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:20 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiNmZmM5NDMiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:21 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:22 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM2NmQ1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:23 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:24 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM1YWQ4Y2MiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:25 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiNmZmM5NDMiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:26 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    %% edge-meta:27 eyJtZXRhZGF0YSI6eyJzdHJva2VXZWlnaHQiOjQsImNvbm5lY3RvclR5cGUiOiJFTEJPV0VEIiwiY29ybmVyUmFkaXVzIjoyNH0sInN0eWxlIjp7InN0cm9rZSI6IiM3NTc1NzUiLCJzdHJva2VPcGFjaXR5IjoxLCJzdHJva2VXaWR0aCI6NH19
+    classDef auto_1 fill:#ffffff,stroke:#f24822,stroke-width:4px
+    classDef auto_2 fill:#c6faf6,stroke:#5ad8cc,stroke-width:4px
+    classDef auto_3 fill:#ffecbd,stroke:#ffc943,stroke-width:4px
+    classDef auto_4 fill:#cdf4d3,stroke:#66d575,stroke-width:4px
+    class node,start,n1,n1_1,node_1,node_2,node_3,node_5 auto_1
+    class node_4,n1_2,n1_3,n1_4,n11,algorithm,algorithm_1,exui,algorithmwaypoint,algorithm1,algorithm_2,algorithm_3 auto_2
+    class usermessage2,usermessage_1,message2buttoniso1021822,n12113,message4 auto_3
+    class usermessage,usermessage_2 auto_4
+subgraph node [셀 정의 기능_설치시점 추가]
+    direction TB
+    node
+    start
+    n1
+    n1_1
+    node_1
+    node_2
+    node_3
+    node_4
+    n1_2
+    usermessage2
+    n1_3
+    usermessage
+    n1_4
+    n11
+    usermessage_1
+    usermessage_2
+    algorithm
+    algorithm_1
+    exui
+    algorithmwaypoint
+    algorithm1
+    node_5
+    algorithm_2
+    message2buttoniso1021822
+    n12113
+    message4
+    algorithm_3
+end

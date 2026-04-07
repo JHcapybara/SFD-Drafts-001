@@ -133,9 +133,9 @@ export function CollisionSubmodalContent({
             boxShadow: 'none',
           }
         : {
-            border: `1px solid ${accentRgba(collisionAccent, 0.38)}`,
-            boxShadow: `inset 3px 0 0 ${collisionAccent}`,
-            background: `linear-gradient(90deg, ${accentRgba(collisionAccent, 0.1)} 0%, rgba(252,252,253,0.35) 58%)`,
+            border: `1px solid ${t.inputBorder}`,
+            boxShadow: 'none',
+            background: 'rgba(0,0,0,0.025)',
           }
       : defaultsMode
         ? {
@@ -144,9 +144,9 @@ export function CollisionSubmodalContent({
             boxShadow: 'none',
           }
         : {
-            border: `1px solid ${accentRgba(collisionAccent, 0.42)}`,
-            boxShadow: `inset 3px 0 0 ${collisionAccent}`,
-            background: `linear-gradient(90deg, ${accentRgba(collisionAccent, 0.16)} 0%, rgba(22,23,28,0.45) 55%)`,
+            border: `1px solid ${t.inputBorder}`,
+            boxShadow: 'none',
+            background: 'rgba(255,255,255,0.035)',
           };
 
   const toggleShell =
@@ -157,9 +157,9 @@ export function CollisionSubmodalContent({
             background: 'rgba(0,0,0,0.025)',
           }
         : {
-            border: `1px solid ${accentRgba(collisionAccent, 0.3)}`,
-            background: accentRgba(collisionAccent, 0.06),
-            boxShadow: `inset 2px 0 0 ${accentRgba(collisionAccent, 0.65)}`,
+            border: `1px solid ${t.inputBorder}`,
+            background: 'rgba(0,0,0,0.02)',
+            boxShadow: 'none',
           }
       : defaultsMode
         ? {
@@ -167,9 +167,9 @@ export function CollisionSubmodalContent({
             background: 'rgba(255,255,255,0.035)',
           }
         : {
-            border: `1px solid ${accentRgba(collisionAccent, 0.35)}`,
-            background: accentRgba(collisionAccent, 0.1),
-            boxShadow: `inset 2px 0 0 ${accentRgba(collisionAccent, 0.55)}`,
+            border: `1px solid ${t.inputBorder}`,
+            background: 'rgba(255,255,255,0.03)',
+            boxShadow: 'none',
           };
 
   return (
@@ -183,8 +183,8 @@ export function CollisionSubmodalContent({
           className="text-[10px] leading-relaxed -mt-0.5 mb-0.5 rounded-[6px] py-1.5 px-2"
           style={{
             color: t.textSecondary,
-            background: theme === 'light' ? accentRgba(collisionAccent, 0.1) : accentRgba(collisionAccent, 0.14),
-            border: `1px solid ${theme === 'light' ? accentRgba(collisionAccent, 0.22) : accentRgba(collisionAccent, 0.28)}`,
+            background: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${t.inputBorder}`,
           }}
         >
           {L.collisionSubmodalEditIntro}
@@ -274,8 +274,8 @@ export function CollisionSubmodalContent({
                 className="aspect-square rounded-[10px] flex items-center justify-center transition-all duration-150"
                 style={{
                   border: `2px solid ${active ? accent : t.inputBorder}`,
-                  background: active ? (theme === 'light' ? 'rgba(255,142,43,0.12)' : 'rgba(255,142,43,0.14)') : t.inputBg,
-                  boxShadow: active ? '0 0 0 1px rgba(255,142,43,0.2)' : 'none',
+                  background: t.inputBg,
+                  boxShadow: active ? `0 0 0 1px ${accentRgba(collisionAccent, 0.25)}` : 'none',
                 }}
                 onClick={() =>
                   patchCollisionShape(setData, selectedAreaId, { primitive: id }, collisionCategoryId)

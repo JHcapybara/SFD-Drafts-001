@@ -1,0 +1,1367 @@
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import {
+  BookOpen,
+  FolderTree,
+  BarChart3,
+  ShieldAlert,
+  Bot,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  ArrowLeft,
+  Map,
+  User,
+  Upload,
+  GripHorizontal,
+  Play,
+  Pause,
+  Square,
+  SkipBack,
+  Repeat,
+} from 'lucide-react';
+import { accentRgba, POINT_ORANGE } from './pointColorSchemes';
+import { SfdIconByIndex } from './sfd/SfdIconByIndex';
+import {
+  WORKSPACE_CONTENT_TOP_PX,
+  WORKSPACE_HEADER_HEIGHT_PX,
+  WORKSPACE_HEADER_TOP_PX,
+} from './chromeLayout';
+
+export type LeftMode = 'library' | 'tree' | 'analysis' | 'riskassessment' | 'safetyai';
+type BottomTab = 'timeline' | 'analysis';
+type TreeNodeType = 'cell' | 'manipulator' | 'gripper' | 'zone' | 'impact' | 'axis' | 'mobile';
+type LibraryStage = 'root' | 'brands' | 'models';
+type HeaderBtnTone = 'default' | 'active' | 'ghost';
+type HeaderViewKey = 'grid' | 'view' | 'rotate' | 'layout' | 'scale' | 'ruler' | 'object snap' | 'snap';
+
+interface TreeNodeItem {
+  id: string;
+  label: string;
+  type: TreeNodeType;
+  cri?: string;
+  processBadge?: boolean;
+  children?: TreeNodeItem[];
+}
+
+interface LibraryChip {
+  id: string;
+  label: string;
+}
+
+interface LibrarySection {
+  id: string;
+  title: string;
+  icon: 'doc' | 'robot' | 'layout' | 'human';
+  chips: LibraryChip[];
+}
+
+const LEFT_GNB_WIDTH = 56;
+const LEFT_PANEL_MIN_WIDTH = 320;
+const LEFT_PANEL_MAX_WIDTH = 460;
+const BOTTOM_GAP = 8;
+const BOTTOM_HEIGHT_EXPANDED = 220;
+const BOTTOM_HEIGHT_COLLAPSED = 74;
+const BOTTOM_COLLAPSED_WIDTH = 460;
+const BOTTOM_HEIGHT_MIN = 140;
+const BOTTOM_HEIGHT_MAX = 360;
+const TREE_INDENT_PX = 16;
+
+const TREE_DATA: TreeNodeItem[] = [
+  {
+    id: 'cell-robot-abc',
+    label: '로봇 셀 ABC',
+    type: 'cell',
+    children: [
+      {
+        id: 'manip-main',
+        label: '매니퓰레이터',
+        type: 'manipulator',
+        cri: '0.7',
+        processBadge: true,
+        children: [
+          {
+            id: 'gripper',
+            label: '그리퍼',
+            type: 'gripper',
+            children: [
+              { id: 'gripper-1', label: '그리퍼 1', type: 'gripper' },
+              { id: 'impact-g1', label: '그리퍼 충돌예상부위', type: 'impact' },
+              { id: 'gripper-2', label: '그리퍼 2', type: 'gripper' },
+              { id: 'impact-g2', label: '그리퍼 충돌예상부위', type: 'impact' },
+            ],
+          },
+          {
+            id: 'robot-settings',
+            label: '로봇 설정',
+            type: 'manipulator',
+            children: [
+              { id: 'zone-operating', label: '운전 영역', type: 'zone' },
+              { id: 'zone-max', label: '최대운전영역', type: 'zone' },
+              { id: 'zone-collab', label: '협동작업영역', type: 'zone' },
+              { id: 'impact-robot', label: '로봇 충돌예상부위', type: 'impact' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'mobile-manip',
+        label: '모바일 매니퓰레이터',
+        type: 'mobile',
+        children: [
+          { id: 'mobile-base', label: '모바일', type: 'mobile', processBadge: true },
+          { id: 'mobile-manipulator', label: '매니퓰레이터', type: 'manipulator', cri: '0.7', processBadge: true },
+        ],
+      },
+      {
+        id: 'manip-plus-axis',
+        label: '매니퓰레이터 + 부가축',
+        type: 'manipulator',
+        children: [
+          { id: 'main-manip', label: '매니퓰레이터', type: 'manipulator', cri: '0.7', processBadge: true },
+          { id: 'axis-1', label: '부가축 1', type: 'axis', processBadge: true },
+          { id: 'axis-2', label: '부가축 2', type: 'axis', processBadge: true },
+        ],
+      },
+    ],
+  },
+];
+
+const TREE_TYPE_ICON: Record<TreeNodeType, string> = {
+  cell: '▦',
+  manipulator: '🦾',
+  gripper: '🖐',
+  zone: '⬚',
+  impact: '·',
+  axis: '⚙',
+  mobile: '▸',
+};
+
+const LIBRARY_SECTIONS: LibrarySection[] = [
+  {
+    id: 'doc',
+    title: '도면',
+    icon: 'doc',
+    chips: [{ id: 'doc-upload', label: '도면 업로드' }],
+  },
+  {
+    id: 'robot',
+    title: '로봇',
+    icon: 'robot',
+    chips: [
+      { id: 'collab-robot', label: '협동 로봇' },
+      { id: 'industrial-robot', label: '산업용 로봇' },
+      { id: 'mobile-robot', label: '이동 로봇' },
+      { id: 'robot-tech', label: '로봇 기술 설비' },
+      { id: 'axis', label: '부가축' },
+    ],
+  },
+  {
+    id: 'layout',
+    title: '레이아웃 설비',
+    icon: 'layout',
+    chips: [
+      { id: 'conveyor', label: '컨베이어' },
+      { id: 'production', label: '생산 설비' },
+      { id: 'profile', label: '프로파일' },
+      { id: 'interior', label: '인테리어' },
+      { id: 'button', label: '버튼' },
+      { id: 'box', label: '박스' },
+      { id: 'pallet', label: '팔레트' },
+      { id: 'etc-layout', label: '기타 설비' },
+    ],
+  },
+  {
+    id: 'human',
+    title: '사람',
+    icon: 'human',
+    chips: [{ id: 'worker', label: '작업자' }],
+  },
+];
+
+const LIBRARY_BRANDS = [
+  'Universal',
+  'Doosan',
+  'Fanuc',
+  'Rainbow Robotics',
+  'Neuromeka',
+  'Hanwha Robotics',
+  'Techman Robot',
+  'Hyundai Wia',
+  'PLOON',
+  'LG',
+  'AtomRobot',
+  'SIASUN',
+  'Elite',
+  'ABB',
+  'DOBOT',
+  'FAIRINO',
+  'KUKA',
+];
+
+const LIBRARY_MODELS: Record<string, string[]> = {
+  Universal: ['UR3', 'UR3e', 'UR5', 'UR5e', 'UR10', 'UR10e', 'UR16e', 'UR20'],
+};
+
+const TIMELINE_TICKS = ['00:00', '00:50', '01:00', '01:50', '02:00', '02:50', '03:00', '03:50', '04:00'];
+const TIMELINE_PLAYBACK_RATES = [0.1, 0.2, 0.5, 1.0, 1.5, 2.0, 4.0] as const;
+
+const HEADER_VIEW_ICON_INDEX: Record<HeaderViewKey, number> = {
+  grid: 83,
+  view: 6,
+  rotate: 160,
+  layout: 161,
+  scale: 162,
+  ruler: 174,
+  'object snap': 175,
+  snap: 163,
+};
+const HEADER_ACTION_ICON_INDEX = {
+  comment: 59,
+  share: 43,
+  info: 61,
+  lang: 62,
+} as const;
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+export function WorkspaceChrome({
+  locale,
+  rightPanelVisible,
+  onToggleLocale,
+}: {
+  locale: 'ko' | 'en';
+  rightPanelVisible: boolean;
+  onToggleLocale?: () => void;
+}) {
+  const [leftMode, setLeftMode] = useState<LeftMode>('tree');
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [leftWidth, setLeftWidth] = useState(320);
+  const [bottomOpen, setBottomOpen] = useState(false);
+  const [bottomTab, setBottomTab] = useState<BottomTab>('timeline');
+  const [bottomHeight, setBottomHeight] = useState(BOTTOM_HEIGHT_EXPANDED);
+  const [playbackRate, setPlaybackRate] = useState<number>(1.0);
+  const [playbackMenuOpen, setPlaybackMenuOpen] = useState(false);
+  const [timelineView, setTimelineView] = useState<'overview' | 'detail'>('overview');
+  const [timelineCollapsedTree, setTimelineCollapsedTree] = useState(false);
+  const [selectedTimelineTarget, setSelectedTimelineTarget] = useState<'cobot2' | 'manipulator'>('cobot2');
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [libraryStage, setLibraryStage] = useState<LibraryStage>('root');
+  const [selectedRobotType, setSelectedRobotType] = useState('협동 로봇');
+  const [selectedBrand, setSelectedBrand] = useState('Universal');
+  const [selectedModel, setSelectedModel] = useState('UR10');
+  const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(() => {
+    const defaults = new Set<string>();
+    defaults.add('cell-robot-abc');
+    defaults.add('manip-main');
+    defaults.add('gripper');
+    defaults.add('robot-settings');
+    defaults.add('mobile-manip');
+    defaults.add('manip-plus-axis');
+    return defaults;
+  });
+
+  useEffect(() => {
+    if (leftMode === 'analysis') setBottomTab('analysis');
+    else setBottomTab('timeline');
+  }, [leftMode]);
+
+  const leftOffset = LEFT_GNB_WIDTH + (leftOpen ? leftWidth : 0) + 8;
+  const rightReserve = rightPanelVisible ? 12 : 12;
+
+  const resizingRef = useRef<{
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+  const bottomResizingRef = useRef<{ startY: number; startH: number } | null>(null);
+
+  const onResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!leftOpen) return;
+    e.preventDefault();
+    resizingRef.current = { startX: e.clientX, startWidth: leftWidth };
+    const onMove = (ev: PointerEvent) => {
+      const r = resizingRef.current;
+      if (!r) return;
+      const dx = ev.clientX - r.startX;
+      setLeftWidth(clamp(r.startWidth + dx, LEFT_PANEL_MIN_WIDTH, LEFT_PANEL_MAX_WIDTH));
+    };
+    const onUp = () => {
+      resizingRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, [leftOpen, leftWidth]);
+
+  const onBottomResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!bottomOpen) return;
+    e.preventDefault();
+    bottomResizingRef.current = { startY: e.clientY, startH: bottomHeight };
+    const onMove = (ev: PointerEvent) => {
+      const r = bottomResizingRef.current;
+      if (!r) return;
+      const dy = r.startY - ev.clientY;
+      setBottomHeight(clamp(r.startH + dy, BOTTOM_HEIGHT_MIN, BOTTOM_HEIGHT_MAX));
+    };
+    const onUp = () => {
+      bottomResizingRef.current = null;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, [bottomOpen, bottomHeight]);
+
+  const modeDefs = useMemo(() => ([
+    { id: 'library' as const, labelKo: '라이브러리', labelEn: 'Library', Icon: BookOpen },
+    { id: 'tree' as const, labelKo: '트리', labelEn: 'Tree', Icon: FolderTree },
+    { id: 'analysis' as const, labelKo: '분석', labelEn: 'Analysis', Icon: BarChart3 },
+    { id: 'riskassessment' as const, labelKo: '위험성평가', labelEn: 'Risk', Icon: ShieldAlert },
+    { id: 'safetyai' as const, labelKo: 'Safety AI', labelEn: 'Safety AI', Icon: Bot },
+  ]), []);
+
+  const modeLabel = modeDefs.find((m) => m.id === leftMode);
+  const modeIcon = modeLabel?.Icon ?? FolderTree;
+  const ModeIcon = modeIcon;
+  const isRiskMode = leftMode === 'riskassessment';
+  const primaryHeaderActionLabel = isRiskMode ? 'Report Issue' : 'Analysis';
+  const leftMenuRight = leftOpen ? LEFT_GNB_WIDTH + 8 + leftWidth : LEFT_GNB_WIDTH + 2;
+  const collapsedTimelineWidth = Math.min(BOTTOM_COLLAPSED_WIDTH, Math.max(300, window.innerWidth - 24));
+  const headerNavButtons = locale === 'en'
+    ? ['menu', 'undo', 'redo']
+    : ['menu', 'undo', 'redo'];
+  const headerViewButtons = locale === 'en'
+    ? (['grid', 'view', 'rotate', 'layout', 'scale', 'ruler', 'object snap', 'snap'] as const)
+    : (['grid', 'view', 'rotate', 'layout', 'scale', 'ruler', 'object snap', 'snap'] as const);
+  const headerPrimaryActive = leftMode === 'analysis' || leftMode === 'riskassessment';
+  const toggleTreeNode = useCallback((nodeId: string) => {
+    setExpandedTreeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) next.delete(nodeId);
+      else next.add(nodeId);
+      return next;
+    });
+  }, []);
+
+  const renderTreeNode = useCallback((node: TreeNodeItem, depth: number) => {
+    const hasChildren = (node.children?.length ?? 0) > 0;
+    const isExpanded = expandedTreeIds.has(node.id);
+    const rowPaddingLeft = 10 + depth * TREE_INDENT_PX;
+    const iconColor = node.type === 'impact' ? '#737373' : '#3f3f46';
+
+    return (
+      <div key={node.id} className="relative">
+        {depth > 0 && (
+          <div
+            className="absolute top-0 bottom-0 border-l"
+            style={{
+              left: 8 + (depth - 1) * TREE_INDENT_PX,
+              borderColor: 'rgba(82,82,91,0.22)',
+            }}
+            aria-hidden
+          />
+        )}
+        <div
+          className="h-8 rounded-[8px] flex items-center gap-1.5 transition-colors duration-120"
+          style={{
+            paddingLeft: rowPaddingLeft,
+            paddingRight: 8,
+            background: depth === 0 ? 'rgba(255,142,43,0.12)' : 'transparent',
+            border: depth === 0 ? `1px solid ${accentRgba(POINT_ORANGE, 0.45)}` : '1px solid transparent',
+          }}
+        >
+          {hasChildren ? (
+            <button
+              type="button"
+              className="w-4 h-4 rounded-[4px] flex items-center justify-center text-[10px] leading-none"
+              style={{ color: '#6b7280' }}
+              onClick={() => toggleTreeNode(node.id)}
+              aria-label={isExpanded ? '하위 항목 접기' : '하위 항목 펼치기'}
+            >
+              {isExpanded ? '▼' : '▶'}
+            </button>
+          ) : (
+            <span className="w-4 h-4" aria-hidden />
+          )}
+          <span className="text-[11px] leading-none" style={{ color: iconColor }}>
+            {TREE_TYPE_ICON[node.type]}
+          </span>
+          <span
+            className="text-[12px] font-medium leading-tight truncate"
+            style={{ color: '#18181b' }}
+            title={node.label}
+          >
+            {node.label}
+          </span>
+          <div className="flex-1" />
+          {node.cri && (
+            <span className="text-[11px] font-semibold leading-none" style={{ color: '#16a34a' }}>
+              CRI: {node.cri}
+            </span>
+          )}
+          {node.processBadge && (
+            <span
+              className="h-4 min-w-4 px-1 rounded-[4px] text-[10px] font-bold leading-[16px] text-center"
+              style={{ background: '#ff8e2b', color: '#fff' }}
+              title={locale === 'en' ? 'Process' : '프로세스'}
+            >
+              P
+            </span>
+          )}
+        </div>
+        {hasChildren && isExpanded && (
+          <div className="mt-0.5 flex flex-col gap-0.5">
+            {node.children!.map((child) => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  }, [expandedTreeIds, locale, toggleTreeNode]);
+
+  const getSectionIcon = useCallback((icon: LibrarySection['icon']) => {
+    if (icon === 'layout') return <Map className="w-3.5 h-3.5" style={{ color: '#4b5563' }} />;
+    if (icon === 'human') return <User className="w-3.5 h-3.5" style={{ color: '#4b5563' }} />;
+    if (icon === 'robot') return <Bot className="w-3.5 h-3.5" style={{ color: '#4b5563' }} />;
+    return <Upload className="w-3.5 h-3.5" style={{ color: '#4b5563' }} />;
+  }, []);
+
+  const goToLibraryRoot = useCallback(() => {
+    setLibraryStage('root');
+    setSelectedBrand('Universal');
+  }, []);
+
+  const renderLibraryRoot = useCallback(() => (
+    <div className="flex flex-col gap-3">
+      {LIBRARY_SECTIONS.map((section) => (
+        <section key={section.id} className="pb-3 border-b last:border-b-0" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+          <div className="flex items-center gap-2 mb-2 px-1">
+            {getSectionIcon(section.icon)}
+            <h4 className="text-[13px] font-semibold" style={{ color: '#111827' }}>{section.title}</h4>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {section.chips.map((chip) => {
+              const isSingle = section.chips.length === 1;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  className={`h-11 rounded-[8px] text-[12px] font-semibold transition-colors ${isSingle ? 'col-span-2' : ''}`}
+                  style={{
+                    background: 'rgba(17,24,39,0.07)',
+                    color: '#111827',
+                    border: '1px solid rgba(0,0,0,0.06)',
+                  }}
+                  onClick={() => {
+                    if (chip.id === 'collab-robot') {
+                      setSelectedRobotType(chip.label);
+                      setLibraryStage('brands');
+                    }
+                  }}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  ), [getSectionIcon]);
+
+  const renderBrandList = useCallback(() => (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        className="h-10 inline-flex items-center gap-2 w-fit px-1 mb-2"
+        onClick={goToLibraryRoot}
+        style={{ color: '#111827' }}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-[27px] font-semibold">{selectedRobotType}</span>
+      </button>
+      <div className="flex flex-col border-t" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+        {LIBRARY_BRANDS.map((brand) => (
+          <button
+            key={brand}
+            type="button"
+            className="h-10 flex items-center gap-2 border-b px-1"
+            style={{ borderColor: 'rgba(0,0,0,0.08)', color: '#111827' }}
+            onClick={() => {
+              setSelectedBrand(brand);
+              setLibraryStage('models');
+            }}
+          >
+            <span className="text-[20px] font-semibold truncate">{brand}</span>
+            <div className="flex-1" />
+            <ChevronRight className="w-4 h-4 text-zinc-500" />
+          </button>
+        ))}
+      </div>
+    </div>
+  ), [goToLibraryRoot, selectedRobotType]);
+
+  const renderModelGrid = useCallback(() => {
+    const models = LIBRARY_MODELS[selectedBrand] ?? ['RX-1', 'RX-2', 'RX-3', 'RX-5', 'RX-8'];
+    return (
+      <div className="flex flex-col">
+        <button
+          type="button"
+          className="h-10 inline-flex items-center gap-2 w-fit px-1 mb-2"
+          onClick={() => setLibraryStage('brands')}
+          style={{ color: '#111827' }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-[27px] font-semibold">{selectedRobotType}</span>
+        </button>
+        <button
+          type="button"
+          className="h-10 w-full border-b inline-flex items-center"
+          style={{ borderColor: 'rgba(0,0,0,0.08)', color: '#111827' }}
+        >
+          <span className="text-[20px] font-semibold">{selectedBrand}</span>
+          <div className="flex-1" />
+          <ChevronUp className="w-4 h-4 text-zinc-500" />
+        </button>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {models.map((model) => {
+            const active = selectedModel === model;
+            return (
+              <button
+                key={model}
+                type="button"
+                className="h-[92px] rounded-[8px] border overflow-hidden"
+                style={{
+                  background: 'rgba(17,24,39,0.08)',
+                  borderColor: active ? '#ff8e2b' : 'rgba(0,0,0,0.06)',
+                  boxShadow: active ? `0 0 0 1px ${accentRgba(POINT_ORANGE, 0.25)} inset` : 'none',
+                }}
+                onClick={() => setSelectedModel(model)}
+              >
+                <div className="h-12 flex items-center justify-center text-[14px]" style={{ color: '#6b7280' }}>
+                  Robot
+                </div>
+                <div className="h-10 border-t flex items-center justify-center text-[12px] font-semibold" style={{ borderColor: 'rgba(0,0,0,0.06)', color: '#111827' }}>
+                  {model}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }, [selectedBrand, selectedModel, selectedRobotType]);
+
+  const renderLibraryContent = useCallback(() => {
+    if (libraryStage === 'models') return renderModelGrid();
+    if (libraryStage === 'brands') return renderBrandList();
+    return renderLibraryRoot();
+  }, [libraryStage, renderModelGrid, renderBrandList, renderLibraryRoot]);
+
+  const renderTimelineRow = useCallback((
+    label: string,
+    segments: Array<{ w: number; tone?: 'blue' | 'cyan' | 'green'; text: string }>,
+    compact = false,
+  ) => (
+    <div className={`${compact ? 'h-7' : 'h-8'} grid grid-cols-[58px_1fr] border-b`} style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+      <div className="px-2 text-[10px] font-semibold flex items-center border-r truncate" style={{ borderColor: 'rgba(0,0,0,0.08)', color: '#374151' }}>
+        {label}
+      </div>
+      <div className="flex items-center gap-1 px-1 overflow-hidden">
+        {segments.map((seg, i) => {
+          const tone = seg.tone ?? 'blue';
+          const bg = tone === 'green' ? '#3cb98f' : tone === 'cyan' ? '#1db7ea' : '#0f4ea3';
+          return (
+            <div
+              key={`${label}-${i}`}
+              className={`${compact ? 'h-5' : 'h-6'} rounded-[3px] px-1.5 text-[9px] font-semibold flex items-center justify-center whitespace-nowrap`}
+              style={{ width: `${seg.w}%`, background: bg, color: '#eef7ff' }}
+            >
+              {seg.text}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ), []);
+
+  const renderTimelineTransportBar = useCallback((compact = false) => (
+    <div
+      className={`${compact ? 'h-9' : 'h-10'} w-full rounded-[9px] border px-3 flex items-center gap-2`}
+      style={{
+        borderColor: 'rgba(0,0,0,0.12)',
+        background: 'rgba(255,255,255,0.92)',
+        color: '#374151',
+      }}
+    >
+      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: 'rgba(0,0,0,0.22)' }}>
+        <Play className="w-3 h-3" />
+      </button>
+      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: 'rgba(0,0,0,0.22)' }}>
+        <Square className="w-2.5 h-2.5" />
+      </button>
+      <span className="text-[11px] font-semibold tabular-nums">00:00.0/04:07.1</span>
+      <div className="relative">
+        <button
+          type="button"
+          className="h-6 px-2 rounded-[6px] border text-[10px] font-semibold"
+          style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.78)' }}
+          onClick={() => setPlaybackMenuOpen((v) => !v)}
+        >
+          x {playbackRate.toFixed(1)}
+        </button>
+        {playbackMenuOpen && (
+          <div
+            className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 rounded-[8px] border p-1 flex flex-col gap-0.5 z-10"
+            style={{
+              borderColor: 'rgba(0,0,0,0.14)',
+              background: 'rgba(255,255,255,0.98)',
+              boxShadow: '0 10px 18px rgba(0,0,0,0.24)',
+            }}
+          >
+            {TIMELINE_PLAYBACK_RATES.map((rate) => (
+              <button
+                key={rate}
+                type="button"
+                className="h-6 px-2 rounded-[6px] text-[10px] font-semibold text-left"
+                style={{
+                  color: rate === playbackRate ? '#9a3412' : '#1f2937',
+                  background: rate === playbackRate ? accentRgba(POINT_ORANGE, 0.22) : 'transparent',
+                }}
+                onClick={() => {
+                  setPlaybackRate(rate);
+                  setPlaybackMenuOpen(false);
+                }}
+              >
+                {rate.toFixed(1)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex-1 h-1.5 rounded-full relative" style={{ background: 'rgba(0,0,0,0.14)' }}>
+        <div className="absolute left-[35%] top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full" style={{ background: '#ff8e2b' }} />
+      </div>
+      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: 'rgba(0,0,0,0.18)' }}>
+        <Repeat className="w-3 h-3" />
+      </button>
+    </div>
+  ), [playbackMenuOpen, playbackRate]);
+
+  const renderTimelineRuler = useCallback(() => (
+    <div className="h-10 px-2 grid grid-cols-[58px_1fr] border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+      <div />
+      <div className="relative">
+        <div
+          className="absolute inset-x-0 top-0 bottom-4"
+          style={{
+            background:
+              'repeating-linear-gradient(to right, rgba(0,0,0,0.18) 0 1px, transparent 1px 10%)',
+          }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 bottom-5"
+          style={{
+            background:
+              'repeating-linear-gradient(to right, rgba(0,0,0,0.08) 0 1px, transparent 1px 2%)',
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between text-[9px]" style={{ color: '#6b7280' }}>
+          {TIMELINE_TICKS.map((tick) => <span key={tick}>{tick}</span>)}
+        </div>
+      </div>
+    </div>
+  ), []);
+
+  const renderTimelineOverview = useCallback(() => (
+    <div className="h-full rounded-[10px] overflow-hidden border" style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.94)' }}>
+      <div className="h-[72px] px-2 py-1 border-b flex flex-col gap-1" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+        <div className="h-6 flex items-center gap-2">
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{ borderColor: accentRgba(POINT_ORANGE, 0.45), background: accentRgba(POINT_ORANGE, 0.2), color: '#9a3412' }}
+            onClick={() => setTimelineView('overview')}
+          >
+            전체 보기
+          </button>
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.72)', color: '#4b5563' }}
+            onClick={() => {
+              setTimelineView('detail');
+              setSelectedTimelineTarget('cobot2');
+            }}
+          >
+            상세 보기
+          </button>
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{
+              borderColor: timelineCollapsedTree ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
+              background: timelineCollapsedTree ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
+              color: timelineCollapsedTree ? '#9a3412' : '#4b5563',
+            }}
+            onClick={() => setTimelineCollapsedTree((v) => !v)}
+          >
+            결합 객체 트리 접기
+          </button>
+          <div className="flex-1" />
+          <div className="text-[10px] font-semibold" style={{ color: '#6b7280' }}>00:00.00/01:38</div>
+        </div>
+        {renderTimelineTransportBar(true)}
+      </div>
+      {renderTimelineRuler()}
+      <div className="h-[calc(100%-112px)] overflow-y-auto sfd-scroll">
+        {renderTimelineRow('Additional', [
+          { w: 14, text: 'Axis-Point 1' }, { w: 14, text: 'Axis-Point 2' }, { w: 14, text: 'Axis-Point 3' }, { w: 30, text: 'Axis-Point 5' },
+        ])}
+        {renderTimelineRow('COBOT1', [
+          { w: 16, tone: 'cyan', text: 'Waypoint2' }, { w: 16, tone: 'cyan', text: 'Waypoint5' }, { w: 16, tone: 'cyan', text: 'Waypoint7' }, { w: 18, tone: 'cyan', text: 'Waypoint9' },
+        ])}
+        {renderTimelineRow('COBOT2', [
+          { w: 13, tone: 'cyan', text: 'Waypoint2' }, { w: 13, tone: 'cyan', text: 'Waypoint3' }, { w: 13, tone: 'cyan', text: 'Waypoint4' }, { w: 13, tone: 'cyan', text: 'Waypoint6' }, { w: 14, tone: 'cyan', text: 'Waypoint8' }, { w: 16, tone: 'cyan', text: 'Waypoint9' },
+        ])}
+        {!timelineCollapsedTree ? (
+          <>
+            {renderTimelineRow('MOBILE', [
+              { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' }, { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' },
+            ])}
+            {renderTimelineRow('MOBILE_EE', [
+              { w: 22, tone: 'green', text: '파지 해제' }, { w: 22, tone: 'green', text: '이동' }, { w: 22, tone: 'green', text: '재파지' },
+            ])}
+          </>
+        ) : (
+          <div className="border-b" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+            {renderTimelineRow('MOBILE', [
+              { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' }, { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' },
+            ], true)}
+            {renderTimelineRow('└ EE', [
+              { w: 22, tone: 'green', text: '파지 해제' }, { w: 22, tone: 'green', text: '이동' }, { w: 22, tone: 'green', text: '재파지' },
+            ], true)}
+          </div>
+        )}
+      </div>
+    </div>
+  ), [renderTimelineRow, timelineCollapsedTree, renderTimelineRuler, renderTimelineTransportBar]);
+
+  const renderTimelineDetail = useCallback(() => (
+    <div className="h-full rounded-[10px] overflow-hidden border" style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.94)' }}>
+      <div className="h-[72px] px-2 py-1 border-b flex flex-col gap-1" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+        <div className="h-6 flex items-center gap-2">
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.72)', color: '#4b5563' }}
+            onClick={() => setTimelineView('overview')}
+          >
+            전체 보기
+          </button>
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{ borderColor: accentRgba(POINT_ORANGE, 0.45), background: accentRgba(POINT_ORANGE, 0.2), color: '#9a3412' }}
+            onClick={() => setTimelineView('detail')}
+          >
+            상세 보기
+          </button>
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{
+              borderColor: selectedTimelineTarget === 'manipulator' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
+              background: selectedTimelineTarget === 'manipulator' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
+              color: selectedTimelineTarget === 'manipulator' ? '#9a3412' : '#4b5563',
+            }}
+            onClick={() => setSelectedTimelineTarget('manipulator')}
+          >
+            매니퓰레이터
+          </button>
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{
+              borderColor: selectedTimelineTarget === 'cobot2' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
+              background: selectedTimelineTarget === 'cobot2' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
+              color: selectedTimelineTarget === 'cobot2' ? '#9a3412' : '#4b5563',
+            }}
+            onClick={() => setSelectedTimelineTarget('cobot2')}
+          >
+            COBOT2
+          </button>
+          <div className="flex-1" />
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
+            style={{ borderColor: accentRgba(POINT_ORANGE, 0.45), background: accentRgba(POINT_ORANGE, 0.2), color: '#9a3412' }}
+          >
+            툴 체인지 설정 시작
+          </button>
+        </div>
+        {renderTimelineTransportBar(true)}
+      </div>
+      {renderTimelineRuler()}
+      <div className="h-[calc(100%-112px)] overflow-y-auto sfd-scroll">
+        {selectedTimelineTarget === 'manipulator' ? (
+          <>
+            {renderTimelineRow('Axis', [
+              { w: 13, text: 'Axis Point 1' }, { w: 13, text: 'Axis Point 2' }, { w: 13, text: 'Axis Point 3' }, { w: 13, text: 'Axis Point 4' }, { w: 13, text: 'Axis Point 5' }, { w: 13, text: 'Axis Point 6' },
+            ])}
+            {renderTimelineRow('엔드이펙터', [
+              { w: 28, tone: 'cyan', text: 'SEG24' }, { w: 28, tone: 'cyan', text: 'SEG32' }, { w: 28, tone: 'cyan', text: 'XEG34' },
+            ])}
+            <div className="relative h-10 border-b" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+              <div className="absolute inset-x-1 top-3 h-4 rounded-[3px]" style={{ background: '#0f4ea3' }} />
+              {[20, 46, 72].map((left, idx) => (
+                <div key={idx} className="absolute top-1 h-8 w-[2px]" style={{ left: `${left}%`, background: '#f97316' }} />
+              ))}
+              <div className="absolute top-0 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px]" style={{ background: 'rgba(249,115,22,0.18)', color: '#9a3412' }}>
+                툴 체인지
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {renderTimelineRow('COBOT2', [
+              { w: 16, tone: 'cyan', text: 'Waypoint2' }, { w: 16, tone: 'cyan', text: 'Waypoint4' }, { w: 16, tone: 'cyan', text: 'Waypoint7' }, { w: 16, tone: 'cyan', text: 'Waypoint9' },
+            ])}
+            {renderTimelineRow('EE', [
+              { w: 20, tone: 'blue', text: 'SEG24' }, { w: 20, tone: 'blue', text: 'SEG32' }, { w: 20, tone: 'blue', text: 'XEG34' },
+            ])}
+          </>
+        )}
+      </div>
+    </div>
+  ), [renderTimelineRow, selectedTimelineTarget, renderTimelineRuler, renderTimelineTransportBar]);
+
+  const renderCollapsedTimeline = useCallback(() => (
+    <div className="h-full flex flex-col items-center justify-center gap-1.5 px-3">
+      <button
+        type="button"
+        className="group relative h-6 w-12 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
+        style={{
+          borderColor: 'rgba(0,0,0,0.14)',
+          background: 'rgba(255,255,255,0.95)',
+          color: '#374151',
+        }}
+        onClick={() => setBottomOpen(true)}
+        title="클릭하여 타임라인 열기"
+      >
+        <ChevronUp className="w-3.5 h-3.5" />
+        <span
+          className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
+          style={{
+            borderColor: 'rgba(0,0,0,0.12)',
+            color: '#111827',
+            background: 'rgba(255,255,255,0.96)',
+            boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+          }}
+          aria-hidden
+        >
+          클릭하여 타임라인 열기
+        </span>
+      </button>
+      {renderTimelineTransportBar(true)}
+    </div>
+  ), [renderTimelineTransportBar]);
+
+  const renderHeaderButton = useCallback((label: string, tone: HeaderBtnTone = 'default') => {
+    const isActive = tone === 'active';
+    const isGhost = tone === 'ghost';
+    return (
+      <button
+        key={label}
+        type="button"
+        className="h-7 px-2.5 text-[10px] rounded-[7px] border font-medium tracking-[0.01em] transition-colors duration-150"
+        style={{
+          borderColor: isActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(0,0,0,0.12)',
+          color: isActive ? '#9a3412' : '#1f2937',
+          background: isGhost
+            ? 'transparent'
+            : isActive
+              ? `linear-gradient(180deg, ${accentRgba(POINT_ORANGE, 0.24)} 0%, ${accentRgba(POINT_ORANGE, 0.12)} 100%)`
+              : 'rgba(255,255,255,0.62)',
+          boxShadow: isGhost ? 'none' : 'inset 0 1px 0 rgba(255,255,255,0.6)',
+        }}
+      >
+        {label}
+      </button>
+    );
+  }, []);
+
+  const renderTreeAreaLayout = useCallback(() => (
+    <div className="h-full flex flex-col border rounded-[10px] overflow-hidden" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.36)' }}>
+      <section className="flex-[3] min-h-0 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+        <div className="h-9 px-3 flex items-center text-[12px] font-semibold" style={{ color: '#111827' }}>
+          Design Tree
+        </div>
+        <div className="h-[calc(100%-36px)] overflow-y-auto sfd-scroll px-2 pb-2">
+          <div className="flex flex-col gap-0.5">
+            {TREE_DATA.map((node) => renderTreeNode(node, 0))}
+          </div>
+        </div>
+      </section>
+      <section className="flex-[2] min-h-0 relative">
+        <div className="h-9 px-3 flex items-center text-[12px] font-semibold" style={{ color: '#111827' }}>
+          Robot Cell Tree
+        </div>
+        <div className="px-3 pb-3 flex flex-col gap-2">
+          {['Robot Cell A', 'Robot Cell B', 'Robot Cell C'].map((label) => (
+            <div
+              key={label}
+              className="h-8 rounded-[7px] border px-2 flex items-center text-[11px] font-medium"
+              style={{ borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.54)', color: '#374151' }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+        <div
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
+          style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.85)' }}
+          aria-hidden
+        />
+      </section>
+    </div>
+  ), [renderTreeNode]);
+
+  const renderAnalysisAreaLayout = useCallback(() => (
+    <div className="h-full relative flex flex-col border rounded-[10px] overflow-hidden p-3 gap-3" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.34)' }}>
+      <div className="w-[112px] h-8 rounded-[7px] border px-3 flex items-center justify-between text-[11px] font-semibold" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.62)', color: '#111827' }}>
+        <span>Robot Cell</span>
+        <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+      </div>
+      <div className="text-[12px] font-semibold" style={{ color: '#1f2937' }}>Recommend Solution</div>
+      <div className="h-28 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
+      <div className="h-28 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
+      <div className="mt-2 text-[12px] font-semibold" style={{ color: '#1f2937' }}>Robot Analysis Result</div>
+      <div className="h-36 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
+      <div className="mt-2 text-[12px] font-semibold" style={{ color: '#1f2937' }}>Unresolved Issues</div>
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div key={idx} className="h-10 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.5)' }} />
+        ))}
+      </div>
+      <div
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
+        style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.85)' }}
+        aria-hidden
+      />
+    </div>
+  ), []);
+
+  const renderSafetyAiAreaLayout = useCallback(() => (
+    <div className="h-full border rounded-[10px] overflow-hidden relative" style={{ borderColor: 'rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.34)' }}>
+      <div className="absolute inset-x-0 top-0 h-[72%] border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }} />
+      <div className="absolute inset-x-4 bottom-8 h-24 rounded-[8px] border" style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.5)' }} />
+      <div
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
+        style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.85)' }}
+        aria-hidden
+      />
+    </div>
+  ), []);
+
+  return (
+    <>
+      {/* Left GNB */}
+      <div
+        className="fixed left-2 bottom-2 z-[30]"
+        style={{
+          top: WORKSPACE_CONTENT_TOP_PX,
+          width: LEFT_GNB_WIDTH,
+          background: 'rgba(255,255,255,0.38)',
+          border: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '0 10px 26px rgba(0,0,0,0.1)',
+          backdropFilter: 'blur(12px) saturate(150%)',
+          borderRadius: 14,
+        }}
+      >
+        <div className="h-full flex flex-col py-2.5">
+          <div className="flex-1 min-h-0 overflow-y-auto sfd-scroll px-1.5 flex flex-col gap-2.5">
+            {modeDefs.map(({ id, labelKo, labelEn, Icon }) => {
+              const active = leftMode === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="h-12 rounded-[12px] flex items-center justify-center transition-all duration-150 border"
+                  style={{
+                    background: active
+                      ? 'linear-gradient(140deg, rgba(255,162,74,0.98) 0%, rgba(255,122,18,0.98) 100%)'
+                      : 'rgba(255,255,255,0.94)',
+                    color: active ? '#ffffff' : '#374151',
+                    borderColor: active ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(0,0,0,0.12)',
+                    boxShadow: active
+                      ? '0 10px 22px rgba(255,107,0,0.3), inset 0 1px 0 rgba(255,255,255,0.24)'
+                      : '0 6px 14px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5)',
+                    transform: active ? 'translateY(-1px)' : 'translateY(0)',
+                  }}
+                  title={locale === 'en' ? labelEn : labelKo}
+                  onClick={() => setLeftMode(id)}
+                >
+                  <Icon className="w-5.5 h-5.5" strokeWidth={2.3} style={active ? { filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))' } : undefined} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        className="group fixed z-[31] h-6 w-12 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
+        style={{
+          left: leftMenuRight + 2,
+          top: WORKSPACE_CONTENT_TOP_PX + 16,
+          borderColor: 'rgba(0,0,0,0.14)',
+          background: 'rgba(255,255,255,0.95)',
+          color: '#374151',
+          boxShadow: '0 8px 18px rgba(0,0,0,0.14)',
+        }}
+        onClick={() => setLeftOpen((v) => !v)}
+        title={leftOpen ? (locale === 'en' ? 'Hide left menu' : '좌측 메뉴 숨기기') : (locale === 'en' ? 'Show left menu' : '좌측 메뉴 표시')}
+      >
+        {leftOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        <span
+          className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
+          style={{
+            borderColor: 'rgba(0,0,0,0.12)',
+            color: '#111827',
+            background: 'rgba(255,255,255,0.96)',
+            boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+          }}
+          aria-hidden
+        >
+          {leftOpen ? (locale === 'en' ? 'Hide' : '숨김') : (locale === 'en' ? 'Show' : '표시')}
+        </span>
+      </button>
+
+      {/* Left Area panel */}
+      {leftOpen && (
+        <div
+          className="fixed z-[29] rounded-[14px] overflow-hidden"
+          style={{
+            left: LEFT_GNB_WIDTH + 8,
+            top: WORKSPACE_CONTENT_TOP_PX,
+            bottom: 8,
+            width: leftWidth,
+            background: 'rgba(252,252,253,0.72)',
+            border: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.12)',
+            backdropFilter: 'blur(24px) saturate(180%)',
+          }}
+        >
+          <div className="h-full flex flex-col">
+            <div className="px-3 py-2.5 border-b flex items-center gap-2" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+              {modeIcon === FolderTree
+                ? <FolderTree className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />
+                : <ModeIcon className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />}
+              <span className="text-[12px] font-semibold" style={{ color: '#111' }}>
+                {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
+              </span>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto sfd-scroll p-3">
+              {leftMode === 'library' ? (
+                <div className="flex flex-col gap-3">
+                  <div className="h-10 rounded-[8px] border px-3 flex items-center gap-2" style={{ borderColor: 'rgba(0,0,0,0.08)', background: 'rgba(17,24,39,0.06)' }}>
+                    <Search className="w-4 h-4 text-zinc-500" />
+                    <input
+                      value={librarySearch}
+                      onChange={(e) => setLibrarySearch(e.target.value)}
+                      placeholder={locale === 'en' ? 'Search by keyword' : '검색어를 입력해 주세요.'}
+                      className="bg-transparent outline-none w-full text-[12px] placeholder:text-zinc-500"
+                      style={{ color: '#111827' }}
+                    />
+                  </div>
+                  {renderLibraryContent()}
+                </div>
+              ) : leftMode === 'tree' ? (
+                renderTreeAreaLayout()
+              ) : leftMode === 'analysis' || leftMode === 'riskassessment' ? (
+                renderAnalysisAreaLayout()
+              ) : leftMode === 'safetyai' ? (
+                renderSafetyAiAreaLayout()
+              ) : (
+                <div className="rounded-[10px] p-3 text-[11px] leading-relaxed" style={{ background: 'rgba(255,255,255,0.22)', color: '#555' }}>
+                  {locale === 'en'
+                    ? 'Left area placeholder based on selected GNB mode.'
+                    : 'Left GNB 모드에 따라 바뀌는 영역입니다.'}
+                </div>
+              )}
+            </div>
+          </div>
+          <div
+            className="absolute top-0 right-0 w-2 h-full cursor-ew-resize"
+            onPointerDown={onResizeStart}
+            title={locale === 'en' ? 'Resize' : '너비 조절'}
+          >
+            <div className="w-full h-full flex items-center justify-center opacity-30">
+              <GripVertical className="w-3 h-3" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header (top_area) */}
+      <div
+        className="fixed z-[28] flex items-center px-3 gap-2"
+        style={{
+          left: 0,
+          right: 0,
+          top: WORKSPACE_HEADER_TOP_PX,
+          height: WORKSPACE_HEADER_HEIGHT_PX,
+          background: 'rgba(8,10,14,0.96)',
+          border: '1px solid rgba(255,255,255,0.14)',
+          boxShadow: '0 8px 22px rgba(0,0,0,0.35)',
+          backdropFilter: 'blur(14px) saturate(140%)',
+        }}
+      >
+        <div className="flex items-center gap-1 shrink-0">
+          {renderHeaderButton('Statics', 'active')}
+          {headerNavButtons.map((label) => renderHeaderButton(label, label === 'menu' ? 'active' : 'default'))}
+        </div>
+        <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
+          <div
+            className="h-8 min-w-[240px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center justify-center"
+            style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#e5e7eb', background: 'rgba(255,255,255,0.08)' }}
+          >
+            Application name
+          </div>
+          <div className="flex items-center gap-1">
+            {headerViewButtons.map((label) => {
+              const iconIndex = HEADER_VIEW_ICON_INDEX[label];
+              const isActive = label === 'view';
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
+                  style={{
+                    borderColor: isActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(255,255,255,0.14)',
+                    color: isActive ? '#fed7aa' : '#cbd5e1',
+                    background: isActive
+                      ? `linear-gradient(180deg, ${accentRgba(POINT_ORANGE, 0.24)} 0%, ${accentRgba(POINT_ORANGE, 0.12)} 100%)`
+                      : 'rgba(255,255,255,0.06)',
+                    boxShadow: isActive ? 'inset 0 1px 0 rgba(255,255,255,0.3)' : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+                  }}
+                  title={label}
+                  aria-label={label}
+                >
+                  <SfdIconByIndex index={iconIndex} color="currentColor" size={13} />
+                  <span
+                    className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
+                    style={{
+                      borderColor: 'rgba(255,255,255,0.18)',
+                      color: '#e5e7eb',
+                      background: 'rgba(17,24,39,0.96)',
+                      boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+                    }}
+                    aria-hidden
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            className="h-8 px-3.5 text-[10px] rounded-[8px] border font-semibold"
+            style={{
+              borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.55) : 'rgba(255,255,255,0.18)',
+              color: '#fff7ed',
+              background: isRiskMode
+                ? `linear-gradient(180deg, ${accentRgba('#f59e0b', 0.3)} 0%, ${accentRgba('#f59e0b', 0.14)} 100%)`
+                : `linear-gradient(180deg, ${accentRgba(POINT_ORANGE, 0.32)} 0%, ${accentRgba(POINT_ORANGE, 0.14)} 100%)`,
+              boxShadow: '0 6px 16px rgba(255,142,43,0.26), inset 0 1px 0 rgba(255,255,255,0.22)',
+            }}
+          >
+            {primaryHeaderActionLabel}
+          </button>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            className="h-8 px-3 rounded-[8px] border font-semibold text-[10px] tracking-[0.02em] transition-colors duration-150"
+            style={{
+              borderColor: 'rgba(147,51,234,0.6)',
+              color: '#f5e8ff',
+              background: 'linear-gradient(135deg, rgba(168,85,247,0.38) 0%, rgba(236,72,153,0.34) 100%)',
+              boxShadow: '0 8px 18px rgba(168,85,247,0.28), inset 0 1px 0 rgba(255,255,255,0.18)',
+            }}
+            title={locale === 'en' ? 'Upgrade to paid tier' : '유료 티어 전환'}
+          >
+            PLAN+
+          </button>
+          {(['comment', 'share', 'info'] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
+              style={{
+                borderColor: 'rgba(255,255,255,0.14)',
+                color: '#cbd5e1',
+                background: 'rgba(255,255,255,0.06)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+              }}
+              title={key}
+              aria-label={key}
+            >
+              <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX[key]} color="currentColor" size={13} />
+              <span
+                className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.18)',
+                  color: '#e5e7eb',
+                  background: 'rgba(17,24,39,0.96)',
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+                }}
+                aria-hidden
+              >
+                {key}
+              </span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
+            style={{
+              borderColor: 'rgba(255,255,255,0.14)',
+              color: '#cbd5e1',
+              background: 'rgba(255,255,255,0.06)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+            }}
+            onClick={onToggleLocale}
+            title={locale === 'ko' ? '언어 변경' : 'Switch language'}
+            aria-label={locale === 'ko' ? '언어 변경' : 'Switch language'}
+          >
+            <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.lang} color="currentColor" size={13} />
+            <span
+              className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
+              style={{
+                borderColor: 'rgba(255,255,255,0.18)',
+                color: '#e5e7eb',
+                background: 'rgba(17,24,39,0.96)',
+                boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+              }}
+              aria-hidden
+            >
+              {locale === 'ko' ? 'language' : '언어'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom area (timeline / analysis) */}
+      <div
+        className="fixed z-[28] rounded-[14px] overflow-hidden"
+        style={{
+          left: bottomOpen ? leftOffset : '50%',
+          right: bottomOpen ? rightReserve : undefined,
+          bottom: BOTTOM_GAP,
+          height: bottomOpen ? bottomHeight : BOTTOM_HEIGHT_COLLAPSED,
+          width: bottomOpen ? undefined : collapsedTimelineWidth,
+          transform: bottomOpen ? undefined : 'translateX(-50%)',
+          background: bottomOpen ? 'rgba(255,255,255,0.95)' : 'transparent',
+          border: bottomOpen ? '1px solid rgba(0,0,0,0.12)' : 'none',
+          boxShadow: bottomOpen ? '0 18px 44px rgba(0,0,0,0.16)' : 'none',
+          backdropFilter: bottomOpen ? 'blur(18px) saturate(150%)' : 'none',
+          transition: 'height 200ms ease',
+        }}
+      >
+        {!bottomOpen ? (
+          renderCollapsedTimeline()
+        ) : (
+          <>
+            <div
+              className="h-2 cursor-ns-resize flex items-center justify-center"
+              onPointerDown={onBottomResizeStart}
+              style={{ background: 'rgba(0,0,0,0.02)' }}
+            >
+              <GripHorizontal className="w-4 h-4 text-zinc-400" />
+            </div>
+            <div className="h-10 px-3 flex items-center gap-2 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.74)' }}>
+              <button
+                type="button"
+                className="group relative h-6 w-12 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
+                style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.95)', color: '#374151' }}
+                onClick={() => setBottomOpen((v) => !v)}
+                title={bottomOpen ? (locale === 'en' ? 'Collapse' : '접기') : (locale === 'en' ? 'Expand' : '펼치기')}
+              >
+                {bottomOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                <span
+                  className="pointer-events-none absolute left-1/2 bottom-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
+                  style={{
+                    borderColor: 'rgba(0,0,0,0.12)',
+                    color: '#111827',
+                    background: 'rgba(255,255,255,0.96)',
+                    boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+                  }}
+                  aria-hidden
+                >
+                  타임라인 접기
+                </span>
+              </button>
+              <div className="flex items-center gap-1">
+                {([
+                  { id: 'timeline', ko: '타임라인', en: 'Timeline' },
+                  { id: 'analysis', ko: '분석', en: 'Analysis' },
+                ] as const).map((tab) => {
+                  const active = bottomTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className="px-3 h-7 rounded-[8px] text-[11px] font-semibold"
+                      style={{
+                        background: active ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.78)',
+                        color: active ? '#9a3412' : '#4b5563',
+                        border: active ? `1px solid ${accentRgba(POINT_ORANGE, 0.45)}` : '1px solid rgba(0,0,0,0.14)',
+                      }}
+                      onClick={() => setBottomTab(tab.id)}
+                    >
+                      {locale === 'en' ? tab.en : tab.ko}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex-1" />
+              <div className="flex items-center gap-1.5">
+                <button type="button" className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.06)', color: '#4b5563' }}>
+                  <SkipBack className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: accentRgba(POINT_ORANGE, 0.22), color: '#9a3412' }}>
+                  {bottomTab === 'timeline' ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                </button>
+                <button type="button" className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.06)', color: '#4b5563' }}>
+                  <Repeat className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="h-[calc(100%-48px)]">
+              {bottomTab === 'timeline' ? (
+                timelineView === 'overview' ? renderTimelineOverview() : renderTimelineDetail()
+              ) : (
+                <div
+                  className="h-full rounded-[10px] border p-3 text-[11px] leading-relaxed overflow-y-auto sfd-scroll"
+                  style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.94)', color: '#374151' }}
+                >
+                  {locale === 'en'
+                    ? 'Analysis chart/table area. Default when Analysis mode is active.'
+                    : '분석 그래프/테이블 영역입니다. Analysis 모드 활성 시 기본 노출됩니다.'}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+

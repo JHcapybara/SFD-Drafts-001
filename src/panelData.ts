@@ -195,6 +195,8 @@ export interface EeSlot {
 /** 매니퓰레이터 스펙 — 로봇 유형 (도메인 상수) */
 export const MANIP_ROBOT_TYPES = ['MANIPULATOR', 'MOBILE', 'MOBILE_MANIPULATOR', 'DUAL_ARM'] as const;
 export type ManipRobotType = (typeof MANIP_ROBOT_TYPES)[number];
+export const MANIP_COLLAB_MODES = ['PFL', 'SSM', 'SRS', 'HGG'] as const;
+export type ManipCollabMode = (typeof MANIP_COLLAB_MODES)[number];
 
 /** 프로퍼티·서브레이어에서 로봇별로 나뉘는 매니퓰레이터 필드 */
 export interface ManipRobotItem {
@@ -207,6 +209,7 @@ export interface ManipRobotItem {
   manipJointCount: string;
   manipCurrentLoadWeight: string;
   manipCollaboration: boolean;
+  manipCollaborationMode: ManipCollabMode;
   position: { x: string; y: string; z: string };
   rotation: { rx: string; ry: string; rz: string };
   size: { w: string; d: string; h: string };
@@ -560,6 +563,7 @@ export const DEFAULT_DATA: PanelData = {
       manipJointCount: '6',
       manipCurrentLoadWeight: '85',
       manipCollaboration: true,
+      manipCollaborationMode: 'PFL',
       position: { x: '1,250', y: '800', z: '0' },
       rotation: { rx: '0', ry: '0', rz: '45' },
       size: { w: '600', d: '600', h: '2,100' },
@@ -591,6 +595,7 @@ export const DEFAULT_DATA: PanelData = {
       manipJointCount: '6',
       manipCurrentLoadWeight: '40',
       manipCollaboration: false,
+      manipCollaborationMode: 'SSM',
       position: { x: '2,100', y: '600', z: '0' },
       rotation: { rx: '0', ry: '0', rz: '0' },
       size: { w: '500', d: '500', h: '1,800' },
@@ -628,6 +633,7 @@ export const DEFAULT_DATA: PanelData = {
       manipJointCount: '6',
       manipCurrentLoadWeight: '72',
       manipCollaboration: true,
+      manipCollaborationMode: 'PFL',
       position: { x: '800', y: '1,200', z: '0' },
       rotation: { rx: '0', ry: '0', rz: '-30' },
       size: { w: '580', d: '580', h: '2,050' },

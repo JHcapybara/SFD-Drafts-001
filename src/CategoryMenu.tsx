@@ -14,6 +14,7 @@ import { ManipulatorSubmodalContent } from './ManipulatorSubmodalContent';
 import { accentRgba, getObjectAccent, POINT_ORANGE } from './pointColorSchemes';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
 import { workspaceHeaderIconIndex } from './sfd/objectGroupHeaderIcon';
+import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
 
 /** Objects 1뎁스 — `sfd-icon-2026` 파일 인덱스 */
 const OBJECT_ROW_ICON_INDEX: Record<string, number> = {
@@ -51,6 +52,7 @@ export const SUB_MODAL_GAP = 8;
 export const VIEWPORT_MARGIN = 8;
 const SUB_MODAL_MIN_HEIGHT = 280;
 const SUB_MODAL_MAX_HEIGHT = 900;
+const SUB_MODAL_MINIMIZED_BUTTON_SIZE = 36;
 
 function computeSubModalPosition(menuRect: DOMRect, subWidth: number, subHeight: number): { left: number; top: number } {
   const vw = window.innerWidth;
@@ -73,7 +75,7 @@ function computeSubModalPosition(menuRect: DOMRect, subWidth: number, subHeight:
   if (top + maxSubH > vh - margin) {
     top = vh - margin - maxSubH;
   }
-  top = Math.max(margin, top);
+  top = Math.max(WORKSPACE_CONTENT_TOP_PX, top);
 
   return { left, top };
 }
@@ -100,7 +102,7 @@ function computeSubModalPositionDockedToPropertyPanel(
   if (top + maxSubH > vh - margin) {
     top = vh - margin - maxSubH;
   }
-  top = Math.max(margin, top);
+  top = Math.max(WORKSPACE_CONTENT_TOP_PX, top);
 
   return { left, top };
 }
@@ -111,6 +113,7 @@ interface CategoryMenuProps {
   initialY?: number;
   selectedObjectId: string;
   onObjectChange: (objectId: string) => void;
+  onEndEffectorCategoryChange?: (categoryId: string) => void;
   /** 프로퍼티 패널 열림/최소화 상태 */
   isPropertyPanelOpen?: boolean;
   /** 외부에서 위치를 제어할 때 사용. 제공되면 드래그가 비활성화되고 이 위치를 따름. */
@@ -181,6 +184,7 @@ export default function CategoryMenu({
   initialY = 24,
   selectedObjectId,
   onObjectChange,
+  onEndEffectorCategoryChange,
   isPropertyPanelOpen = true,
   controlledPos,
   expandOnHover = CATEGORY_MENU_EXPAND_ON_HOVER_DEFAULT,
@@ -252,7 +256,7 @@ export default function CategoryMenu({
     const maxX = window.innerWidth - w;
     const maxY = window.innerHeight - (menuRef.current?.offsetHeight ?? 200);
     const clampedDL = Math.min(Math.max(0, newDisplayLeft), maxX);
-    const clampedY = Math.min(Math.max(0, newY), maxY);
+    const clampedY = Math.min(Math.max(WORKSPACE_CONTENT_TOP_PX, newY), maxY);
     setPos({
       x: clampedDL - shift,
       y: clampedY,
@@ -273,7 +277,7 @@ export default function CategoryMenu({
         const dl = p.x + shift;
         return {
           x: Math.min(Math.max(0, dl), maxX) - shift,
-          y: Math.min(Math.max(0, p.y), maxY),
+          y: Math.min(Math.max(WORKSPACE_CONTENT_TOP_PX, p.y), maxY),
         };
       });
     }
@@ -342,6 +346,9 @@ export default function CategoryMenu({
     eeSelectedIdx != null && panelData?.eeSlots?.[eeSelectedIdx]
       ? panelData.eeSlots[eeSelectedIdx]?.objectName ?? null
       : null;
+  const endEffectorCategories = selectedObjectDef?.id === 'endeffector'
+    ? selectedObjectDef.categories
+    : [];
   const isEndEffectorSubmodal = isEndEffectorSettingsTab || isEndEffectorConnectionTab;
   const selectedManipRobotName =
     panelData?.manipRobots?.length && panelData.manipSelectedRobotIdx != null
@@ -355,37 +362,35 @@ export default function CategoryMenu({
 
   const subModalMinimizedPos = useMemo(() => {
     const margin = VIEWPORT_MARGIN;
-    const boxW = 164;
-    const boxH = 34;
+    const minTop = WORKSPACE_CONTENT_TOP_PX;
+    const boxW = SUB_MODAL_MINIMIZED_BUTTON_SIZE;
+    const boxH = SUB_MODAL_MINIMIZED_BUTTON_SIZE;
     let left = margin;
-    let top = margin;
-    if (isPropertyPanelOpen && subModalDockToPropertyPanel) {
-      left = subModalDockToPropertyPanel.left + subModalDockToPropertyPanel.width + SUB_MODAL_GAP;
-      top = subModalDockToPropertyPanel.top + 8;
-    } else {
-      const menuRect = menuRef.current?.getBoundingClientRect();
-      if (menuRect) {
-        left = menuRect.right + SUB_MODAL_GAP;
-        top = menuRect.top + 8;
-      }
+    let top = minTop;
+    const menuRect = menuRef.current?.getBoundingClientRect();
+    if (menuRect) {
+      // 상태와 무관하게 항상 에딧 메뉴(CategoryMenu) 하단 기준으로 배치
+      left = menuRect.right - boxW;
+      top = menuRect.bottom + SUB_MODAL_GAP;
     }
     const maxLeft = Math.max(margin, window.innerWidth - margin - boxW);
-    const maxTop = Math.max(margin, window.innerHeight - margin - boxH);
+    const maxTop = Math.max(minTop, window.innerHeight - margin - boxH);
     return {
       left: Math.min(Math.max(left, margin), maxLeft),
-      top: Math.min(Math.max(top, margin), maxTop),
+      top: Math.min(Math.max(top, minTop), maxTop),
     };
-  }, [isPropertyPanelOpen, subModalDockToPropertyPanel, showSubModalEffective, selectedObjectId, subModalRefreshKey]);
+  }, [showSubModalEffective, selectedObjectId, subModalRefreshKey, renderedLeft, renderedTop]);
 
   const clampSubModalPos = useCallback(() => {
     const subW = subModalRef.current?.offsetWidth ?? SUB_MODAL_WIDTH;
     const subH = subModalRef.current?.offsetHeight ?? subModalHeightPx ?? SUB_MODAL_MIN_HEIGHT;
     const margin = VIEWPORT_MARGIN;
+    const minTop = WORKSPACE_CONTENT_TOP_PX;
     const maxLeft = Math.max(margin, window.innerWidth - margin - subW);
-    const maxTop = Math.max(margin, window.innerHeight - margin - subH);
+    const maxTop = Math.max(minTop, window.innerHeight - margin - subH);
     setSubModalPos((p) => {
       const left = Math.min(Math.max(p.left, margin), maxLeft);
-      const top = Math.min(Math.max(p.top, margin), maxTop);
+      const top = Math.min(Math.max(p.top, minTop), maxTop);
       return p.left === left && p.top === top ? p : { left, top };
     });
   }, [subModalHeightPx]);
@@ -394,6 +399,7 @@ export default function CategoryMenu({
     if (!subResizeEdge) return;
     function onMove(e: PointerEvent) {
       const margin = VIEWPORT_MARGIN;
+      const minTop = WORKSPACE_CONTENT_TOP_PX;
       const minH = SUB_MODAL_MIN_HEIGHT;
       const start = subResizeRef.current;
       if (subResizeEdge === 'bottom') {
@@ -408,7 +414,7 @@ export default function CategoryMenu({
         const dy = e.clientY - start.clientY;
         const maxH = Math.min(
           SUB_MODAL_MAX_HEIGHT,
-          Math.max(minH, window.innerHeight - 2 * margin),
+          Math.max(minH, window.innerHeight - minTop - margin),
         );
         let nextTop = start.top + dy;
         let nextH = start.height - dy;
@@ -419,9 +425,9 @@ export default function CategoryMenu({
           nextTop = start.top + start.height - maxH;
           nextH = maxH;
         }
-        nextTop = Math.max(margin, nextTop);
+        nextTop = Math.max(minTop, nextTop);
         const maxTopByBottom = Math.max(
-          margin,
+          minTop,
           window.innerHeight - margin - nextH,
         );
         nextTop = Math.min(nextTop, maxTopByBottom);
@@ -512,12 +518,13 @@ export default function CategoryMenu({
       const subW = subModalRef.current?.offsetWidth ?? SUB_MODAL_WIDTH;
       const subH = subModalRef.current?.offsetHeight ?? subModalHeightPx ?? SUB_MODAL_MIN_HEIGHT;
       const margin = VIEWPORT_MARGIN;
+      const minTop = WORKSPACE_CONTENT_TOP_PX;
       const nextLeftRaw = e.clientX - subDragOffsetRef.current.x;
       const nextTopRaw = e.clientY - subDragOffsetRef.current.y;
       const maxLeft = Math.max(margin, window.innerWidth - margin - subW);
-      const maxTop = Math.max(margin, window.innerHeight - margin - subH);
+      const maxTop = Math.max(minTop, window.innerHeight - margin - subH);
       const left = Math.min(Math.max(nextLeftRaw, margin), maxLeft);
-      const top = Math.min(Math.max(nextTopRaw, margin), maxTop);
+      const top = Math.min(Math.max(nextTopRaw, minTop), maxTop);
       setSubModalPos((p) => (p.left === left && p.top === top ? p : { left, top }));
     }
     function onUp() {
@@ -876,27 +883,23 @@ export default function CategoryMenu({
     {showSubModalEffective && selectedObjectDef && subModalMinimized && (
       <button
         type="button"
-        className="fixed z-[52] inline-flex items-center gap-2 rounded-[10px] px-3 py-2 text-[11px] font-semibold"
+        className="fixed z-[52] inline-flex h-9 w-9 items-center justify-center rounded-[10px]"
         style={{
           left: subModalMinimizedPos.left,
           top: subModalMinimizedPos.top,
-          background: tk.bg,
-          color: tk.textPrimary,
-          border: `1px solid ${tk.border}`,
+          background:
+            theme === 'light'
+              ? 'linear-gradient(135deg, rgba(255,170,84,0.98) 0%, rgba(255,142,43,0.98) 56%, rgba(235,115,21,0.98) 100%)'
+              : 'linear-gradient(135deg, rgba(255,170,84,0.92) 0%, rgba(255,142,43,0.94) 56%, rgba(235,115,21,0.94) 100%)',
+          color: '#fff7ed',
+          border: '1px solid rgba(255,142,43,0.42)',
           boxShadow: tk.shadow,
         }}
         onClick={() => setSubModalMinimized(false)}
         title="최소화된 상세 설정 열기"
         aria-label="최소화된 상세 설정 열기"
       >
-        <SfdIconByIndex index={2} color={tk.textSecondary} size={12} />
-        <span className="truncate max-w-[90px]">
-          {selectedObjectId === 'endeffector' && isEndEffectorSubmodal
-            ? `${selectedEeObjectName ?? selectedObjectDef.label} 상세 설정`
-            : isManipulatorRobotDetail
-              ? `${selectedManipRobotName ?? selectedObjectDef.label} 상세 설정`
-              : L.subModalSectionTitle}
-        </span>
+        <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" strokeWidth={2.2} />
       </button>
     )}
 
@@ -954,16 +957,38 @@ export default function CategoryMenu({
         </button>
         {selectedObjectId === 'endeffector' && isEndEffectorSubmodal ? (
           <div
-            className="flex items-center gap-2 px-4 py-4 shrink-0"
+            className="flex flex-col gap-2 px-4 py-4 shrink-0"
             style={{
               background: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
               borderBottom: `1px solid ${tk.divider}`,
             }}
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" style={{ color: selectedObjectDef.color }} strokeWidth={2} />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
-              {(selectedEeObjectName ?? selectedObjectDef.label)} 상세 설정
-            </span>
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" style={{ color: selectedObjectDef.color }} strokeWidth={2} />
+              <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+                {(selectedEeObjectName ?? selectedObjectDef.label)} 상세 설정
+              </span>
+            </div>
+            <div className="flex gap-1 p-0.5 rounded-[8px]" style={{ background: tk.objectTabBg }}>
+              {endEffectorCategories.map((cat) => {
+                const isActive = cat.id === (endeffectorActiveCategoryId ?? 'ee-basic');
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    className="flex-1 min-w-0 px-2 py-1.5 rounded-[7px] text-[12px] font-semibold transition-all duration-150"
+                    style={{
+                      color: isActive ? selectedObjectDef.color : tk.textSecondary,
+                      background: isActive ? tk.objectTabActive : 'transparent',
+                      boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,142,43,0.28)' : 'none',
+                    }}
+                    onClick={() => onEndEffectorCategoryChange?.(cat.id)}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ) : isManipulatorRobotDetail ? (
           <div

@@ -147,7 +147,7 @@ export function ManipulatorSubmodalContent({
         key={id}
         type="button"
         onClick={() => setSubTab(id)}
-        className="flex-1 min-w-0 px-2 py-1.5 rounded-[8px] text-[10px] font-semibold transition-all duration-150"
+        className="flex-1 min-w-0 px-2 py-1.5 rounded-[8px] text-[12px] font-semibold transition-all duration-150"
         style={{
           color: on ? accentColor : t.textSecondary,
           background: on ? (theme === 'light' ? `${accentColor}18` : `${accentColor}22`) : 'transparent',
@@ -190,11 +190,25 @@ export function ManipulatorSubmodalContent({
             <InputField label={L.manipMaker} value={robot.manipMaker} onChange={(v) => patch({ manipMaker: v })} t={t} />
             <InputField label={L.manipModel} value={robot.manipModel} onChange={(v) => patch({ manipModel: v })} t={t} />
             <Toggle
-              label={L.manipCollaborationLabel}
+              label={L.manipCollaborationToggleLabel}
               value={robot.manipCollaboration}
               onChange={(v) => patch({ manipCollaboration: v })}
               t={t}
             />
+            {robot.manipCollaboration && (
+              <DropdownField
+                label={L.manipCollaborationLabel}
+                value={robot.manipCollaborationMode ?? 'PFL'}
+                t={t}
+                options={[
+                  { value: 'PFL', label: 'PFL' },
+                  { value: 'SSM', label: 'SSM' },
+                  { value: 'SRS', label: 'SRS' },
+                  { value: 'HGG', label: 'HGG' },
+                ]}
+                onChange={(v) => patch({ manipCollaborationMode: v as 'PFL' | 'SSM' | 'SRS' | 'HGG' })}
+              />
+            )}
           </Section>
           <Section title={L.manipPosition} accentColor={accentColor} t={t}>
             <SubLabel text={L.positionMm} t={t} uppercase={false} />

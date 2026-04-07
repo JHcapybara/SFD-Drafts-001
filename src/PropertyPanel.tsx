@@ -41,6 +41,7 @@ import {
   PROPERTY_PANEL_CATEGORY_TAB_ROW_HEIGHT_PX,
   PROPERTY_PANEL_DRAG_HEADER_HEIGHT_PX,
 } from './panelChromeHeights';
+import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
 import {
   SFD_ICON_HAND_GUIDING_ADD_MOVE,
@@ -1355,9 +1356,10 @@ function CollisionEntityZoneContent({
           type="button"
           className="w-full flex items-center justify-center text-[13px] font-semibold rounded-[10px] transition-all duration-200 active:scale-[0.98] py-2.5 shrink-0 border"
           style={{
-            color: t.textPrimary,
-            background: t.inputBg,
-            borderColor: t.inputBorder,
+            color: 'white',
+            background: 'linear-gradient(135deg,#ff9a3c 0%,#ff6b00 100%)',
+            borderColor: 'rgba(255,107,0,0.45)',
+            boxShadow: '0 4px 16px rgba(255,107,0,0.35)',
           }}
           aria-pressed={false}
           onClick={() =>
@@ -1588,7 +1590,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
           t={t}
           selectedIdx={eeSelectedIdx}
           setSelectedIdx={setEeSelectedIdx}
-          variant="connection"
+          variant="settings-list-only"
           accentColor={objectAccent}
         />
       );
@@ -1726,6 +1728,7 @@ interface PropertyPanelProps {
   /** ?? ??: ???? ?(??/EE/?) ? CategoryMenu ???? ?? */
   onCollisionCategoryChange?: (categoryId: string) => void;
   onEndEffectorCategoryChange?: (categoryId: string) => void;
+  endeffectorActiveCategoryId?: string;
 }
 
 export default function PropertyPanel({
@@ -1748,6 +1751,7 @@ export default function PropertyPanel({
   onMotionCategoryChange,
   onCollisionCategoryChange,
   onEndEffectorCategoryChange,
+  endeffectorActiveCategoryId: controlledEndeffectorCategoryId,
 }: PropertyPanelProps) {
   const { L, objects, pointScheme } = useLocale();
   const objectAccent = useMemo(
@@ -1759,10 +1763,10 @@ export default function PropertyPanel({
   const data = controlledData ?? internalData;
   const setData = controlledSetData ?? setInternalData;
   const [isDragging, setIsDragging] = useState(false);
-  const [pos, setPos] = useState({ x: initialX, y: initialY });
+  const [pos, setPos] = useState({ x: initialX, y: Math.max(WORKSPACE_CONTENT_TOP_PX, initialY) });
   useLayoutEffect(() => {
     if (syncedPosition == null) return;
-    setPos(syncedPosition);
+    setPos({ x: syncedPosition.x, y: Math.max(WORKSPACE_CONTENT_TOP_PX, syncedPosition.y) });
   }, [syncedPosition?.x, syncedPosition?.y]);
   const dragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -1791,6 +1795,12 @@ export default function PropertyPanel({
   }, [selectedObjectId, objects]);
 
   useEffect(() => {
+    if (selectedObject.id !== 'endeffector') return;
+    if (!controlledEndeffectorCategoryId) return;
+    setActiveCategoryId((prev) => (prev === controlledEndeffectorCategoryId ? prev : controlledEndeffectorCategoryId));
+  }, [selectedObject.id, controlledEndeffectorCategoryId]);
+
+  useEffect(() => {
     if (selectedObject.id !== 'motion') setSelectedMotionSeqId(null);
   }, [selectedObject.id]);
 
@@ -1816,7 +1826,10 @@ export default function PropertyPanel({
     setPanelHeightPx(null);
     setPos((p) => {
       const maxX = Math.max(0, window.innerWidth - PANEL_WIDTH);
-      return { ...p, x: Math.min(p.x, maxX) };
+      return {
+        x: Math.min(p.x, maxX),
+        y: Math.max(WORKSPACE_CONTENT_TOP_PX, p.y),
+      };
     });
   }, [selectedObject.id]);
 
@@ -1824,7 +1837,7 @@ export default function PropertyPanel({
     if (!resizeEdge) return;
     const minH = PANEL_MIN_HEIGHT;
     function onMove(e: PointerEvent) {
-      const maxH = Math.max(minH, window.innerHeight - 16);
+      const maxH = Math.max(minH, window.innerHeight - WORKSPACE_CONTENT_TOP_PX - 16);
       if (resizeEdge === 'bottom') {
         const dy = e.clientY - resizeRef.current.clientY;
         let nh = resizeRef.current.height + dy;
@@ -1841,7 +1854,7 @@ export default function PropertyPanel({
           newTop = resizeRef.current.top + resizeRef.current.height - maxH;
           nh = maxH;
         }
-        newTop = Math.max(0, newTop);
+        newTop = Math.max(WORKSPACE_CONTENT_TOP_PX, newTop);
         const x = resizeRef.current.posX;
         setPos({ x, y: newTop });
         setPanelHeightPx(nh);
@@ -1929,7 +1942,10 @@ export default function PropertyPanel({
     const maxX = window.innerWidth - w;
     const maxY = window.innerHeight - (panel?.offsetHeight ?? 200);
     const newX = Math.min(Math.max(0, e.clientX - dragOffset.current.x), maxX);
-    const newY = Math.min(Math.max(0, e.clientY - dragOffset.current.y), maxY);
+    const newY = Math.min(
+      Math.max(WORKSPACE_CONTENT_TOP_PX, e.clientY - dragOffset.current.y),
+      maxY,
+    );
     setPos({ x: newX, y: newY });
     onPosChange?.(newX, newY);
   }, [onPosChange]);
@@ -1946,7 +1962,10 @@ export default function PropertyPanel({
       const pw = panel?.offsetWidth ?? PANEL_WIDTH;
       setPos((prev) => {
         const newX = Math.min(prev.x, window.innerWidth - pw);
-        const newY = Math.min(prev.y, window.innerHeight - (panel?.offsetHeight ?? 200));
+        const newY = Math.min(
+          Math.max(prev.y, WORKSPACE_CONTENT_TOP_PX),
+          window.innerHeight - (panel?.offsetHeight ?? 200),
+        );
         onPosChange?.(newX, newY);
         return { x: newX, y: newY };
       });
@@ -1966,7 +1985,7 @@ export default function PropertyPanel({
         width: PANEL_WIDTH,
         minHeight: panelHeightPx != null ? undefined : (isMotionObject ? PANEL_MIN_HEIGHT : undefined),
         height: panelHeightPx ?? undefined,
-        maxHeight: panelHeightPx ? undefined : 'calc(100vh - 12px)',
+        maxHeight: panelHeightPx ? undefined : `calc(100vh - ${WORKSPACE_CONTENT_TOP_PX + 12}px)`,
         background: t.panelBg,
         backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -2025,7 +2044,7 @@ export default function PropertyPanel({
       <div style={{ height: 1, background: t.divider }} />
 
       {/* 카테고리가 2개 이상일 때만 상단 탭 표시 (협동 작업 등 단일 카테고리는 생략) */}
-      {selectedObject.categories.length > 1 ? (
+      {selectedObject.categories.length > 1 && selectedObject.id !== 'endeffector' ? (
         <>
           <div
             ref={categoryTabRowRef}
@@ -2251,13 +2270,6 @@ export default function PropertyPanel({
                 </div>
               )}
             </div>
-            {activeCategory.tabs.length === 0 && (
-              <div className="flex flex-col px-3 py-1">
-                <p className="text-[10px] leading-snug text-center" style={{ color: t.textSecondary }}>
-                  {L.motionGenerateEmptyHint}
-                </p>
-              </div>
-            )}
             <div
               className="shrink-0 sticky bottom-0 z-20 px-3 py-2 border-t"
               style={{
@@ -2267,130 +2279,180 @@ export default function PropertyPanel({
               }}
             >
               {data.handGuidingMode ? (
-                <div className="flex flex-wrap gap-2 justify-start items-center">
+                <div
+                  className="rounded-[12px] shrink-0 flex flex-col gap-2 p-2.5"
+                  style={{
+                    border: `1px solid ${t.panelBorder}`,
+                    background: t.sectionHeaderBg,
+                    boxShadow: theme === 'light' ? '0 4px 20px rgba(0,0,0,0.06)' : '0 8px 24px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  <div className="flex items-center gap-2 px-0.5 pb-0.5 border-b" style={{ borderColor: t.divider }}>
+                    <span className="text-[12px] font-bold leading-tight" style={{ color: '#ff8e2b' }}>
+                      핸드가이딩 모드
+                    </span>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-[4px] leading-none"
+                      style={{
+                        background: theme === 'light' ? 'rgba(255,107,0,0.14)' : 'rgba(255,107,0,0.24)',
+                        color: '#ff8e2b',
+                      }}
+                    >
+                      ON
+                    </span>
+                  </div>
+                  <p className="text-[10px] leading-snug px-0.5" style={{ color: t.textSecondary }}>
+                    {L.motionGenerateEmptyHint}
+                  </p>
+                  <div className="flex gap-2 w-full min-w-0">
+                    <button
+                      type="button"
+                      className="flex-1 min-w-0 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-[10px] text-[11px] font-semibold border transition-all active:scale-[0.98] whitespace-nowrap"
+                      style={{
+                        height: 34,
+                        background:
+                          theme === 'light'
+                            ? 'linear-gradient(145deg, #3d3d3d 0%, #141414 100%)'
+                            : 'linear-gradient(145deg, #4a4a4a 0%, #1f1f1f 100%)',
+                        borderColor: theme === 'light' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.12)',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.38)',
+                        color: '#f5f5f5',
+                      }}
+                      onClick={() =>
+                        setData((p) => {
+                          const mv =
+                            p.motionSequenceItems.filter((x) => x.kind === 'move').length % 2 === 0 ? 'MoveL' : 'MoveJ';
+                          return {
+                            ...p,
+                            motionSequenceItems: [
+                              ...p.motionSequenceItems,
+                              createMotionSeqItemMove(p, `ms-${Date.now()}`, mv),
+                            ],
+                          };
+                        })
+                      }
+                    >
+                      <SfdIconByIndex index={SFD_ICON_HAND_GUIDING_ADD_MOVE} color="#f5f5f5" size={PP_ICON_PX.md} />
+                      이동 모션 추가
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 min-w-0 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-[10px] text-[11px] font-semibold border transition-all active:scale-[0.98] whitespace-nowrap"
+                      style={{
+                        height: 34,
+                        background:
+                          theme === 'light'
+                            ? 'linear-gradient(145deg, #2a2a2a 0%, #0a0a0a 100%)'
+                            : 'linear-gradient(145deg, #383838 0%, #121212 100%)',
+                        borderColor: theme === 'light' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.1)',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.42)',
+                        color: '#f5f5f5',
+                      }}
+                      onClick={() =>
+                        setData((p) => ({
+                          ...p,
+                          motionSequenceItems: [
+                            ...p.motionSequenceItems,
+                            createMotionSeqItemStop(p, `ms-${Date.now()}`),
+                          ],
+                        }))
+                      }
+                    >
+                      <SfdIconByIndex index={SFD_ICON_HAND_GUIDING_ADD_STOP} color="#f5f5f5" size={PP_ICON_PX.md} />
+                      정지 시간 추가
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    className="shrink-0 px-4 py-2 rounded-[10px] text-[12px] font-semibold transition-all active:scale-[0.98]"
+                    className="w-full py-2 rounded-[10px] text-[12px] font-semibold border transition-all duration-200 active:scale-[0.98]"
                     style={{
-                      height: 38,
-                      color: 'white',
-                      background: 'linear-gradient(135deg,#ff9a3c 0%,#ff6b00 100%)',
-                      boxShadow: '0 4px 16px rgba(255,107,0,0.35)',
+                      borderColor: t.inputBorder,
+                      background: theme === 'light' ? 'rgba(252,252,253,0.95)' : 'rgba(22,23,28,0.9)',
+                      color: t.textPrimary,
                     }}
-                    onClick={() =>
-                      setData((p) => ({
-                        ...p,
-                        motionSequenceItems: [
-                          ...p.motionSequenceItems,
-                          createMotionSeqItemMove(p, `ms-${Date.now()}`, 'MoveL'),
-                        ],
-                      }))
-                    }
-                  >
-                    {L.motionAddEnter}
-                  </button>
-                  <button
-                    type="button"
-                    className="shrink-0 px-4 py-2 rounded-[10px] text-[12px] font-semibold border transition-all active:scale-[0.98]"
-                    style={{ height: 38, color: t.textPrimary, borderColor: t.inputBorder, background: t.inputBg }}
                     onClick={() => setData((p) => ({ ...p, handGuidingMode: false }))}
                   >
                     {L.handGuidingExit}
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-nowrap items-center justify-center gap-1 w-full min-w-0">
+                <div className="flex flex-col gap-2 w-full min-w-0">
+                  <p className="text-[10px] leading-snug text-center" style={{ color: t.textSecondary }}>
+                    {L.motionGenerateEmptyHint}
+                  </p>
+                  <div className="flex flex-nowrap items-center justify-center gap-2 w-full min-w-0">
+                    <button
+                      type="button"
+                      title={L.tooltipAddMoveMotion}
+                      className="flex-1 min-w-0 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-[10px] text-[11px] font-semibold border transition-all active:scale-[0.98] whitespace-nowrap"
+                      style={{
+                        height: 34,
+                        background:
+                          theme === 'light'
+                            ? 'linear-gradient(145deg, #3d3d3d 0%, #141414 100%)'
+                            : 'linear-gradient(145deg, #4a4a4a 0%, #1f1f1f 100%)',
+                        borderColor: theme === 'light' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.12)',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.38)',
+                        color: '#f5f5f5',
+                      }}
+                      onClick={() =>
+                        setData((p) => {
+                          const mv =
+                            p.motionSequenceItems.filter((x) => x.kind === 'move').length % 2 === 0 ? 'MoveL' : 'MoveJ';
+                          return {
+                            ...p,
+                            motionSequenceItems: [
+                              ...p.motionSequenceItems,
+                              createMotionSeqItemMove(p, `ms-${Date.now()}`, mv),
+                            ],
+                          };
+                        })
+                      }
+                    >
+                      <SfdIconByIndex index={SFD_ICON_HAND_GUIDING_ADD_MOVE} color="#f5f5f5" size={PP_ICON_PX.md} />
+                      이동 모션 추가
+                    </button>
+                    <button
+                      type="button"
+                      title={L.tooltipAddStopMotion}
+                      className="flex-1 min-w-0 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-[10px] text-[11px] font-semibold border transition-all active:scale-[0.98] whitespace-nowrap"
+                      style={{
+                        height: 34,
+                        background:
+                          theme === 'light'
+                            ? 'linear-gradient(145deg, #2a2a2a 0%, #0a0a0a 100%)'
+                            : 'linear-gradient(145deg, #383838 0%, #121212 100%)',
+                        borderColor: theme === 'light' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.1)',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.42)',
+                        color: '#f5f5f5',
+                      }}
+                      onClick={() =>
+                        setData((p) => ({
+                          ...p,
+                          motionSequenceItems: [
+                            ...p.motionSequenceItems,
+                            createMotionSeqItemStop(p, `ms-${Date.now()}`),
+                          ],
+                        }))
+                      }
+                    >
+                      <SfdIconByIndex index={SFD_ICON_HAND_GUIDING_ADD_STOP} color="#f5f5f5" size={PP_ICON_PX.md} />
+                      정지 시간 추가
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    className="shrink min-w-0 px-2 py-2 rounded-[10px] text-[11px] font-semibold transition-all active:scale-[0.98] truncate max-w-[132px]"
+                    className="w-full px-3 py-2.5 rounded-[10px] text-[13px] font-semibold transition-all active:scale-[0.98] border"
                     style={{
-                      height: 38,
+                      height: 40,
                       color: 'white',
+                      borderColor: 'rgba(255,107,0,0.45)',
                       background: 'linear-gradient(135deg,#ff9a3c 0%,#ff6b00 100%)',
                       boxShadow: '0 4px 16px rgba(255,107,0,0.35)',
                     }}
                     onClick={() => setData((p) => ({ ...p, handGuidingMode: true }))}
                   >
-                    {L.handGuidingMode}
-                  </button>
-                  <button
-                    type="button"
-                    title={L.tooltipAddMoveMotion}
-                    className="w-9 h-9 flex items-center justify-center rounded-[10px] shrink-0 transition-all active:scale-[0.98] border"
-                    style={{
-                      background:
-                        theme === 'light'
-                          ? 'linear-gradient(145deg, #3d3d3d 0%, #141414 100%)'
-                          : 'linear-gradient(145deg, #4a4a4a 0%, #1f1f1f 100%)',
-                      borderColor: theme === 'light' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.12)',
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.38)',
-                      color: '#f5f5f5',
-                    }}
-                    onClick={() =>
-                      setData((p) => {
-                        const mv =
-                          p.motionSequenceItems.filter((x) => x.kind === 'move').length % 2 === 0 ? 'MoveL' : 'MoveJ';
-                        return {
-                          ...p,
-                          motionSequenceItems: [
-                            ...p.motionSequenceItems,
-                            createMotionSeqItemMove(p, `ms-${Date.now()}`, mv),
-                          ],
-                        };
-                      })
-                    }
-                  >
-                    <SfdIconByIndex index={SFD_ICON_HAND_GUIDING_ADD_MOVE} color="#f5f5f5" size={PP_ICON_PX.lg} />
-                  </button>
-                  <button
-                    type="button"
-                    title={L.tooltipAddStopMotion}
-                    className="w-9 h-9 flex items-center justify-center rounded-[10px] shrink-0 transition-all active:scale-[0.98] border"
-                    style={{
-                      background:
-                        theme === 'light'
-                          ? 'linear-gradient(145deg, #2a2a2a 0%, #0a0a0a 100%)'
-                          : 'linear-gradient(145deg, #383838 0%, #121212 100%)',
-                      borderColor: theme === 'light' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.1)',
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.42)',
-                      color: '#f5f5f5',
-                    }}
-                    onClick={() =>
-                      setData((p) => ({
-                        ...p,
-                        motionSequenceItems: [
-                          ...p.motionSequenceItems,
-                          createMotionSeqItemStop(p, `ms-${Date.now()}`),
-                        ],
-                      }))
-                    }
-                  >
-                    <SfdIconByIndex index={SFD_ICON_HAND_GUIDING_ADD_STOP} color="#f5f5f5" size={PP_ICON_PX.lg} />
-                  </button>
-                  <button
-                    type="button"
-                    title={L.toolChangeTooltip}
-                    aria-pressed={data.toolChangeMode}
-                    aria-label={L.toolChangeBtn}
-                    className="shrink-0 inline-flex items-center gap-1 px-2 py-2 rounded-[10px] text-[10px] font-semibold tracking-tight border transition-all active:scale-[0.98] whitespace-nowrap"
-                    style={{
-                      height: 38,
-                      color: data.toolChangeMode ? '#7c3aed' : t.textPrimary,
-                      borderColor: data.toolChangeMode
-                        ? 'rgba(139, 92, 246, 0.75)'
-                        : theme === 'light'
-                          ? 'rgba(100, 116, 139, 0.45)'
-                          : 'rgba(148, 163, 184, 0.45)',
-                      background: data.toolChangeMode
-                        ? (theme === 'light' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.22)')
-                        : (theme === 'light' ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.06)'),
-                      boxShadow: data.toolChangeMode ? '0 0 0 1px rgba(139, 92, 246, 0.2)' : 'none',
-                    }}
-                    onClick={() =>
-                      setData((p) => ({ ...p, toolChangeMode: !p.toolChangeMode }))
-                    }
-                  >
-                    {L.toolChangeBtn}
+                    핸드가이딩 모드 On
                   </button>
                 </div>
               )}
