@@ -1087,9 +1087,9 @@ export function WorkspaceChrome({
             top: WORKSPACE_CONTENT_TOP_PX,
             bottom: 8,
             width: leftWidth,
-            background: 'rgba(252,252,253,0.72)',
+            background: 'rgba(252,252,253,0.92)',
             border: '1px solid rgba(0,0,0,0.08)',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.12)',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(0,0,0,0.06) inset',
             backdropFilter: 'blur(24px) saturate(180%)',
           }}
         >
@@ -1146,7 +1146,7 @@ export function WorkspaceChrome({
 
       {/* Header (top_area) */}
       <div
-        className="fixed z-[28] flex items-center px-3 gap-3"
+        className="fixed z-[28] flex flex-col px-2 py-1 gap-1"
         style={{
           left: 0,
           right: 0,
@@ -1158,85 +1158,88 @@ export function WorkspaceChrome({
           backdropFilter: 'blur(14px) saturate(140%)',
         }}
       >
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="h-6 flex items-center gap-2">
           <button
             type="button"
-            className="group relative h-8 w-8 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
+            className="h-5 px-2 rounded-[6px] border text-[9px] font-semibold"
             style={{
               borderColor: 'rgba(15,23,42,0.14)',
-              color: '#334155',
-              background: 'rgba(255,255,255,0.92)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)',
+              color: '#1f2937',
+              background: 'rgba(255,255,255,0.96)',
             }}
-            title={locale === 'en' ? 'Company logo' : '회사 로고'}
-            aria-label={locale === 'en' ? 'Company logo' : '회사 로고'}
           >
-            <SfdIconByIndex index={HEADER_LEFT_ICON_INDEX.logo} color="currentColor" size={14} />
+            Statics
           </button>
-          {([
-            { id: 'menu', index: HEADER_LEFT_ICON_INDEX.menu, active: true, ko: '메뉴', en: 'menu' },
-            { id: 'undo', index: HEADER_LEFT_ICON_INDEX.undo, active: false, ko: '실행 취소', en: 'undo' },
-            { id: 'redo', index: HEADER_LEFT_ICON_INDEX.redo, active: false, ko: '다시 실행', en: 'redo', flipX: true },
-          ] as const).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
-              style={{
-                borderColor: item.active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
-                color: item.active ? '#9a3412' : '#334155',
-                background: item.active
-                  ? accentRgba(POINT_ORANGE, 0.14)
-                  : 'rgba(255,255,255,0.9)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
-              }}
-              title={locale === 'en' ? item.en : item.ko}
-              aria-label={locale === 'en' ? item.en : item.ko}
+          <div className="flex-1 min-w-0 flex justify-center">
+            <div
+              className="h-5 min-w-[300px] max-w-[420px] px-3 border rounded-[6px] text-[10px] font-semibold flex items-center justify-start"
+              style={{ borderColor: 'rgba(15,23,42,0.12)', color: '#334155', background: 'rgba(255,255,255,0.94)' }}
             >
-              <SfdIconByIndex
-                index={item.index}
-                color="currentColor"
-                size={13}
-                style={item.id === 'redo' ? { transform: 'scaleX(-1)', transformOrigin: 'center' } : undefined}
-              />
-              <span
-                className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
-                style={{
-                  borderColor: 'rgba(15,23,42,0.12)',
-                  color: '#111827',
-                  background: 'rgba(255,255,255,0.98)',
-                  boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
-                }}
-                aria-hidden
-              >
-                {locale === 'en' ? item.en : item.ko}
+              <span className="flex-1 min-w-0 truncate">
+                {locale === 'en' ? 'Mockup: EV Battery Pack Assembly Line 01' : '목업: EV 배터리 팩 조립 라인 01'}
               </span>
-            </button>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0 flex items-center gap-2.5">
-          <div
-            className="h-8 min-w-[320px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center gap-2"
-            style={{ borderColor: 'rgba(15,23,42,0.12)', color: '#334155', background: 'rgba(255,255,255,0.92)' }}
-          >
-            <span className="flex-1 min-w-0 truncate">
-              {locale === 'en' ? 'Mockup: EV Battery Pack Assembly Line 01' : '목업: EV 배터리 팩 조립 라인 01'}
-            </span>
-            <button
-              type="button"
-              className="group relative h-6 w-6 rounded-[7px] border inline-flex items-center justify-center shrink-0 transition-colors duration-150"
-              style={{
-                borderColor: 'rgba(15,23,42,0.14)',
-                color: '#334155',
-                background: 'rgba(255,255,255,0.9)',
-              }}
-              aria-label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'}
-            >
-              <Settings className="w-3.5 h-3.5" strokeWidth={2} />
-              <CustomTooltip label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'} placement="bottom" />
-            </button>
+              <button
+                type="button"
+                className="group relative h-4.5 w-4.5 rounded-[5px] border inline-flex items-center justify-center shrink-0 transition-colors duration-150"
+                style={{
+                  borderColor: 'rgba(15,23,42,0.14)',
+                  color: '#334155',
+                  background: 'rgba(255,255,255,0.9)',
+                }}
+                aria-label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'}
+              >
+                <Settings className="w-3 h-3" strokeWidth={2} />
+                <CustomTooltip label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'} placement="bottom" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
+            {(['comment', 'share', 'plan', 'info'] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                className="h-5 px-2 rounded-[6px] border text-[9px] font-semibold"
+                style={{
+                  borderColor: 'rgba(15,23,42,0.14)',
+                  color: '#1f2937',
+                  background: 'rgba(255,255,255,0.96)',
+                }}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="h-6 flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {([
+              { id: 'menu', index: HEADER_LEFT_ICON_INDEX.menu, active: true, ko: '메뉴', en: 'menu' },
+              { id: 'undo', index: HEADER_LEFT_ICON_INDEX.undo, active: false, ko: '실행 취소', en: 'undo' },
+              { id: 'redo', index: HEADER_LEFT_ICON_INDEX.redo, active: false, ko: '다시 실행', en: 'redo' },
+            ] as const).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="group relative h-5 w-8 rounded-[6px] border transition-colors duration-150 inline-flex items-center justify-center"
+                style={{
+                  borderColor: item.active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
+                  color: item.active ? '#9a3412' : '#334155',
+                  background: item.active ? accentRgba(POINT_ORANGE, 0.14) : 'rgba(255,255,255,0.9)',
+                }}
+                title={locale === 'en' ? item.en : item.ko}
+                aria-label={locale === 'en' ? item.en : item.ko}
+              >
+                <SfdIconByIndex
+                  index={item.index}
+                  color="currentColor"
+                  size={11}
+                  style={item.id === 'redo' ? { transform: 'scaleX(-1)', transformOrigin: 'center' } : undefined}
+                />
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 min-w-0 flex justify-center">
+            <div className="flex items-center gap-1">
             {headerViewButtons.map((label) => {
               const iconIndex = HEADER_VIEW_ICON_INDEX[label];
               const isActive = label === 'view';
@@ -1244,117 +1247,33 @@ export function WorkspaceChrome({
                 <button
                   key={label}
                   type="button"
-                  className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
+                    className="group relative h-5 w-7 rounded-[6px] border transition-colors duration-150 inline-flex items-center justify-center"
                   style={{
                     borderColor: isActive ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(15,23,42,0.14)',
                     color: isActive ? '#9a3412' : '#334155',
                     background: isActive
                       ? accentRgba(POINT_ORANGE, 0.14)
                       : 'rgba(255,255,255,0.9)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
                   }}
                   title={label}
                   aria-label={label}
                 >
-                  <SfdIconByIndex index={iconIndex} color="currentColor" size={13} />
-                  <span
-                    className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
-                    style={{
-                      borderColor: 'rgba(15,23,42,0.12)',
-                      color: '#111827',
-                      background: 'rgba(255,255,255,0.98)',
-                      boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
-                    }}
-                    aria-hidden
-                  >
-                    {label}
-                  </span>
+                  <SfdIconByIndex index={iconIndex} color="currentColor" size={11} />
                 </button>
               );
             })}
+            </div>
           </div>
           <button
             type="button"
-            className="h-8 px-3.5 text-[11px] rounded-[10px] border font-semibold"
+            className="h-5 px-2.5 text-[9px] rounded-[6px] border font-semibold shrink-0"
             style={{
               borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(15,23,42,0.14)',
               color: '#ffffff',
               background: isRiskMode ? '#f59e0b' : POINT_ORANGE,
-              boxShadow: '0 4px 12px rgba(255,142,43,0.22)',
             }}
           >
             {primaryHeaderActionLabel}
-          </button>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            className="h-8 px-3.5 rounded-[10px] border font-semibold text-[11px] tracking-[0.02em] transition-colors duration-150"
-            style={{
-              borderColor: 'rgba(15,23,42,0.14)',
-              color: '#ffffff',
-              background: '#7c3aed',
-              boxShadow: '0 4px 12px rgba(124,58,237,0.24)',
-            }}
-            title={locale === 'en' ? 'Upgrade to paid tier' : '유료 티어 전환'}
-          >
-            PLAN+
-          </button>
-          {(['comment', 'share', 'info'] as const).map((key) => (
-            <button
-              key={key}
-              type="button"
-              className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
-              style={{
-                borderColor: 'rgba(15,23,42,0.14)',
-                color: '#334155',
-                background: 'rgba(255,255,255,0.9)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
-              }}
-              title={key}
-              aria-label={key}
-            >
-              <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX[key]} color="currentColor" size={13} />
-              <span
-                className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
-                style={{
-                  borderColor: 'rgba(15,23,42,0.12)',
-                  color: '#111827',
-                  background: 'rgba(255,255,255,0.98)',
-                  boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
-                }}
-                aria-hidden
-              >
-                {key}
-              </span>
-            </button>
-          ))}
-          <button
-            type="button"
-            className="group relative h-7 w-7 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
-            style={{
-              borderColor: 'rgba(15,23,42,0.14)',
-              color: '#334155',
-              background: 'rgba(255,255,255,0.9)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
-            }}
-            onClick={onToggleLocale}
-            title={locale === 'ko' ? '언어 변경' : 'Switch language'}
-            aria-label={locale === 'ko' ? '언어 변경' : 'Switch language'}
-          >
-            <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.lang} color="currentColor" size={13} />
-            <span
-              className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
-              style={{
-                borderColor: 'rgba(15,23,42,0.12)',
-                color: '#111827',
-                background: 'rgba(255,255,255,0.98)',
-                boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
-              }}
-              aria-hidden
-            >
-              {locale === 'ko' ? 'language' : '언어'}
-            </span>
           </button>
         </div>
       </div>
