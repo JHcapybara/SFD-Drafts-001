@@ -166,7 +166,7 @@ export function EndEffectorSubmodalContent({
 
   if (selectedIdx == null) {
     return (
-      <p className="text-[11px] leading-relaxed px-0.5" style={{ color: t.textSecondary }}>
+      <p className="text-[11px] leading-[18px] px-0.5" style={{ color: t.textSecondary }}>
         {mode === 'connection'
           ? L.eeConnEmptySlotHint
           : `${L.eeListTitle}에서 상세 설정할 엔드이펙터를 선택하세요.`}
@@ -283,21 +283,21 @@ export function EndEffectorSubmodalContent({
           ) : (
             <Section title={L.connLinkedList} accentColor={accentColor} t={t}>
               {selectedEe.linkedItems.length === 0 ? (
-                <p className="text-[12px] px-1 py-2 leading-relaxed" style={{ color: t.textSecondary }}>
+                <p className="text-[12px] leading-[20px] px-1 py-2" style={{ color: t.textSecondary }}>
                   {L.connListEmpty}
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {selectedEe.linkedItems.map((row, i) => (
                     <div key={i} className="rounded-[10px] px-3 py-2.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
-                      <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: t.textPrimary }} title={row.name}>
+                      <p className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: t.textPrimary }} title={row.name}>
                         <span style={{ color: t.textSecondary, fontWeight: 500 }}>{L.connColName}</span>{' '}
                         <span style={{ color: t.textPrimary }}>{row.name}</span>
                       </p>
-                      <p className="text-[11px] mt-1.5 leading-snug truncate" style={{ color: t.textSecondary }}>
+                      <p className="text-[11px] mt-1.5 leading-[16px] truncate" style={{ color: t.textSecondary }}>
                         <span style={{ fontWeight: 600 }}>{L.connColModel}</span> {row.model}
                       </p>
-                      <p className="text-[11px] mt-0.5 leading-snug truncate" style={{ color: t.textSecondary }}>
+                      <p className="text-[11px] mt-0.5 leading-[16px] truncate" style={{ color: t.textSecondary }}>
                         <span style={{ fontWeight: 600 }}>{L.connColKind}</span> {row.kind}
                       </p>
                     </div>
@@ -309,7 +309,7 @@ export function EndEffectorSubmodalContent({
         </>
       ) : (
         mode === 'connection' ? (
-          <p className="text-[12px] px-1 py-2 leading-relaxed text-center" style={{ color: t.textSecondary }}>
+          <p className="text-[12px] leading-[20px] px-1 py-2 text-center" style={{ color: t.textSecondary }}>
             {L.eeConnEmptySlotHint}
           </p>
         ) : (

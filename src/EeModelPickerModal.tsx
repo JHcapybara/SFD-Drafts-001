@@ -201,7 +201,7 @@ export default function EeModelPickerModal({ open, slotIndex, onClose, onPick, t
         </div>
 
         <div className="flex-1 overflow-y-auto sfd-scroll px-4 py-3 flex flex-col gap-3">
-          <p className="text-[11px] leading-relaxed" style={{ color: t.textSecondary }}>
+          <p className="text-[11px] leading-[18px]" style={{ color: t.textSecondary }}>
             {L.eeModalDesc}
           </p>
 
@@ -237,7 +237,7 @@ export default function EeModelPickerModal({ open, slotIndex, onClose, onPick, t
                       >
                         <FileBox className="w-4 h-4 shrink-0 mt-0.5" style={{ color: ACCENT }} strokeWidth={2} />
                         <span className="min-w-0 flex-1">
-                          <span className="block text-[12px] font-semibold truncate leading-tight" style={{ color: t.textPrimary }}>
+                          <span className="block text-[12px] font-semibold truncate leading-[15px]" style={{ color: t.textPrimary }}>
                             {row.fileName}
                           </span>
                           <span className="block text-[10px] mt-0.5 truncate" style={{ color: t.textSecondary }}>
@@ -251,7 +251,7 @@ export default function EeModelPickerModal({ open, slotIndex, onClose, onPick, t
               </div>
             ) : (
               <div
-                className="rounded-[12px] px-3 py-4 text-center text-[11px] leading-relaxed"
+                className="rounded-[12px] px-3 py-4 text-center text-[11px] leading-[18px]"
                 style={{
                   border: `2px dashed ${t.panelBorder}`,
                   background: t.sectionHeaderBg,

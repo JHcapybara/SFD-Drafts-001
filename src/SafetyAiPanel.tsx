@@ -298,7 +298,7 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
               >
                 {L.kwTag}
               </span>
-              <p className="text-[10px] font-medium leading-snug" style={{ color: colors.text }}>
+              <p className="text-[10px] font-medium leading-[14px]" style={{ color: colors.text }}>
                 {locale === 'en' ? k.en : k.ko}
               </p>
             </button>
@@ -418,7 +418,7 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
                       boxShadow: active ? `0 0 0 1px ${accentRgba(POINT_ORANGE, 0.25)}` : 'none',
                     }}
                   >
-                    <p className="text-[10px] font-semibold leading-tight line-clamp-2" style={{ color: colors.text }}>
+                    <p className="text-[10px] font-semibold leading-[13px] line-clamp-2" style={{ color: colors.text }}>
                       {locale === 'en' ? c.titleEn : c.titleKo}
                     </p>
                     <p className="text-[9px] mt-0.5" style={{ color: colors.muted }}>
@@ -459,14 +459,14 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
                   >
                     <MessageCircle className="w-6 h-6" strokeWidth={2} style={{ color: '#ffffff' }} />
                   </div>
-                  <p className="text-[12px] font-bold leading-tight" style={{ color: colors.text }}>
+                  <p className="text-[12px] font-bold leading-[15px]" style={{ color: colors.text }}>
                     {L.welcomeTitle}
                   </p>
-                  <p className="text-[10px] mt-1 leading-snug" style={{ color: colors.muted }}>
+                  <p className="text-[10px] mt-1 leading-[14px]" style={{ color: colors.muted }}>
                     {L.welcomeSub}
                   </p>
                   <div
-                    className="mt-2 px-2.5 py-1.5 rounded-full text-[9px] font-medium leading-snug max-w-full"
+                    className="mt-2 px-2.5 py-1.5 rounded-full text-[9px] font-medium leading-[12px] max-w-full"
                     style={{ background: colors.bannerBg, color: isDark ? '#fcd9a8' : '#92400e' }}
                   >
                     {L.banner3d}
@@ -486,7 +486,7 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
                       )}
                       <div className="flex items-end justify-end gap-1.5">
                         <div
-                          className="max-w-[92%] rounded-[12px] rounded-br-sm px-2.5 py-2 text-[10px] font-medium leading-relaxed text-white"
+                          className="max-w-[92%] rounded-[12px] rounded-br-sm px-2.5 py-2 text-[10px] font-medium leading-[16px] text-white"
                           style={{ background: POINT_ORANGE }}
                         >
                           {m.content}
@@ -509,7 +509,7 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div
-                          className="rounded-[10px] rounded-tl-sm px-2.5 py-2 text-[10px] leading-relaxed whitespace-pre-wrap"
+                          className="rounded-[10px] rounded-tl-sm px-2.5 py-2 text-[10px] leading-[16px] whitespace-pre-wrap"
                           style={{ background: colors.aiBubble, color: colors.text }}
                         >
                           {m.content}
@@ -562,7 +562,7 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
                 onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT))}
                 rows={2}
                 placeholder={L.placeholder}
-                className="w-full resize-none rounded-[10px] border pl-2.5 pr-10 py-2 text-[10px] leading-snug outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,142,43,0.4)]"
+                className="w-full resize-none rounded-[10px] border pl-2.5 pr-10 py-2 text-[10px] leading-[14px] outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,142,43,0.4)]"
                 style={{
                   borderColor: colors.border,
                   background: colors.inputBg,
@@ -586,7 +586,7 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
                 <Send className="w-3.5 h-3.5" />
               </button>
             </div>
-            <p className="text-[8px] leading-snug mt-1.5 px-0.5" style={{ color: colors.muted }}>
+            <p className="text-[8px] leading-[11px] mt-1.5 px-0.5" style={{ color: colors.muted }}>
               {L.disclaimer}
             </p>
           </div>

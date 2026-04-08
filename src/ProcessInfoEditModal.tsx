@@ -178,7 +178,7 @@ export function ProcessInfoEditModal({ open, locale, theme, initial, onClose, on
       >
         <div className="px-6 pt-5 pb-4 border-b" style={{ borderColor: tok.headerBorder }}>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-            <h2 id="process-info-modal-title" className="text-[16px] font-bold leading-tight" style={{ color: tok.title }}>
+            <h2 id="process-info-modal-title" className="text-[16px] font-bold leading-[20px]" style={{ color: tok.title }}>
               {t.title}
             </h2>
             <p className="text-[11px] font-semibold shrink-0" style={{ color: POINT_ORANGE }}>
@@ -247,7 +247,7 @@ export function ProcessInfoEditModal({ open, locale, theme, initial, onClose, on
               />
             </div>
             <div
-              className="min-h-[72px] rounded-[8px] border px-3 py-2.5 text-[12px] leading-relaxed"
+              className="min-h-[72px] rounded-[8px] border px-3 py-2.5 text-[12px] leading-[20px]"
               style={{
                 borderColor: tok.hintBoxBorder,
                 background: tok.hintBoxBg,

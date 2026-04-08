@@ -100,7 +100,7 @@ function JointDetailAccordion({
         aria-expanded={open}
       >
         <SfdChevronAccordion open={open} color={t.textSecondary} size={14} />
-        <span className="text-[11px] font-semibold leading-tight" style={{ color: t.textPrimary, letterSpacing: '-0.01em' }}>
+        <span className="text-[11px] font-semibold leading-[14px]" style={{ color: t.textPrimary, letterSpacing: '-0.01em' }}>
           {L.motionJointDetailAccordionTitle}
         </span>
       </button>
@@ -480,7 +480,7 @@ export function MotionSubmodalContent({
 
   if (!defaultsMode && !selectedItem) {
     return (
-      <p className="text-[11px] leading-relaxed px-0.5" style={{ color: t.textSecondary }}>
+      <p className="text-[11px] leading-[18px] px-0.5" style={{ color: t.textSecondary }}>
         {L.motionSubmodalEditFormPlaceholder}
       </p>
     );
@@ -584,7 +584,7 @@ export function MotionSubmodalContent({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[10px] leading-relaxed px-0.5 -mt-0.5 mb-0.5" style={{ color: t.textSecondary }}>
+      <p className="text-[10px] leading-[16px] px-0.5 -mt-0.5 mb-0.5" style={{ color: t.textSecondary }}>
         {L.motionSubmodalDefaultsIntro}
       </p>
       <Section

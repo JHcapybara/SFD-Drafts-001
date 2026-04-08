@@ -222,7 +222,7 @@ export function CollabBodyPartPicker({
                             size={18}
                           />
                         </span>
-                        <span className="flex-1 min-w-0 leading-snug">{locale === 'en' ? opt.labelEn : opt.labelKo}</span>
+                        <span className="flex-1 min-w-0 leading-[17px]">{locale === 'en' ? opt.labelEn : opt.labelKo}</span>
                       </button>
                     </li>
                   );

@@ -53,11 +53,11 @@ export function EeModelSummaryCard({
         <p className="text-[13px] font-bold truncate" style={{ color: t.textPrimary }}>
           {modelFileName}
         </p>
-        <p className="text-[11px] leading-snug" style={{ color: t.textSecondary }}>
+        <p className="text-[11px] leading-[16px]" style={{ color: t.textSecondary }}>
           {detailLine}
         </p>
         {sourceLine ? (
-          <p className="text-[11px] leading-snug truncate" style={{ color: t.textSecondary }}>
+          <p className="text-[11px] leading-[16px] truncate" style={{ color: t.textSecondary }}>
             {sourceLine}
           </p>
         ) : null}

@@ -2,9 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 기준: 1rem = 16px (html 폰트 크기 기본값) — 피그마·토큰 정수 px와 맞출 때 참고 */
+/*
+  Line-height: Tailwind leading-tight/snug/relaxed는 배율이라 text-[11px] 등과 곱하면 비정수 px가 됨.
+  UI 텍스트는 가능하면 text-[Npx]와 함께 leading-[Mpx] 정수 조합 사용 (scripts/normalize-text-line-height.mjs 참고).
+*/
 * {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   box-sizing: border-box;
+}
+
+svg {
+  font-family: inherit;
 }
 
 body {

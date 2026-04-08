@@ -64,7 +64,7 @@ function ManipStopPerformanceBlock({
               />
               <span className="text-[18px] font-bold shrink-0" style={{ color: t.textPrimary }}>ms</span>
             </div>
-            <p className="text-[10px] mt-2.5 leading-relaxed" style={{ color: t.textSecondary }}>{L.stopPerfHint}</p>
+            <p className="text-[10px] mt-2.5 leading-[16px]" style={{ color: t.textSecondary }}>{L.stopPerfHint}</p>
           </div>
           <div className="rounded-[10px] p-3.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
             <p className="text-[12px] mb-1.5 font-medium" style={{ color: t.textSecondary }}>{L.stopSsLabel}</p>
@@ -163,7 +163,7 @@ export function ManipulatorSubmodalContent({
 
   if (!robot) {
     return (
-      <p className="text-[11px] leading-relaxed" style={{ color: t.textSecondary }}>
+      <p className="text-[11px] leading-[18px]" style={{ color: t.textSecondary }}>
         {L.manipListPanelSubtitle}
       </p>
     );

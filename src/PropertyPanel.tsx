@@ -104,7 +104,7 @@ export interface Tokens {
 }
 
 export const DARK: Tokens = {
-  panelBg: 'rgba(16, 17, 20, 0.74)', panelBorder: 'rgba(255,255,255,0.09)',
+  panelBg: 'rgba(16, 17, 20, 0.8)', panelBorder: 'rgba(255,255,255,0.09)',
   panelShadow: '0 24px 48px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
   sectionHeaderBg: 'rgba(255,255,255,0.06)', sectionHeaderHover: 'rgba(255,255,255,0.10)',
   inputBg: 'rgba(255,255,255,0.08)', inputBorder: 'rgba(255,255,255,0.18)',
@@ -123,7 +123,7 @@ export const DARK: Tokens = {
 };
 
 export const LIGHT: Tokens = {
-  panelBg: 'rgba(252, 252, 253, 0.92)', panelBorder: 'rgba(0,0,0,0.08)',
+  panelBg: 'rgba(252, 252, 253, 0.8)', panelBorder: 'rgba(0,0,0,0.08)',
   panelShadow: '0 24px 48px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(0,0,0,0.06) inset',
   sectionHeaderBg: 'rgba(0,0,0,0.025)', sectionHeaderHover: 'rgba(0,0,0,0.05)',
   inputBg: 'rgba(0,0,0,0.035)', inputBorder: 'rgba(0,0,0,0.10)',
@@ -523,7 +523,7 @@ export function Toggle({ label, tooltip, value, onChange, t }: { label: string; 
   return (
     <div className="flex items-center gap-2 px-1 min-h-[34px] min-w-0">
       <div className="flex-1 min-w-0 flex items-center gap-1.5">
-        <span className="text-[14px] leading-snug min-w-0" style={{ color: t.textSecondary, fontWeight: 500 }}>
+        <span className="text-[14px] leading-[19px] min-w-0" style={{ color: t.textSecondary, fontWeight: 500 }}>
           {label}
         </span>
         {tooltip && <div title={tooltip}><Info className="w-3.5 h-3.5" strokeWidth={2} style={{ color: t.textSecondary }} /></div>}
@@ -566,9 +566,9 @@ export function Section({
         onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onClick={() => setOpen(!open)}>
         <div className="w-[8px] h-[8px] rounded-[2px] shrink-0 mt-0.5" style={{ background: accentColor }} />
         <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <span className="text-[13px] leading-tight" style={{ color: t.textPrimary, fontWeight: 600, letterSpacing: '-0.01em' }}>{title}</span>
+          <span className="text-[13px] leading-[16px]" style={{ color: t.textPrimary, fontWeight: 600, letterSpacing: '-0.01em' }}>{title}</span>
           {description ? (
-            <span className="text-[10px] leading-snug font-normal" style={{ color: t.textSecondary }}>{description}</span>
+            <span className="text-[10px] leading-[14px] font-normal" style={{ color: t.textSecondary }}>{description}</span>
           ) : null}
         </div>
         <SfdChevronAccordion open={open} color={t.textSecondary} size={14} className="mt-0.5" />
@@ -588,6 +588,7 @@ function MotionUploadFileListDock({
   selectedUploadKey,
   setSelectedUploadKey,
   accentColor,
+  onListInteract,
 }: {
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
@@ -596,6 +597,7 @@ function MotionUploadFileListDock({
   selectedUploadKey: string | null;
   setSelectedUploadKey: React.Dispatch<React.SetStateAction<string | null>>;
   accentColor: string;
+  onListInteract?: () => void;
 }) {
   const { L } = useLocale();
   const selAccent = accentColor;
@@ -661,7 +663,10 @@ function MotionUploadFileListDock({
                     ? (theme === 'light' ? 'rgba(252,252,253,0.95)' : 'rgba(22,23,28,0.85)')
                     : 'transparent',
                 }}
-                onClick={() => setSelectedUploadKey((k) => (k === fileKey ? null : fileKey))}
+                onClick={() => {
+                  onListInteract?.();
+                  setSelectedUploadKey((k) => (k === fileKey ? null : fileKey));
+                }}
               >
                 <FileText className="w-3.5 h-3.5 shrink-0" strokeWidth={2} style={{ color: accentColor }} />
                 <span className="flex-1 min-w-0 text-[12px] font-medium truncate">{g.fileName}</span>
@@ -682,7 +687,10 @@ function MotionUploadFileListDock({
                           border: selected ? `2px solid ${selAccent}` : `1px solid ${t.inputBorder}`,
                           boxShadow: selected ? `0 0 0 1px ${selShadow}` : undefined,
                         }}
-                        onClick={() => setSelectedUploadKey((k) => (k === wpKey ? null : wpKey))}
+                        onClick={() => {
+                          onListInteract?.();
+                          setSelectedUploadKey((k) => (k === wpKey ? null : wpKey));
+                        }}
                       >
                         <div
                           className="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center shrink-0"
@@ -694,7 +702,7 @@ function MotionUploadFileListDock({
                             size={PP_ICON_PX.sm}
                           />
                         </div>
-                        <span className="flex-1 min-w-0 text-[10px] font-medium truncate leading-tight" style={{ color: t.textPrimary }}>
+                        <span className="flex-1 min-w-0 text-[10px] font-medium truncate leading-[13px]" style={{ color: t.textPrimary }}>
                           {L.motionListWaypointPrefix} {w.waypointIndex}
                         </span>
                         <span className="text-[10px] font-medium tabular-nums shrink-0" style={{ color: t.textSecondary }}>
@@ -739,7 +747,7 @@ export function MotionUploadSection({
   return (
     <div className="flex flex-col gap-2">
       <Section title={L.motionUploadSectionTitle} accentColor={motionAccent} t={t}>
-        <p className="text-[11px] leading-relaxed px-0.5" style={{ color: t.textSecondary }}>
+        <p className="text-[11px] leading-[18px] px-0.5" style={{ color: t.textSecondary }}>
           {L.motionUploadHint}
         </p>
         <button
@@ -780,7 +788,7 @@ export function MotionUploadSection({
 }
 
 // ?? ????? ?? + ?? ???? ?????????????????????????????????????????
-function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant, accentColor, onFilledSlotClick }: {
+function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant, accentColor, onFilledSlotClick, onListInteract }: {
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
   t: Tokens;
@@ -789,6 +797,7 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
   variant: 'settings' | 'settings-list-only' | 'connection';
   accentColor: string;
   onFilledSlotClick?: (idx: number) => void;
+  onListInteract?: () => void;
 }) {
   const { L } = useLocale();
   const MAX_SLOTS = 5;
@@ -909,7 +918,7 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
           <div
             role="status"
             aria-live="polite"
-            className="absolute left-2 right-2 bottom-2 z-20 rounded-[8px] px-3 py-2 text-[11px] font-medium leading-snug shadow-lg pointer-events-none"
+            className="absolute left-2 right-2 bottom-2 z-20 rounded-[8px] px-3 py-2 text-[11px] font-medium leading-[16px] shadow-lg pointer-events-none"
             style={{
               background: isDark ? 'rgba(30,31,36,0.96)' : 'rgba(17,24,39,0.94)',
               color: isDark ? '#f3f4f6' : '#fafafa',
@@ -957,15 +966,18 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
                         showEeFillOrderHint();
                         return;
                       }
+                      onListInteract?.();
                       setSelectedIdx(i);
                       setEePickerOpen(true);
                       return;
                     }
                     if (!ee) return;
                     if (!isSelected) {
+                      onListInteract?.();
                       setSelectedIdx(i);
                       return;
                     }
+                    onListInteract?.();
                     onFilledSlotClick?.(i);
                   }}
                   onKeyDown={(e) => {
@@ -987,7 +999,7 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
                   {ee ? (
                     <>
                       <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 py-0.5">
-                        <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: isSelected ? accentColor : t.textPrimary }}>
+                        <p className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: isSelected ? accentColor : t.textPrimary }}>
                           {ee.objectName}
                         </p>
                         <p className="text-[10px] leading-none truncate" style={{ color: t.textSecondary }}>
@@ -1004,7 +1016,7 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
                   ) : (
                     <>
                       <div className="flex-1 min-w-0 self-stretch flex items-center min-h-0">
-                        <p className="text-[12px] font-medium leading-tight truncate" style={{ color: t.textSecondary, fontStyle: 'italic' }}>
+                        <p className="text-[12px] font-medium leading-[15px] truncate" style={{ color: t.textSecondary, fontStyle: 'italic' }}>
                           {L.eeSlotEmpty}
                         </p>
                       </div>
@@ -1117,19 +1129,19 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
           </div>
           <Section title={L.connLinkedList} accentColor={accentColor} t={t}>
             {selectedEe.linkedItems.length === 0 ? (
-              <p className="text-[12px] px-1 py-2 leading-relaxed" style={{ color: t.textSecondary }}>{L.connListEmpty}</p>
+              <p className="text-[12px] leading-[20px] px-1 py-2" style={{ color: t.textSecondary }}>{L.connListEmpty}</p>
             ) : (
               <div className="flex flex-col gap-2">
                 {selectedEe.linkedItems.map((row, i) => (
                   <div key={i} className="rounded-[10px] px-3 py-2.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
-                    <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: t.textPrimary }} title={row.name}>
+                    <p className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: t.textPrimary }} title={row.name}>
                       <span style={{ color: t.textSecondary, fontWeight: 500 }}>{L.connColName}</span>{' '}
                       <span style={{ color: t.textPrimary }}>{row.name}</span>
                     </p>
-                    <p className="text-[11px] mt-1.5 leading-snug truncate" style={{ color: t.textSecondary }}>
+                    <p className="text-[11px] mt-1.5 leading-[16px] truncate" style={{ color: t.textSecondary }}>
                       <span style={{ fontWeight: 600 }}>{L.connColModel}</span> {row.model}
                     </p>
-                    <p className="text-[11px] mt-0.5 leading-snug truncate" style={{ color: t.textSecondary }}>
+                    <p className="text-[11px] mt-0.5 leading-[16px] truncate" style={{ color: t.textSecondary }}>
                       <span style={{ fontWeight: 600 }}>{L.connColKind}</span> {row.kind}
                     </p>
                   </div>
@@ -1150,7 +1162,7 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
             <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
           </div>
           {variant === 'connection' ? (
-            <p className="text-[12px] px-1 py-2 leading-relaxed text-center" style={{ color: t.textSecondary }}>
+            <p className="text-[12px] leading-[20px] px-1 py-2 text-center" style={{ color: t.textSecondary }}>
               {L.eeConnEmptySlotHint}
             </p>
           ) : (
@@ -1181,6 +1193,7 @@ function CollisionEntityZoneContent({
   areasTitle,
   entitySelectedPrefix,
   accentColor,
+  onListInteract,
 }: {
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
@@ -1191,6 +1204,7 @@ function CollisionEntityZoneContent({
   areasTitle: string;
   entitySelectedPrefix: string;
   accentColor: string;
+  onListInteract?: () => void;
 }) {
   const { L } = useLocale();
   const isDark = t === DARK;
@@ -1228,7 +1242,10 @@ function CollisionEntityZoneContent({
                     background: isSelected ? slotActiveBg : 'transparent',
                     borderLeft: isSelected ? `3px solid ${accentColor}` : '3px solid transparent',
                   }}
-                  onClick={() => setData((p) => setSelectedEntityIndex(p, categoryId, i))}
+                  onClick={() => {
+                    onListInteract?.();
+                    setData((p) => setSelectedEntityIndex(p, categoryId, i));
+                  }}
                 >
                   <div
                     className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0 text-[10px] font-bold"
@@ -1240,7 +1257,7 @@ function CollisionEntityZoneContent({
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 py-0.5">
-                    <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: isSelected ? accentColor : t.textPrimary }}>
+                    <p className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: isSelected ? accentColor : t.textPrimary }}>
                       {ent.objectName}
                     </p>
                     <p className="text-[10px] leading-none truncate" style={{ color: t.textSecondary }}>{ent.subtitle}</p>
@@ -1325,15 +1342,17 @@ function CollisionEntityZoneContent({
                     }}
                     onMouseEnter={() => setHoverAreaId(area.id)}
                     onMouseLeave={() => setHoverAreaId(null)}
-                    onClick={() =>
+                    onClick={() => {
+                      onListInteract?.();
                       setData((p) => ({
                         ...p,
                         selectedCollisionAreaId: area.id === p.selectedCollisionAreaId ? null : area.id,
-                      }))
-                    }
+                      }));
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
+                        onListInteract?.();
                         setData((p) => ({
                           ...p,
                           selectedCollisionAreaId: area.id === p.selectedCollisionAreaId ? null : area.id,
@@ -1347,7 +1366,7 @@ function CollisionEntityZoneContent({
                       size={14}
                       aria-hidden
                     />
-                    <span className="flex-1 min-w-0 text-[10px] font-medium truncate leading-tight" style={{ color: t.textPrimary }}>
+                    <span className="flex-1 min-w-0 text-[10px] font-medium truncate leading-[13px]" style={{ color: t.textPrimary }}>
                       {area.label}
                     </span>
                     <div
@@ -1399,7 +1418,7 @@ function CollisionEntityZoneContent({
           }}
         >
           <div className="flex items-center gap-2 px-0.5 pb-0.5 border-b" style={{ borderColor: t.divider }}>
-            <span className="text-[12px] font-bold leading-tight" style={{ color: accentColor }}>
+            <span className="text-[12px] font-bold leading-[15px]" style={{ color: accentColor }}>
               {L.collisionContinuousGenerationModeBtn}
             </span>
             <span
@@ -1460,14 +1479,14 @@ function CollisionEntityZoneContent({
 function ManipConnRowLines({ row, L, t }: { row: ManipLinkedRow; L: AppLabels; t: Tokens }) {
   return (
     <>
-      <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: t.textPrimary }} title={row.name}>
+      <p className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: t.textPrimary }} title={row.name}>
         <span style={{ color: t.textSecondary, fontWeight: 500 }}>{L.connColName}</span>{' '}
         <span style={{ color: t.textPrimary }}>{row.name}</span>
       </p>
-      <p className="text-[11px] mt-1.5 leading-snug truncate" style={{ color: t.textSecondary }}>
+      <p className="text-[11px] mt-1.5 leading-[16px] truncate" style={{ color: t.textSecondary }}>
         <span style={{ fontWeight: 600 }}>{L.connColModel}</span> {row.model}
       </p>
-      <p className="text-[11px] mt-0.5 leading-snug truncate" style={{ color: t.textSecondary }}>
+      <p className="text-[11px] mt-0.5 leading-[16px] truncate" style={{ color: t.textSecondary }}>
         <span style={{ fontWeight: 600 }}>{L.connColKind}</span> {row.kind}
       </p>
     </>
@@ -1476,7 +1495,7 @@ function ManipConnRowLines({ row, L, t }: { row: ManipLinkedRow; L: AppLabels; t
 
 function ManipConnNoneLine({ L, t }: { L: AppLabels; t: Tokens }) {
   return (
-    <p className="text-[12px] font-medium leading-snug" style={{ color: t.textValue }}>
+    <p className="text-[12px] font-medium leading-[17px]" style={{ color: t.textValue }}>
       {L.connNone}
     </p>
   );
@@ -1487,11 +1506,11 @@ export function ManipConnectionLinksContent({ links, L, t }: { links: ManipConne
   return (
     <div className="flex flex-col gap-2">
       <div className="rounded-[10px] px-3 py-2.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
-        <p className="text-[12px] font-semibold leading-tight mb-2" style={{ color: t.textSecondary }}>{L.connLinkedController}</p>
+        <p className="text-[12px] font-semibold leading-[15px] mb-2" style={{ color: t.textSecondary }}>{L.connLinkedController}</p>
         {links.controller ? <ManipConnRowLines row={links.controller} L={L} t={t} /> : <ManipConnNoneLine L={L} t={t} />}
       </div>
       <div className="rounded-[10px] px-3 py-2.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
-        <p className="text-[12px] font-semibold leading-tight mb-2" style={{ color: t.textSecondary }}>{L.connLinkedAuxAxis}</p>
+        <p className="text-[12px] font-semibold leading-[15px] mb-2" style={{ color: t.textSecondary }}>{L.connLinkedAuxAxis}</p>
         {links.auxiliaryAxes.length === 0 ? (
           <ManipConnNoneLine L={L} t={t} />
         ) : (
@@ -1505,15 +1524,15 @@ export function ManipConnectionLinksContent({ links, L, t }: { links: ManipConne
         )}
       </div>
       <div className="rounded-[10px] px-3 py-2.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
-        <p className="text-[12px] font-semibold leading-tight mb-2" style={{ color: t.textSecondary }}>{L.connLinkedCell}</p>
+        <p className="text-[12px] font-semibold leading-[15px] mb-2" style={{ color: t.textSecondary }}>{L.connLinkedCell}</p>
         {links.cell ? <ManipConnRowLines row={links.cell} L={L} t={t} /> : <ManipConnNoneLine L={L} t={t} />}
       </div>
       <div className="rounded-[10px] px-3 py-2.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
-        <p className="text-[12px] font-semibold leading-tight mb-2" style={{ color: t.textSecondary }}>{L.connLinkedEstop}</p>
+        <p className="text-[12px] font-semibold leading-[15px] mb-2" style={{ color: t.textSecondary }}>{L.connLinkedEstop}</p>
         {links.emergencyStop ? <ManipConnRowLines row={links.emergencyStop} L={L} t={t} /> : <ManipConnNoneLine L={L} t={t} />}
       </div>
       <div className="rounded-[10px] px-3 py-2.5" style={{ border: `1px solid ${t.inputBorder}`, background: t.inputBg }}>
-        <p className="text-[12px] font-semibold leading-tight mb-2" style={{ color: t.textSecondary }}>{L.connLinkedGrippers}</p>
+        <p className="text-[12px] font-semibold leading-[15px] mb-2" style={{ color: t.textSecondary }}>{L.connLinkedGrippers}</p>
         {grippers.length === 0 ? (
           <ManipConnNoneLine L={L} t={t} />
         ) : (
@@ -1530,11 +1549,12 @@ export function ManipConnectionLinksContent({ links, L, t }: { links: ManipConne
   );
 }
 
-function ManipulatorListSection({ data, setData, t, accentColor }: {
+function ManipulatorListSection({ data, setData, t, accentColor, onListInteract }: {
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
   t: Tokens;
   accentColor: string;
+  onListInteract?: () => void;
 }) {
   const { L } = useLocale();
   const isDark = t === DARK;
@@ -1555,7 +1575,7 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
       </div>
       <div style={{ height: 1, background: t.divider }} />
       <div
-        className="px-3 py-2.5 text-[10px] leading-relaxed"
+        className="px-3 py-2.5 text-[10px] leading-[16px]"
         style={{ color: t.textSecondary, background: t.inputBg, borderBottom: `1px solid ${t.divider}` }}
       >
         {listHint}
@@ -1570,7 +1590,10 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
                 type="button"
                 className={PROPERTY_MODAL_LIST_ROW_CLASS}
                 style={{ background: isSelected ? slotActiveBg : 'transparent' }}
-                onClick={() => setData((p) => ({ ...p, manipSelectedRobotIdx: i }))}
+                onClick={() => {
+                  onListInteract?.();
+                  setData((p) => ({ ...p, manipSelectedRobotIdx: i }));
+                }}
               >
                 <div
                   className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0 text-[10px] font-bold"
@@ -1584,7 +1607,7 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
                 <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 py-0.5">
                   <div className="flex items-start justify-between gap-2 min-w-0">
                     <p
-                      className="text-[12px] font-semibold leading-tight truncate min-w-0 flex-1"
+                      className="text-[12px] font-semibold leading-[15px] truncate min-w-0 flex-1"
                       style={{ color: isSelected ? accentColor : t.textPrimary }}
                     >
                       {r.manipObjectName}
@@ -1638,7 +1661,7 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
 }
 
 // ?? ?? ?? ??? ????????????????????????????????????????????????????????
-function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, theme, activeCategoryId, objectAccent, onEeFilledSlotClick }: {
+function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, theme, activeCategoryId, objectAccent, onEeFilledSlotClick, onSubModalListInteract }: {
   tabId: TabContentId;
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
@@ -1649,6 +1672,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
   activeCategoryId?: string;
   objectAccent: string;
   onEeFilledSlotClick?: (idx: number) => void;
+  onSubModalListInteract?: () => void;
 }) {
   const { L, locale } = useLocale();
   function f(key: keyof PanelData) { return (v: string) => setData((p) => ({ ...p, [key]: v })); }
@@ -1666,6 +1690,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
           variant="settings-list-only"
           accentColor={objectAccent}
           onFilledSlotClick={onEeFilledSlotClick}
+          onListInteract={onSubModalListInteract}
         />
       );
     case 'ee-conn':
@@ -1679,6 +1704,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
           variant="settings-list-only"
           accentColor={objectAccent}
           onFilledSlotClick={onEeFilledSlotClick}
+          onListInteract={onSubModalListInteract}
         />
       );
 
@@ -1744,6 +1770,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
             areasTitle={zl.areasTitle}
             entitySelectedPrefix={zl.entitySelectedPrefix}
             accentColor={objectAccent}
+            onListInteract={onSubModalListInteract}
           />
         );
       }
@@ -1782,6 +1809,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
           locale={locale}
           objectAccent={objectAccent}
           theme={theme}
+          onListInteract={onSubModalListInteract}
         />
       );
     default:
@@ -1817,6 +1845,8 @@ interface PropertyPanelProps {
   onEndEffectorCategoryChange?: (categoryId: string) => void;
   endeffectorActiveCategoryId?: string;
   onEeFilledSlotClick?: (idx: number) => void;
+  /** 프로퍼티 패널 내 리스트·행 클릭 시 Objects 서브모달 재표시(App → CategoryMenu) */
+  onSubModalListInteract?: () => void;
 }
 
 export default function PropertyPanel({
@@ -1841,6 +1871,7 @@ export default function PropertyPanel({
   onEndEffectorCategoryChange,
   endeffectorActiveCategoryId: controlledEndeffectorCategoryId,
   onEeFilledSlotClick,
+  onSubModalListInteract,
 }: PropertyPanelProps) {
   const { L, objects, pointScheme } = useLocale();
   const objectAccent = useMemo(
@@ -2118,7 +2149,7 @@ export default function PropertyPanel({
       >
         <div className="shrink-0" style={{ color: t.dragHandleColor }}><GripVertical className="w-4 h-4" strokeWidth={2} /></div>
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] leading-tight truncate" style={{ color: t.textPrimary, fontWeight: 700, letterSpacing: '-0.02em' }}>
+          <p className="text-[14px] leading-[18px] truncate" style={{ color: t.textPrimary, fontWeight: 700, letterSpacing: '-0.02em' }}>
             {selectedObject.id === 'endeffector'
               ? L.panelEeDetailTitle
               : selectedObject.id === 'manipulator'
@@ -2220,6 +2251,7 @@ export default function PropertyPanel({
                 setData={setData}
                 t={t}
                 accentColor={objectAccent}
+                onListInteract={onSubModalListInteract}
               />
             </div>
           ) : activeCategory.tabs.length > 0 ? (
@@ -2237,6 +2269,7 @@ export default function PropertyPanel({
                   activeCategoryId={effectiveActiveCategoryId}
                   objectAccent={objectAccent}
                   onEeFilledSlotClick={onEeFilledSlotClick}
+                  onSubModalListInteract={onSubModalListInteract}
                 />
               ))}
             </div>
@@ -2256,6 +2289,7 @@ export default function PropertyPanel({
               selectedUploadKey={selectedMotionUploadKey}
               setSelectedUploadKey={setSelectedMotionUploadKey}
               accentColor={objectAccent}
+              onListInteract={onSubModalListInteract}
             />
             <div className="shrink-0 flex justify-end w-full">
               <button
@@ -2335,9 +2369,10 @@ export default function PropertyPanel({
                               border: selected ? '2px solid #3b82f6' : `1px solid ${t.inputBorder}`,
                               boxShadow: selected ? '0 0 0 1px rgba(59,130,246,0.2)' : undefined,
                             }}
-                            onClick={() =>
-                              setSelectedMotionSeqId((k) => (k === it.id ? null : it.id))
-                            }
+                            onClick={() => {
+                              onSubModalListInteract?.();
+                              setSelectedMotionSeqId((k) => (k === it.id ? null : it.id));
+                            }}
                           >
                             <div
                               className="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center shrink-0"
@@ -2349,7 +2384,7 @@ export default function PropertyPanel({
                                 size={PP_ICON_PX.sm}
                               />
                             </div>
-                            <span className="flex-1 min-w-0 text-[10px] font-medium truncate leading-tight" style={{ color: t.textPrimary }}>
+                            <span className="flex-1 min-w-0 text-[10px] font-medium truncate leading-[13px]" style={{ color: t.textPrimary }}>
                               {rowLabel}
                             </span>
                             <div className="flex items-center gap-1 shrink-0">
@@ -2396,7 +2431,7 @@ export default function PropertyPanel({
                   }}
                 >
                   <div className="flex items-center gap-2 px-0.5 pb-0.5 border-b" style={{ borderColor: t.divider }}>
-                    <span className="text-[12px] font-bold leading-tight" style={{ color: '#ff8e2b' }}>
+                    <span className="text-[12px] font-bold leading-[15px]" style={{ color: '#ff8e2b' }}>
                       핸드가이딩 모드
                     </span>
                     <span
@@ -2409,7 +2444,7 @@ export default function PropertyPanel({
                       ON
                     </span>
                   </div>
-                  <p className="text-[10px] leading-snug px-0.5" style={{ color: t.textSecondary }}>
+                  <p className="text-[10px] leading-[14px] px-0.5" style={{ color: t.textSecondary }}>
                     {L.motionGenerateEmptyHint}
                   </p>
                   <div className="flex gap-2 w-full min-w-0">
@@ -2485,7 +2520,7 @@ export default function PropertyPanel({
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 w-full min-w-0">
-                  <p className="text-[10px] leading-snug text-center" style={{ color: t.textSecondary }}>
+                  <p className="text-[10px] leading-[14px] text-center" style={{ color: t.textSecondary }}>
                     {L.motionGenerateEmptyHint}
                   </p>
                   <div className="flex flex-nowrap items-center justify-center gap-2 w-full min-w-0">

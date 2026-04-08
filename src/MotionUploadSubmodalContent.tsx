@@ -178,7 +178,7 @@ export function MotionUploadSubmodalContent({
 
   const group = data.motionUploadFileGroups.find((g) => g.id === parsed.groupId);
   if (!group) {
-    return <p className="text-[11px] leading-relaxed px-0.5" style={{ color: t.textSecondary }}>{L.motionSubmodalEditFormPlaceholder}</p>;
+    return <p className="text-[11px] leading-[18px] px-0.5" style={{ color: t.textSecondary }}>{L.motionSubmodalEditFormPlaceholder}</p>;
   }
 
   if (parsed.kind === 'file') {
@@ -196,7 +196,7 @@ export function MotionUploadSubmodalContent({
 
   const wp = group.waypoints.find((w) => w.id === parsed.waypointId);
   if (!wp) {
-    return <p className="text-[11px] leading-relaxed px-0.5" style={{ color: t.textSecondary }}>{L.motionSubmodalEditFormPlaceholder}</p>;
+    return <p className="text-[11px] leading-[18px] px-0.5" style={{ color: t.textSecondary }}>{L.motionSubmodalEditFormPlaceholder}</p>;
   }
 
   const ro = resolveWaypointReadonly(wp);

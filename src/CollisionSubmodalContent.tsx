@@ -175,12 +175,12 @@ export function CollisionSubmodalContent({
   return (
     <div className="flex flex-col gap-2.5">
       {defaultsMode ? (
-        <p className="text-[10px] leading-relaxed px-0.5 -mt-0.5 mb-0.5" style={{ color: t.textSecondary }}>
+        <p className="text-[10px] leading-[16px] px-0.5 -mt-0.5 mb-0.5" style={{ color: t.textSecondary }}>
           {L.collisionSubmodalDefaultsIntro}
         </p>
       ) : (
         <p
-          className="text-[10px] leading-relaxed -mt-0.5 mb-0.5 rounded-[6px] py-1.5 px-2"
+          className="text-[10px] leading-[16px] -mt-0.5 mb-0.5 rounded-[6px] py-1.5 px-2"
           style={{
             color: t.textSecondary,
             background: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',

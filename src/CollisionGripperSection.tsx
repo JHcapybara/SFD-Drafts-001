@@ -37,7 +37,7 @@ function MiniCheck({
       >
         {checked ? '✓' : ''}
       </span>
-      <span className="text-[11px] leading-snug" style={{ color: t.textSecondary }}>
+      <span className="text-[11px] leading-[16px]" style={{ color: t.textSecondary }}>
         {label}
       </span>
     </button>

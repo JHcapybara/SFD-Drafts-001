@@ -14,6 +14,7 @@ import { accentRgba, getObjectAccent, POINT_ORANGE } from './pointColorSchemes';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
 import { workspaceHeaderIconIndex } from './sfd/objectGroupHeaderIcon';
 import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
+import { DARK as PROPERTY_DARK_TOKENS, LIGHT as PROPERTY_LIGHT_TOKENS } from './PropertyPanel';
 
 /** Objects 1뎁스 — `sfd-icon-2026` 파일 인덱스 */
 const OBJECT_ROW_ICON_INDEX: Record<string, number> = {
@@ -146,35 +147,38 @@ interface CategoryMenuProps {
   eeSelectedIdx?: number | null;
   /** 협동 서브모달 DOM 위치 — CollabWorkspacePanel 편집 블록을 그 아래에 고정 배치할 때 사용 */
   onCollabSubModalLayoutChange?: (rect: CollabSubModalAnchorRect | null) => void;
+  /** 프로퍼티 패널 리스트에서 항목 선택 시 서브모달을 다시 표시(App에서 증가) */
+  subModalReopenSignal?: number;
 }
 
-// ── 디자인 토큰 ──────────────────────────────────
+// ── 디자인 토큰 (좌 GNB·우 패널과 동일 `PropertyPanel` DARK/LIGHT) ──
 const DARK = {
-  bg: 'rgba(16,17,20,0.74)',
-  border: 'rgba(255,255,255,0.09)',
-  shadow: '0 20px 44px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
-  textPrimary: '#f0f0f0',
-  textSecondary: '#b4bac6',
-  itemHover: 'rgba(255,255,255,0.10)',
-  activeItem: 'rgba(255,255,255,0.14)',
-  divider: 'rgba(255,255,255,0.12)',
-  objectTabBg: 'rgba(255,255,255,0.04)',
-  objectTabActive: 'rgba(255,255,255,0.14)',
-  grip: 'rgba(255,255,255,0.3)',
+  bg: PROPERTY_DARK_TOKENS.panelBg,
+  border: PROPERTY_DARK_TOKENS.panelBorder,
+  shadow: PROPERTY_DARK_TOKENS.panelShadow,
+  textPrimary: PROPERTY_DARK_TOKENS.textPrimary,
+  textSecondary: PROPERTY_DARK_TOKENS.textSecondary,
+  itemHover: PROPERTY_DARK_TOKENS.sectionHeaderHover,
+  activeItem: PROPERTY_DARK_TOKENS.tabActiveBg,
+  divider: PROPERTY_DARK_TOKENS.divider,
+  objectTabBg: PROPERTY_DARK_TOKENS.tabBarBg,
+  objectTabActive: PROPERTY_DARK_TOKENS.tabActiveBg,
+  grip: PROPERTY_DARK_TOKENS.dragHandleColor,
 };
 
+/** 라이트: 좌 GNB·우 프로퍼티 패널과 동일 `PropertyPanel` LIGHT 토큰 */
 const LIGHT = {
-  bg: 'rgba(252,252,253,0.94)',
-  border: 'rgba(0,0,0,0.08)',
-  shadow: '0 16px 40px rgba(0,0,0,0.12)',
-  textPrimary: '#111',
-  textSecondary: '#999',
-  itemHover: 'rgba(0,0,0,0.04)',
-  activeItem: 'rgba(0,0,0,0.06)',
-  divider: 'rgba(0,0,0,0.06)',
-  objectTabBg: 'rgba(0,0,0,0.03)',
-  objectTabActive: 'rgba(0,0,0,0.07)',
-  grip: 'rgba(0,0,0,0.16)',
+  bg: PROPERTY_LIGHT_TOKENS.panelBg,
+  border: PROPERTY_LIGHT_TOKENS.panelBorder,
+  shadow: PROPERTY_LIGHT_TOKENS.panelShadow,
+  textPrimary: PROPERTY_LIGHT_TOKENS.textPrimary,
+  textSecondary: PROPERTY_LIGHT_TOKENS.textSecondary,
+  itemHover: PROPERTY_LIGHT_TOKENS.sectionHeaderHover,
+  activeItem: PROPERTY_LIGHT_TOKENS.tabActiveBg,
+  divider: PROPERTY_LIGHT_TOKENS.divider,
+  objectTabBg: PROPERTY_LIGHT_TOKENS.tabBarBg,
+  objectTabActive: PROPERTY_LIGHT_TOKENS.tabActiveBg,
+  grip: PROPERTY_LIGHT_TOKENS.dragHandleColor,
 };
 
 export default function CategoryMenu({
@@ -197,6 +201,7 @@ export default function CategoryMenu({
   endeffectorActiveCategoryId = null,
   eeSelectedIdx = null,
   onCollabSubModalLayoutChange,
+  subModalReopenSignal = 0,
 }: CategoryMenuProps) {
   const { L, objects, pointScheme } = useLocale();
   const motionAccent = getObjectAccent('motion', pointScheme);
@@ -349,19 +354,10 @@ export default function CategoryMenu({
   const effectiveMotionUploadDefault = motionUploadDefault && !anyEditMode;
   const effectiveMotionGenerateDefaults = motionGenerateDefaults && !anyEditMode;
   const effectiveCollisionDefaultsMode = collisionDefaultsMode && !anyEditMode;
-  const categoryMenuRenderCountRef = useRef(0);
-  categoryMenuRenderCountRef.current += 1;
-  console.log('[Render][CategoryMenu]', {
-    count: categoryMenuRenderCountRef.current,
-    selectedObjectId,
-    endeffectorActiveCategoryId,
-    eeSelectedIdx,
-    showSubModal,
-    showSubModalEffective,
-    subModalClosed,
-    motionCat,
-    collisionActiveCategoryId,
-  });
+  useEffect(() => {
+    setSubModalClosed(false);
+  }, [subModalReopenSignal]);
+
   const selectedManipRobotName =
     panelData?.manipRobots?.length && panelData.manipSelectedRobotIdx != null
       ? panelData.manipRobots[
@@ -709,7 +705,7 @@ export default function CategoryMenu({
                   OBJECTS
                 </span>
                 <p
-                  className="text-[12px] font-bold leading-tight truncate shrink-0"
+                  className="text-[12px] font-bold leading-[15px] truncate shrink-0"
                   style={{ color: tk.textPrimary }}
                   title={headerTitle}
                 >
@@ -717,7 +713,7 @@ export default function CategoryMenu({
                 </p>
                 <div className="flex flex-wrap gap-1 mt-0.5 shrink-0">
                   <span
-                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-tight"
+                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-[11px]"
                     style={{
                       background: headerMeta.analysis === 'done'
                         ? (theme === 'light' ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.22)')
@@ -728,7 +724,7 @@ export default function CategoryMenu({
                     {headerMeta.analysis === 'done' ? L.badgeAnalyzed : L.badgePending}
                   </span>
                   <span
-                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-tight"
+                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-[11px]"
                     style={{
                       background: headerMeta.collaboration === 'on'
                         ? (theme === 'light' ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.22)')
@@ -739,7 +735,7 @@ export default function CategoryMenu({
                     {headerMeta.collaboration === 'on' ? L.badgeCollab : L.badgeNoCollab}
                   </span>
                   <span
-                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-tight"
+                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-[11px]"
                     style={{
                       background: headerMeta.tier === 'paid'
                         ? (theme === 'light' ? 'rgba(139,92,246,0.14)' : 'rgba(139,92,246,0.22)')
@@ -777,7 +773,7 @@ export default function CategoryMenu({
                 OBJECTS
               </span>
               <p
-                className="text-[12px] font-bold leading-tight truncate shrink-0"
+                className="text-[12px] font-bold leading-[15px] truncate shrink-0"
                 style={{ color: tk.textPrimary }}
                 title={headerTitle}
               >
@@ -785,7 +781,7 @@ export default function CategoryMenu({
               </p>
               <div className="flex flex-wrap gap-1 mt-0.5 shrink-0">
                 <span
-                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-tight"
+                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-[11px]"
                   style={{
                     background: headerMeta.analysis === 'done'
                       ? (theme === 'light' ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.22)')
@@ -796,7 +792,7 @@ export default function CategoryMenu({
                   {headerMeta.analysis === 'done' ? L.badgeAnalyzed : L.badgePending}
                 </span>
                 <span
-                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-tight"
+                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-[11px]"
                   style={{
                     background: headerMeta.collaboration === 'on'
                       ? (theme === 'light' ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.22)')
@@ -807,7 +803,7 @@ export default function CategoryMenu({
                   {headerMeta.collaboration === 'on' ? L.badgeCollab : L.badgeNoCollab}
                 </span>
                 <span
-                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-tight"
+                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px] leading-[11px]"
                   style={{
                     background: headerMeta.tier === 'paid'
                       ? (theme === 'light' ? 'rgba(139,92,246,0.14)' : 'rgba(139,92,246,0.22)')
@@ -873,7 +869,7 @@ export default function CategoryMenu({
               </div>
               <div className={`min-w-0 overflow-hidden ${isCollapsed ? 'hidden' : 'flex-1'}`}>
                 <p
-                  className={`text-[11px] leading-tight truncate ${isActive ? 'font-semibold' : 'font-medium'}`}
+                  className={`text-[11px] leading-[14px] truncate ${isActive ? 'font-semibold' : 'font-medium'}`}
                   style={{ color: isActive ? tk.textPrimary : tk.textSecondary }}
                 >
                   {obj.label}
@@ -950,7 +946,7 @@ export default function CategoryMenu({
             }}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" style={{ color: selectedObjectDef.color }} strokeWidth={2} />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {(selectedManipRobotName ?? selectedObjectDef.label)} 상세 설정
             </span>
           </div>
@@ -963,7 +959,7 @@ export default function CategoryMenu({
             }}
           >
             <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: motionAccent }} strokeWidth={2} />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {L.motionUploadSubmodalTitleDefault}
             </span>
           </div>
@@ -980,7 +976,7 @@ export default function CategoryMenu({
             }}
           >
             <Eye className="w-3.5 h-3.5 shrink-0" style={{ color: viewAccent }} strokeWidth={2.5} />
-            <span className="flex-1 min-w-0 text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="flex-1 min-w-0 text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {L.motionUploadSubmodalTitleReadonly}
             </span>
             <span
@@ -1003,7 +999,7 @@ export default function CategoryMenu({
             }}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" style={{ color: tk.textSecondary }} strokeWidth={2} />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {L.motionSubmodalTitleDefaults}
             </span>
           </div>
@@ -1020,7 +1016,7 @@ export default function CategoryMenu({
             }}
           >
             <SfdIconByIndex index={134} color="#ff8e2b" size={14} className="shrink-0" />
-            <span className="flex-1 min-w-0 text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="flex-1 min-w-0 text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {L.motionSubmodalTitleEdit}
             </span>
             <span
@@ -1043,7 +1039,7 @@ export default function CategoryMenu({
             }}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" style={{ color: collisionAccent }} strokeWidth={2} />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {L.collisionSubmodalTitleDefaults}
             </span>
             <span
@@ -1070,7 +1066,7 @@ export default function CategoryMenu({
             }}
           >
             <SfdIconByIndex index={134} color={collisionAccent} size={14} className="shrink-0" />
-            <span className="flex-1 min-w-0 text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="flex-1 min-w-0 text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {L.collisionSubmodalTitleEdit}
             </span>
             <span
@@ -1090,7 +1086,7 @@ export default function CategoryMenu({
             style={{ background: tk.objectTabBg, borderBottom: `1px solid ${tk.divider}` }}
           >
             <div className="w-2 h-2 rounded-full shrink-0" style={{ background: selectedObjectDef.color }} />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {selectedObjectDef.label}
             </span>
           </div>
@@ -1103,7 +1099,7 @@ export default function CategoryMenu({
             }}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" style={{ color: collabAccent }} strokeWidth={2} />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {L.collabSubmodalTitle}
             </span>
           </div>
@@ -1116,7 +1112,7 @@ export default function CategoryMenu({
               className="w-2 h-2 rounded-full shrink-0"
               style={{ background: selectedObjectDef.color }}
             />
-            <span className="text-[12px] font-semibold leading-tight truncate" style={{ color: tk.textPrimary }}>
+            <span className="text-[12px] font-semibold leading-[15px] truncate" style={{ color: tk.textPrimary }}>
               {selectedObjectDef.label}
             </span>
           </div>
@@ -1161,12 +1157,12 @@ export default function CategoryMenu({
               theme={theme}
             />
           ) : selectedObjectId === 'collision' ? (
-            <p className="text-[11px] leading-relaxed" style={{ color: tk.textSecondary }}>
+            <p className="text-[11px] leading-[18px]" style={{ color: tk.textSecondary }}>
               {L.collisionSubmodalPlaceholderOther}
             </p>
           ) : (
             <>
-              <p className="text-[11px] leading-relaxed" style={{ color: tk.textSecondary }}>
+              <p className="text-[11px] leading-[18px]" style={{ color: tk.textSecondary }}>
                 {L.subModalPlaceholder}
               </p>
               <div>

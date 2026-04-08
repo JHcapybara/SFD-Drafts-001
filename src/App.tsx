@@ -8,7 +8,7 @@ import CategoryMenu, {
   SUB_MODAL_WIDTH,
   VIEWPORT_MARGIN,
 } from './CategoryMenu';
-import PropertyPanel from './PropertyPanel';
+import PropertyPanel, { DARK as PP_DARK, LIGHT as PP_LIGHT } from './PropertyPanel';
 import { EndEffectorSubmodalContent } from './EndEffectorSubmodalContent';
 import { useLocale } from './localeContext';
 import { WorkspaceChrome } from './WorkspaceChrome';
@@ -347,6 +347,11 @@ export default function App() {
 
   /** 협동 CategoryMenu 서브모달 아래에 워크스페이스 편집 패널을 붙일 때 사용 */
   const [collabSubModalAnchorRect, setCollabSubModalAnchorRect] = useState<CollabSubModalAnchorRect | null>(null);
+  /** 프로퍼티 패널 리스트 클릭 시 CategoryMenu 서브모달 재표시 */
+  const [subModalReopenSignal, setSubModalReopenSignal] = useState(0);
+  const bumpSubModalFromPropertyList = useCallback(() => {
+    setSubModalReopenSignal((n) => n + 1);
+  }, []);
 
   /** 서브레이어(모션/충돌/협동)가 열린 상태에서 자동 회피/수동 우선 공존 클램프 */
   useEffect(() => {
@@ -464,6 +469,7 @@ export default function App() {
         collisionActiveCategoryId={collisionActiveCategoryId}
         eeSelectedIdx={eeSelectedIdx}
         onCollabSubModalLayoutChange={setCollabSubModalAnchorRect}
+        subModalReopenSignal={subModalReopenSignal}
       />
 
       {showEndEffectorSubLayer && (
@@ -480,13 +486,11 @@ export default function App() {
             minHeight: endEffectorSubLayerLayout.minH,
             maxHeight: endEffectorSubLayerLayout.maxH,
             zIndex: 51,
-            background: uiThemeMode === 'dark' ? 'rgba(16,17,20,0.74)' : 'rgba(252,252,253,0.94)',
+            background: uiThemeMode === 'dark' ? PP_DARK.panelBg : PP_LIGHT.panelBg,
             backdropFilter: uiThemeMode === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
             WebkitBackdropFilter: uiThemeMode === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
-            border: uiThemeMode === 'dark' ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(0,0,0,0.08)',
-            boxShadow: uiThemeMode === 'dark'
-              ? '0 20px 44px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.06) inset'
-              : '0 16px 40px rgba(0,0,0,0.12)',
+            border: uiThemeMode === 'dark' ? `1px solid ${PP_DARK.panelBorder}` : `1px solid ${PP_LIGHT.panelBorder}`,
+            boxShadow: uiThemeMode === 'dark' ? PP_DARK.panelShadow : PP_LIGHT.panelShadow,
           }}
         >
           <div
@@ -505,7 +509,7 @@ export default function App() {
           >
             <div className="w-2 h-2 rounded-full shrink-0" style={{ background: POINT_ORANGE }} />
             <span
-              className="flex-1 min-w-0 text-[12px] font-semibold leading-tight truncate"
+              className="flex-1 min-w-0 text-[12px] font-semibold leading-[15px] truncate"
               style={{ color: uiThemeMode === 'dark' ? '#f0f0f0' : '#111111' }}
             >
               {locale === 'en' ? 'End effector detail settings' : '엔드 이펙터 상세 설정'}
@@ -568,6 +572,7 @@ export default function App() {
           onEeFilledSlotClick={handleEeFilledSlotClick}
           selectedEeIdx={eeSelectedIdx}
           setSelectedEeIdx={setEeSelectedIdx}
+          onSubModalListInteract={bumpSubModalFromPropertyList}
         />
       )}
 

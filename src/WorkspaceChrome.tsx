@@ -35,6 +35,7 @@ import {
 } from './chromeLayout';
 import { SafeticsBrandLockup } from './SafeticsBrandLockup';
 import { ProcessInfoEditModal, type ProcessInfoSnapshot } from './ProcessInfoEditModal';
+import { ModalExamplesLayer } from './ModalExamplesLayer';
 import { SafetyAiPanel, type SafetyAiColors } from './SafetyAiPanel';
 
 const DEFAULT_HEADER_PROCESS_NAME: Record<'ko' | 'en', string> = {
@@ -407,6 +408,7 @@ export function WorkspaceChrome({
     return defaults;
   });
   const [processInfoModalOpen, setProcessInfoModalOpen] = useState(false);
+  const [modalExamplesOpen, setModalExamplesOpen] = useState(false);
   const [savedProcessInfo, setSavedProcessInfo] = useState<ProcessInfoSnapshot | null>(null);
   const uiPreviewMode = controlledUiPreviewMode ?? internalUiPreviewMode;
   const isDarkPreview = uiPreviewMode === 'dark';
@@ -565,15 +567,16 @@ export function WorkspaceChrome({
 
   const timelineUiTokens = useMemo(
     () => ({
-      shellBg: isDarkPreview ? 'rgba(22,23,28,0.94)' : 'rgba(255,255,255,0.94)',
-      shellBorder: isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.14)',
+      /** 타임라인 내부 셸·접힘 트랜스포트: 우측 프로퍼티 패널과 동일 `panelBg` / 테두리 */
+      shellBg: sidePanelTokens.panelBg,
+      shellBorder: sidePanelTokens.panelBorder,
       headerBarBorder: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
       rowBorder: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
       rowLabelText: isDarkPreview ? '#e5e7eb' : '#374151',
       rowLabelDivider: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-      transportBg: isDarkPreview ? 'rgba(16,18,24,0.52)' : 'rgba(255,255,255,0.92)',
-      transportBackdrop: isDarkPreview ? 'blur(20px) saturate(165%)' : 'none',
-      transportBorder: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)',
+      transportBg: sidePanelTokens.panelBg,
+      transportBackdrop: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+      transportBorder: sidePanelTokens.panelBorder,
       transportText: isDarkPreview ? '#e5e7eb' : '#374151',
       transportIconBorder: isDarkPreview ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.22)',
       transportRateBtnBorder: isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.16)',
@@ -603,7 +606,7 @@ export function WorkspaceChrome({
       bottomResizeHandleBg: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.02)',
       bottomResizeGrip: isDarkPreview ? '#9ca3af' : '#a1a1aa',
     }),
-    [isDarkPreview],
+    [isDarkPreview, sidePanelTokens.panelBg, sidePanelTokens.panelBorder],
   );
 
   const renderTreeNode = useCallback((node: TreeNodeItem, depth: number) => {
@@ -652,7 +655,7 @@ export function WorkspaceChrome({
             {TREE_TYPE_ICON[node.type]}
           </span>
           <span
-            className="text-[12px] font-medium leading-tight truncate"
+            className="text-[12px] font-medium leading-[15px] truncate"
             style={{ color: leftUiTokens.treeText }}
             title={node.label}
           >
@@ -764,10 +767,10 @@ export function WorkspaceChrome({
                   <FileText className="w-4 h-4" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-[11px] font-bold leading-tight truncate" style={{ color: leftUiTokens.libraryTitle }}>
+                  <p className="text-[11px] font-bold leading-[14px] truncate" style={{ color: leftUiTokens.libraryTitle }}>
                     {libraryDrawing.fileName}
                   </p>
-                  <p className="mt-0.5 text-[10px] leading-snug" style={{ color: leftUiTokens.libraryMuted }}>
+                  <p className="mt-0.5 text-[10px] leading-[14px]" style={{ color: leftUiTokens.libraryMuted }}>
                     {libraryDrawing.sizeLabel}
                     <span className="mx-1 opacity-50">·</span>
                     {drawingDate}
@@ -858,7 +861,7 @@ export function WorkspaceChrome({
                 <h4 className="text-[12px] font-bold tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
                   {section.title}
                 </h4>
-                <p className="mt-0.5 text-[10px] font-medium leading-snug" style={{ color: leftUiTokens.libraryMuted }}>
+                <p className="mt-0.5 text-[10px] font-medium leading-[14px]" style={{ color: leftUiTokens.libraryMuted }}>
                   {section.chips.length}
                   {locale === 'en' ? ' items' : '개 항목'}
                 </p>
@@ -871,7 +874,7 @@ export function WorkspaceChrome({
                   <button
                     key={chip.id}
                     type="button"
-                    className={`group/chip relative overflow-hidden rounded-xl py-2.5 px-3 text-left text-[11px] font-semibold leading-snug transition-all duration-200 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/40 ${isSingle ? 'col-span-2' : ''}`}
+                    className={`group/chip relative overflow-hidden rounded-xl py-2.5 px-3 text-left text-[11px] font-semibold leading-[16px] transition-all duration-200 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/40 ${isSingle ? 'col-span-2' : ''}`}
                     style={{
                       background: isDarkPreview ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.92)',
                       color: leftUiTokens.libraryBodyText,
@@ -955,10 +958,10 @@ export function WorkspaceChrome({
               >
                 {selectedRobotType}
               </p>
-              <h2 className="mt-0.5 text-[16px] font-bold leading-snug tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
+              <h2 className="mt-0.5 text-[16px] font-bold leading-[22px] tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
                 {locale === 'en' ? 'Manufacturers' : '제조사'}
               </h2>
-              <p className="mt-1.5 text-[10px] leading-relaxed" style={{ color: leftUiTokens.libraryMuted }}>
+              <p className="mt-1.5 text-[10px] leading-[16px]" style={{ color: leftUiTokens.libraryMuted }}>
                 {locale === 'en'
                   ? 'Pick a brand to browse available robot models.'
                   : '브랜드를 선택하면 해당 로봇 모델을 확인할 수 있습니다.'}
@@ -970,7 +973,7 @@ export function WorkspaceChrome({
         <div className="flex flex-col gap-2">
           {filtered.length === 0 ? (
             <div
-              className="rounded-[16px] px-4 py-12 text-center text-[11px] leading-relaxed transition-shadow duration-200"
+              className="rounded-[16px] px-4 py-12 text-center text-[11px] leading-[18px] transition-shadow duration-200"
               style={{
                 border: `1px dashed ${isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.12)'}`,
                 background: isDarkPreview ? 'rgba(255,255,255,0.03)' : 'rgba(248,250,252,0.9)',
@@ -1020,7 +1023,7 @@ export function WorkspaceChrome({
                   >
                     {libraryBrandInitials(brand)}
                   </div>
-                  <span className="relative min-w-0 flex-1 text-[12px] font-bold leading-tight tracking-tight truncate" style={{ color: leftUiTokens.libraryBodyText }}>
+                  <span className="relative min-w-0 flex-1 text-[12px] font-bold leading-[15px] tracking-tight truncate" style={{ color: leftUiTokens.libraryBodyText }}>
                     {brand}
                   </span>
                   <div
@@ -1096,7 +1099,7 @@ export function WorkspaceChrome({
               <p className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: leftUiTokens.libraryMuted }}>
                 {selectedRobotType}
               </p>
-              <p className="truncate text-[15px] font-bold tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
+              <p className="truncate text-[15px] font-bold leading-[19px] tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
                 {selectedBrand}
               </p>
             </div>
@@ -1659,7 +1662,7 @@ export function WorkspaceChrome({
                 <button
                   key={id}
                   type="button"
-                  className="group relative h-12 rounded-[12px] flex items-center justify-center transition-all duration-150 border"
+                  className="group relative w-full aspect-square shrink-0 rounded-[12px] flex items-center justify-center transition-all duration-150 border box-border"
                   style={{
                     background: active
                       ? accentRgba(POINT_ORANGE, 0.14)
@@ -1741,11 +1744,11 @@ export function WorkspaceChrome({
                   <div
                     className="sticky top-0 z-[4] -mx-1 mb-2 space-y-2 px-1 pb-2 pt-0"
                     style={{
-                      background: isDarkPreview ? 'rgba(18,19,24,0.94)' : 'rgba(252,252,253,0.96)',
-                      borderBottom: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
-                      boxShadow: isDarkPreview ? '0 10px 24px rgba(0,0,0,0.4)' : '0 6px 18px rgba(15,23,42,0.06)',
-                      backdropFilter: 'blur(12px) saturate(140%)',
-                      WebkitBackdropFilter: 'blur(12px) saturate(140%)',
+                      background: sidePanelTokens.panelBg,
+                      borderBottom: `1px solid ${sidePanelTokens.divider}`,
+                      boxShadow: sidePanelTokens.panelShadow,
+                      backdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+                      WebkitBackdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
                     }}
                   >
                     <div
@@ -1794,7 +1797,7 @@ export function WorkspaceChrome({
                   onClosePanel={() => setLeftOpen(false)}
                 />
               ) : (
-                <div className="rounded-[10px] p-3 text-[11px] leading-relaxed" style={{ background: sidePanelTokens.sectionHeaderBg, color: sidePanelTokens.textSecondary }}>
+                <div className="rounded-[10px] p-3 text-[11px] leading-[18px]" style={{ background: sidePanelTokens.sectionHeaderBg, color: sidePanelTokens.textSecondary }}>
                   {locale === 'en'
                     ? 'Left area placeholder based on selected GNB mode.'
                     : 'Left GNB 모드에 따라 바뀌는 영역입니다.'}
@@ -1867,6 +1870,20 @@ export function WorkspaceChrome({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              className="h-9 px-2.5 rounded-[8px] border text-[12px] font-semibold outline-none cursor-pointer inline-flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-0 shrink-0"
+              style={{
+                borderColor: 'rgba(255,255,255,0.2)',
+                color: '#f3f4f6',
+                background: 'rgba(255,255,255,0.1)',
+              }}
+              aria-pressed={modalExamplesOpen}
+              aria-label={locale === 'en' ? 'Modal examples' : '모달 예시'}
+              onClick={() => setModalExamplesOpen((o) => !o)}
+            >
+              {locale === 'en' ? 'Modal examples' : '모달 예시'}
+            </button>
             <div className="relative shrink-0" ref={uiModeMenuRef}>
               <button
                 type="button"
@@ -2117,11 +2134,11 @@ export function WorkspaceChrome({
           height: bottomOpen ? bottomHeight : BOTTOM_HEIGHT_COLLAPSED,
           width: bottomOpen ? undefined : collapsedTimelineWidth,
           transform: bottomOpen ? undefined : 'translateX(-50%)',
-          background: bottomOpen ? (isDarkPreview ? 'rgba(10,12,16,0.74)' : 'rgba(255,255,255,0.95)') : 'transparent',
-          border: bottomOpen ? (isDarkPreview ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(0,0,0,0.12)') : 'none',
-          boxShadow: bottomOpen ? (isDarkPreview ? '0 18px 44px rgba(0,0,0,0.35)' : '0 18px 44px rgba(0,0,0,0.16)') : 'none',
-          backdropFilter: bottomOpen ? (isDarkPreview ? 'blur(26px) saturate(160%)' : 'blur(18px) saturate(150%)') : 'none',
-          WebkitBackdropFilter: bottomOpen ? (isDarkPreview ? 'blur(26px) saturate(160%)' : 'blur(18px) saturate(150%)') : 'none',
+          background: bottomOpen ? sidePanelTokens.panelBg : 'transparent',
+          border: bottomOpen ? `1px solid ${sidePanelTokens.panelBorder}` : 'none',
+          boxShadow: bottomOpen ? sidePanelTokens.panelShadow : 'none',
+          backdropFilter: bottomOpen ? (isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)') : 'none',
+          WebkitBackdropFilter: bottomOpen ? (isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)') : 'none',
           transition: 'height 200ms ease',
         }}
       >
@@ -2141,10 +2158,10 @@ export function WorkspaceChrome({
                 timelineView === 'overview' ? renderTimelineOverview() : renderTimelineDetail()
               ) : (
                 <div
-                  className="h-full rounded-[10px] border p-3 text-[11px] leading-relaxed overflow-y-auto sfd-scroll"
+                  className="h-full rounded-[10px] border p-3 text-[11px] leading-[18px] overflow-y-auto sfd-scroll"
                   style={{
-                    borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)',
-                    background: isDarkPreview ? 'rgba(17,24,39,0.92)' : 'rgba(255,255,255,0.94)',
+                    borderColor: sidePanelTokens.inputBorder,
+                    background: sidePanelTokens.panelBg,
                     color: isDarkPreview ? '#d1d5db' : '#374151',
                   }}
                 >
@@ -2164,11 +2181,11 @@ export function WorkspaceChrome({
             left: leftOffset + 8,
             top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
             transform: 'translateY(-100%)',
-            background: isDarkPreview ? 'rgba(17,24,39,0.74)' : 'rgba(255,255,255,0.98)',
-            border: isDarkPreview ? '1px solid rgba(255,255,255,0.16)' : '1px solid rgba(15,23,42,0.12)',
-            boxShadow: isDarkPreview ? '0 10px 22px rgba(0,0,0,0.34)' : '0 10px 22px rgba(15,23,42,0.16)',
-            backdropFilter: isDarkPreview ? 'blur(22px) saturate(160%)' : 'blur(14px) saturate(140%)',
-            WebkitBackdropFilter: isDarkPreview ? 'blur(22px) saturate(160%)' : 'blur(14px) saturate(140%)',
+            background: sidePanelTokens.panelBg,
+            border: `1px solid ${sidePanelTokens.panelBorder}`,
+            boxShadow: sidePanelTokens.panelShadow,
+            backdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
           }}
         >
           {([
@@ -2202,6 +2219,12 @@ export function WorkspaceChrome({
         onClose={() => setProcessInfoModalOpen(false)}
         onSave={setSavedProcessInfo}
       />
+      <ModalExamplesLayer
+        open={modalExamplesOpen}
+        onClose={() => setModalExamplesOpen(false)}
+        isDark={isDarkPreview}
+        locale={locale}
+      />
 
       {libraryDrawingModalOpen && (
         <div
@@ -2218,7 +2241,7 @@ export function WorkspaceChrome({
             role="dialog"
             aria-modal="true"
             aria-labelledby="library-drawing-modal-title"
-            className="w-full max-w-[min(420px,calc(100vw-2rem))] rounded-2xl border shadow-2xl overflow-hidden"
+            className="w-full max-w-[min(420px,calc(100vw-32px))] rounded-2xl border shadow-2xl overflow-hidden"
             style={{
               background: isDarkPreview ? 'rgba(18,20,26,0.96)' : '#ffffff',
               borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.1)',
@@ -2234,7 +2257,7 @@ export function WorkspaceChrome({
             >
               <h2
                 id="library-drawing-modal-title"
-                className="text-[15px] font-bold leading-tight pr-2"
+                className="text-[15px] font-bold leading-[19px] pr-2"
                 style={{ color: isDarkPreview ? '#f4f4f5' : '#18181b' }}
               >
                 {libraryDrawing
@@ -2257,7 +2280,7 @@ export function WorkspaceChrome({
             </div>
             <div className="px-4 py-3">
               <p
-                className="text-[13px] leading-relaxed"
+                className="text-[13px] leading-[21px]"
                 style={{ color: isDarkPreview ? 'rgba(228,228,231,0.78)' : '#52525b' }}
               >
                 {locale === 'en' ? (
@@ -2319,12 +2342,12 @@ export function WorkspaceChrome({
             left: '50%',
             top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
             transform: 'translate(-50%, -100%)',
-            borderColor: isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)',
-            background: isDarkPreview ? 'rgba(17,24,39,0.74)' : 'rgba(255,255,255,0.98)',
+            borderColor: sidePanelTokens.panelBorder,
+            background: sidePanelTokens.panelBg,
             color: isDarkPreview ? '#e5e7eb' : '#334155',
-            boxShadow: isDarkPreview ? '0 10px 22px rgba(0,0,0,0.34)' : '0 10px 22px rgba(15,23,42,0.16)',
-            backdropFilter: isDarkPreview ? 'blur(22px) saturate(160%)' : 'blur(14px) saturate(140%)',
-            WebkitBackdropFilter: isDarkPreview ? 'blur(22px) saturate(160%)' : 'blur(14px) saturate(140%)',
+            boxShadow: sidePanelTokens.panelShadow,
+            backdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
           }}
           onClick={() => setBottomOpen(false)}
           aria-label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'}

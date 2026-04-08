@@ -1,0 +1,295 @@
+/* SafetyDesigner workspace shell — html.to.design CSS 칸에 붙여넣기 (앱과 동일: Pretendard, 1rem=16px) */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+body {
+  background: #0f1218;
+  -webkit-font-smoothing: antialiased;
+}
+svg {
+  font-family: inherit;
+}
+.shell {
+  width: 1440px;
+  height: 900px;
+  position: relative;
+  overflow: hidden;
+  background: #e8ecf2;
+}
+/* ── Header (WorkspaceChrome) ── */
+.header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1440px;
+  height: 122px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(8, 10, 14, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
+}
+.header-row {
+  height: 44px;
+  border-radius: 10px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-row.r1 { background: rgba(255, 255, 255, 0.04); }
+.header-row.r2 { background: rgba(255, 255, 255, 0.1); }
+.brand-box {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 0 1px rgba(255, 142, 43, 0.12) inset;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.brand-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #ff8e2b, #ea580c);
+}
+.brand-txt {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f3f4f6;
+  letter-spacing: 0.02em;
+}
+.process-field {
+  height: 40px;
+  min-width: 300px;
+  max-width: 520px;
+  width: 380px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.09);
+  color: #f3f4f6;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.process-field span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+.ui-mode {
+  min-width: 128px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f3f4f6;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.plan-btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 220, 140, 0.95);
+  background: linear-gradient(180deg, #fff4e0 0%, #ffcc66 18%, #ff8e2b 55%, #ea6c12 100%);
+  color: #1a0a00;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.header-spacer { flex: 1; min-width: 8px; }
+.tool-3 {
+  width: 40px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+.tool-3.on {
+  border-color: rgba(255, 142, 43, 0.5);
+  background: rgba(255, 142, 43, 0.22);
+}
+.view-tools {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.view-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+.view-ic.on {
+  border-color: rgba(255, 142, 43, 0.5);
+  background: rgba(255, 142, 43, 0.22);
+}
+.primary-analysis {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #ff8e2b;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+/* ── Left GNB ── */
+.gnb {
+  position: absolute;
+  left: 0;
+  top: 122px;
+  width: 56px;
+  height: 778px;
+  padding: 10px 6px;
+  background: rgba(252, 252, 253, 0.8);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gnb-btn {
+  width: 44px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.035);
+}
+.gnb-btn.on {
+  border-color: rgba(255, 142, 43, 0.42);
+  background: rgba(255, 142, 43, 0.14);
+  box-shadow: 0 0 0 1px rgba(255, 142, 43, 0.32) inset;
+}
+/* ── Main viewport (App bg-viewport) ── */
+.main {
+  position: absolute;
+  left: 56px;
+  top: 122px;
+  width: 1372px;
+  height: 696px;
+  background: linear-gradient(165deg, #c5d4e8 0%, #9eb4d4 45%, #dfe7f2 100%);
+}
+.main-note {
+  position: absolute;
+  left: 24px;
+  top: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(30, 41, 59, 0.65);
+}
+/* ── Edge toggle ── */
+.edge-toggle {
+  position: absolute;
+  left: 60px;
+  top: 479px;
+  width: 28px;
+  height: 56px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.035);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+/* ── Bottom collapsed transport ── */
+.bottom-dock {
+  position: absolute;
+  left: 490px;
+  top: 818px;
+  width: 460px;
+  height: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.expand-tl {
+  width: 48px;
+  height: 24px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.035);
+}
+.transport {
+  width: 436px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(252, 252, 253, 0.8);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+}
+.t-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+}
+.t-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  font-variant-numeric: tabular-nums;
+}
+.t-rate {
+  font-size: 10px;
+  font-weight: 600;
+  color: #374151;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: rgba(255, 255, 255, 0.9);
+}
+.t-scrub {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #e5e7eb;
+  position: relative;
+}
+.t-scrub::after {
+  content: "";
+  position: absolute;
+  left: 35%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #ff8e2b;
+}

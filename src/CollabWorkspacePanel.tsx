@@ -359,7 +359,7 @@ export function CollabWorkspaceEditSection({
                     {L.collabOpacityLabel}
                   </span>
                   <span
-                    className="text-[11px] font-mono px-2 py-0.5 rounded-[6px]"
+                    className="text-[11px] tabular-nums px-2 py-0.5 rounded-[6px]"
                     style={{ background: t.inputBg, color: t.textPrimary }}
                   >
                     {colorTarget.opacityPercent}%
@@ -397,6 +397,7 @@ export function CollabWorkspacePanel({
   locale,
   objectAccent,
   theme,
+  onListInteract,
 }: {
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
@@ -405,6 +406,7 @@ export function CollabWorkspacePanel({
   locale: AppLocale;
   objectAccent: string;
   theme: 'light' | 'dark';
+  onListInteract?: () => void;
 }) {
   const [showAssignFromExisting, setShowAssignFromExisting] = useState(false);
 
@@ -461,17 +463,17 @@ export function CollabWorkspacePanel({
         <div className="px-2.5 pt-2.5 pb-2" style={{ background: t.sectionHeaderBg }}>
           <div className="flex items-center gap-1.5 mb-1">
             <Share2 className="w-3.5 h-3.5 shrink-0" style={{ color: objectAccent }} strokeWidth={2.2} />
-            <span className="text-[11px] font-semibold leading-tight" style={{ color: t.textSecondary }}>
+            <span className="text-[11px] font-semibold leading-[14px]" style={{ color: t.textSecondary }}>
               {L.collabSharedListTitle}
             </span>
           </div>
-          <p className="text-[10px] leading-snug pl-0.5" style={{ color: t.textSecondary }}>
+          <p className="text-[10px] leading-[14px] pl-0.5" style={{ color: t.textSecondary }}>
             {L.collabAssignedSectionHint}
           </p>
         </div>
         <div className={collabWorkspaceListClass('pt-1', assignedList.length)}>
           {assignedList.length === 0 ? (
-            <p className="text-[11px] px-1 py-1.5 leading-relaxed" style={{ color: t.textSecondary }}>
+            <p className="text-[11px] leading-[18px] px-1 py-1.5" style={{ color: t.textSecondary }}>
               협동 작업 영역을 생성하거나, 이미 설치한 다른 로봇과 협동작업 영역을 공유하는 경우, 기존 항목에서 선택해주세요.
             </p>
           ) : (
@@ -501,11 +503,24 @@ export function CollabWorkspacePanel({
                     className="flex-1 min-w-0 text-left text-[12px] font-medium truncate"
                     style={{ color: t.textPrimary }}
                     onClick={() => {
-                      setData((p) => ({
-                        ...p,
-                        collabSelectedWorkspaceId: w.id,
-                        collabEditingWorkspaceId: w.id,
-                      }));
+                      const willDeselect = data.collabSelectedWorkspaceId === w.id;
+                      setData((p) => {
+                        if (p.collabSelectedWorkspaceId === w.id) {
+                          return {
+                            ...p,
+                            collabSelectedWorkspaceId: null,
+                            collabEditingWorkspaceId: null,
+                          };
+                        }
+                        return {
+                          ...p,
+                          collabSelectedWorkspaceId: w.id,
+                          collabEditingWorkspaceId: w.id,
+                        };
+                      });
+                      if (!willDeselect) {
+                        onListInteract?.();
+                      }
                     }}
                   >
                     {w.name}
@@ -537,7 +552,7 @@ export function CollabWorkspacePanel({
               <span className="text-[11px] font-semibold block mb-1" style={{ color: t.textSecondary }}>
                 {L.collabExistingAssignListTitle}
               </span>
-              <p className="text-[10px] leading-snug pl-0.5" style={{ color: t.textSecondary }}>
+              <p className="text-[10px] leading-[14px] pl-0.5" style={{ color: t.textSecondary }}>
                 {L.collabLibrarySectionHint}
               </p>
             </div>
@@ -560,6 +575,7 @@ export function CollabWorkspacePanel({
                       className="w-full min-w-0 text-left text-[12px] font-medium truncate"
                       style={{ color: t.textPrimary }}
                       onClick={() => {
+                        onListInteract?.();
                         setData((p) => ({
                           ...p,
                           collabSelectedWorkspaceId: w.id,
@@ -569,7 +585,7 @@ export function CollabWorkspacePanel({
                     >
                       {w.name}
                     </button>
-                    <p className="text-[10px] mt-0.5 leading-snug truncate" style={{ color: t.textSecondary }}>
+                    <p className="text-[10px] mt-0.5 leading-[14px] truncate" style={{ color: t.textSecondary }}>
                       <span style={{ fontWeight: 600 }}>{L.collabLinkedToItemsLabel}</span>{' '}
                       {linkedItemsText(w)}
                     </p>

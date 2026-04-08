@@ -161,7 +161,7 @@ function UsageRing({
         </text>
       </svg>
       <span
-        className="max-w-[4.75rem] text-center text-[8px] font-bold leading-[1.2]"
+        className="max-w-[76px] text-center text-[8px] font-bold leading-[10px]"
         style={{ color: accent }}
       >
         {label}
@@ -342,7 +342,7 @@ export function SceneInfoPanel({ theme, locale, counts: countsProp, onClose }: P
   const toggle = useCallback(() => setExpanded((v) => !v), []);
 
   const row = (label: string, right: string, key: string) => (
-    <div key={key} className="flex items-center justify-between gap-3 text-[12px] leading-snug py-1.5">
+    <div key={key} className="flex items-center justify-between gap-3 text-[12px] leading-[17px] py-1.5">
       <span className="min-w-0 pr-1" style={{ color: tokens.muted }}>
         {label}
       </span>
@@ -431,7 +431,7 @@ export function SceneInfoPanel({ theme, locale, counts: countsProp, onClose }: P
         <div className="flex-1 min-w-0 py-2 pr-1 flex flex-col gap-2">
           <div className="flex items-start justify-between gap-2 pr-1">
             <div className="min-w-0 flex-1">
-              <h3 className="text-[12px] font-bold tracking-tight leading-snug" style={{ color: tokens.headerText }}>
+              <h3 className="text-[12px] font-bold tracking-tight leading-[17px]" style={{ color: tokens.headerText }}>
                 <span className="opacity-[0.88]">Scene Info</span>
                 <span style={{ color: tokens.muted, fontWeight: 700 }}> : </span>
                 <span>{L.titleSuffix}</span>
