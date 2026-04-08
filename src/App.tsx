@@ -1,6 +1,13 @@
-import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { X } from 'lucide-react';
-import CategoryMenu, { SUB_MODAL_GAP, SUB_MODAL_WIDTH, VIEWPORT_MARGIN } from './CategoryMenu';
+import CategoryMenu, {
+  SUB_MODAL_FLOOR_HEIGHT,
+  SUB_MODAL_GAP,
+  SUB_MODAL_MAX_HEIGHT,
+  SUB_MODAL_MIN_HEIGHT,
+  SUB_MODAL_WIDTH,
+  VIEWPORT_MARGIN,
+} from './CategoryMenu';
 import PropertyPanel from './PropertyPanel';
 import { EndEffectorSubmodalContent } from './EndEffectorSubmodalContent';
 import { useLocale } from './localeContext';
@@ -10,6 +17,7 @@ import { DEFAULT_DATA } from './panelData';
 import { CollabSubModalAnchorContext } from './collabSubModalAnchorContext';
 import type { CollabSubModalAnchorRect } from './collabSubModalAnchorContext';
 import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
+import { SceneInfoPanel } from './SceneInfoPanel';
 import { POINT_ORANGE } from './pointColorSchemes';
 // 헤더 메타는 menuData의 OBJECTS_MODAL_CONTEXT (상위 로봇 1대). 씬별로 바꾸려면 CategoryMenu에 workspaceContext={...} 전달
 
@@ -31,6 +39,7 @@ export default function App() {
   const { locale, toggleLocale } = useLocale();
   const [showLight, setShowLight] = useState(true);
   const [uiThemeMode, setUiThemeMode] = useState<'light' | 'dark'>('light');
+  const [sceneInfoOpen, setSceneInfoOpen] = useState(true);
 
   // 선택된 오브젝트 상태 (PropertyPanel 탭 구성에 사용)
   const [selectedObjectId, setSelectedObjectId] = useState('manipulator');
@@ -75,6 +84,12 @@ export default function App() {
   /** 업로드 모션 리스트 선택(파일·웨이포인트) */
   const [selectedMotionUploadKey, setSelectedMotionUploadKey] = useState<string | null>(null);
   const [eeSubLayerClosed, setEeSubLayerClosed] = useState(false);
+  const [eeSubLayerHeightPx, setEeSubLayerHeightPx] = useState<number | null>(null);
+  const [eeSubLayerTopOffsetPx, setEeSubLayerTopOffsetPx] = useState(0);
+  const [eeSubResizeEdge, setEeSubResizeEdge] = useState<'top' | 'bottom' | null>(null);
+  const eeSubResizeRef = useRef({ clientY: 0, top: 0, height: 0 });
+  const eeSubLayerShellRef = useRef<HTMLDivElement>(null);
+  const prevEeSubLayerKeyRef = useRef<string | null>(null);
 
   const handleMotionCategoryChange = useCallback((categoryId: string) => {
     setMotionActiveCategoryId(categoryId);
@@ -88,15 +103,18 @@ export default function App() {
   }, []);
 
   const handleObjectChange = useCallback((objectId: string) => {
-    setSelectedObjectId(objectId);
-    if (objectId === 'endeffector') {
+    const isObjectChanged = selectedObjectId !== objectId;
+    if (isObjectChanged) {
+      setSelectedObjectId(objectId);
+    }
+    if (isObjectChanged && objectId === 'endeffector') {
       setEeSelectedIdx(null);
     }
     if (!showLight) {
       placePanelTopRight();
     }
     setShowLight(true);
-  }, [placePanelTopRight, showLight]);
+  }, [placePanelTopRight, selectedObjectId, showLight]);
 
   const [collisionActiveCategoryId, setCollisionActiveCategoryId] = useState('collision-robot');
   const handleCollisionCategoryChange = useCallback((categoryId: string) => {
@@ -104,6 +122,9 @@ export default function App() {
   }, []);
   const handleEndEffectorCategoryChange = useCallback((categoryId: string) => {
     setEndeffectorActiveCategoryId(categoryId);
+  }, []);
+  const handleEeFilledSlotClick = useCallback(() => {
+    setEeSubLayerClosed(false);
   }, []);
 
   useEffect(() => {
@@ -154,44 +175,168 @@ export default function App() {
   const hasSelectedEeSlot =
     eeSelectedIdx != null &&
     panelData.eeSlots[eeSelectedIdx] != null;
-
+  const canShowEeSubLayerByCategory =
+    endeffectorActiveCategoryId === 'ee-basic' || endeffectorActiveCategoryId === 'ee-connect';
+  const showEndEffectorSubLayer =
+    showLight &&
+    selectedObjectId === 'endeffector' &&
+    hasSelectedEeSlot &&
+    canShowEeSubLayerByCategory &&
+    !eeSubLayerClosed;
   const subLayerOpen =
     selectedObjectId === 'motion' ||
     selectedObjectId === 'collision' ||
     selectedObjectId === 'collab' ||
     (selectedObjectId === 'manipulator' && hasManipulatorSelection) ||
-    (selectedObjectId === 'endeffector' && !eeSubLayerClosed && hasSelectedEeSlot
-      && (endeffectorActiveCategoryId === 'ee-basic' || endeffectorActiveCategoryId === 'ee-connect'));
+    showEndEffectorSubLayer;
+  const appRenderCountRef = useRef(0);
+  appRenderCountRef.current += 1;
+  console.log('[Render][App]', {
+    count: appRenderCountRef.current,
+    selectedObjectId,
+    endeffectorActiveCategoryId,
+    eeSelectedIdx,
+    hasSelectedEeSlot,
+    showEndEffectorSubLayer,
+    eeSubLayerClosed,
+    eeFilledCount: panelData.eeSlots.filter(Boolean).length,
+    subLayerOpen,
+  });
 
-  const showEndEffectorSubLayer =
-    showLight &&
-    selectedObjectId === 'endeffector' &&
-    !eeSubLayerClosed &&
-    hasSelectedEeSlot &&
-    (endeffectorActiveCategoryId === 'ee-basic' || endeffectorActiveCategoryId === 'ee-connect');
-  const eeSubLayerRefreshKey = `${selectedObjectId}|${endeffectorActiveCategoryId}|${eeSelectedIdx ?? ''}|${hasSelectedEeSlot ? '1' : '0'}`;
-
-  useEffect(() => {
-    if (selectedObjectId !== 'endeffector') {
-      setEeSubLayerClosed(false);
-      return;
-    }
-    setEeSubLayerClosed(false);
-  }, [eeSubLayerRefreshKey, selectedObjectId]);
+  /** CategoryMenu `getSubModalHeightBounds` 와 동일 공식 */
+  const getEeSubLayerHeightBounds = useCallback((top: number) => {
+    const margin = VIEWPORT_MARGIN;
+    const minTop = WORKSPACE_CONTENT_TOP_PX;
+    const safeTop = Math.max(minTop, top);
+    const viewportMax = Math.max(SUB_MODAL_FLOOR_HEIGHT, window.innerHeight - margin - safeTop);
+    const maxH = Math.min(SUB_MODAL_MAX_HEIGHT, viewportMax);
+    const minH = Math.min(SUB_MODAL_MIN_HEIGHT, maxH);
+    return { minH, maxH };
+  }, []);
 
   const endEffectorSubLayerLayout = useMemo(() => {
     const margin = VIEWPORT_MARGIN;
+    const minTop = WORKSPACE_CONTENT_TOP_PX;
     const desiredLeft = lightPos.x + PROPERTY_PANEL_WIDTH + SUB_LAYER_GAP;
     const maxLeft = Math.max(margin, viewportWidth - margin - END_EFFECTOR_SUBLAYER_WIDTH);
     const left = Math.min(Math.max(desiredLeft, margin), maxLeft);
-    const maxHeight = Math.max(280, viewportHeight - WORKSPACE_CONTENT_TOP_PX - margin);
-    const height = Math.min(540, maxHeight);
-    const top = Math.min(
-      Math.max(lightPos.y, WORKSPACE_CONTENT_TOP_PX),
-      Math.max(WORKSPACE_CONTENT_TOP_PX, viewportHeight - margin - height),
-    );
-    return { left, top, height };
-  }, [lightPos.x, lightPos.y, viewportHeight, viewportWidth]);
+
+    const topBase = lightPos.y + eeSubLayerTopOffsetPx;
+    const { minH, maxH } = getEeSubLayerHeightBounds(topBase);
+    /** 사용자가 리사이즈한 값만 고정 높이; 그 외는 콘텐츠 높이에 맞춤(min~max) */
+    const fixedHeight =
+      eeSubLayerHeightPx != null
+        ? Math.min(Math.max(eeSubLayerHeightPx, minH), maxH)
+        : null;
+    const heightForTopClamp = fixedHeight ?? maxH;
+    const maxTop = Math.max(minTop, viewportHeight - margin - heightForTopClamp);
+    const top = Math.min(Math.max(topBase, minTop), maxTop);
+
+    return { left, top, minH, maxH, fixedHeight };
+  }, [
+    lightPos.x,
+    lightPos.y,
+    eeSubLayerTopOffsetPx,
+    eeSubLayerHeightPx,
+    getEeSubLayerHeightBounds,
+    viewportHeight,
+    viewportWidth,
+  ]);
+
+  useEffect(() => {
+    console.log('[Effect][App][eeSubLayerResetBySelection]', {
+      selectedObjectId,
+      hasSelectedEeSlot,
+      canShowEeSubLayerByCategory,
+      eeSelectedIdx,
+      endeffectorActiveCategoryId,
+      prevKey: prevEeSubLayerKeyRef.current,
+    });
+    if (selectedObjectId !== 'endeffector') {
+      setEeSubLayerClosed(false);
+      setEeSubLayerHeightPx(null);
+      setEeSubLayerTopOffsetPx(0);
+      prevEeSubLayerKeyRef.current = null;
+      return;
+    }
+    if (!hasSelectedEeSlot || !canShowEeSubLayerByCategory || eeSelectedIdx == null) return;
+    const key = `${endeffectorActiveCategoryId}|${eeSelectedIdx}`;
+    if (prevEeSubLayerKeyRef.current !== key) {
+      setEeSubLayerClosed(false);
+      setEeSubLayerHeightPx(null);
+      setEeSubLayerTopOffsetPx(0);
+      prevEeSubLayerKeyRef.current = key;
+    }
+  }, [selectedObjectId, hasSelectedEeSlot, canShowEeSubLayerByCategory, endeffectorActiveCategoryId, eeSelectedIdx]);
+
+  useEffect(() => {
+    if (!eeSubResizeEdge) return;
+    function onMove(e: PointerEvent) {
+      const start = eeSubResizeRef.current;
+      if (eeSubResizeEdge === 'bottom') {
+        const dy = e.clientY - start.clientY;
+        const { minH, maxH } = getEeSubLayerHeightBounds(start.top);
+        const nextH = Math.min(Math.max(start.height + dy, minH), maxH);
+        setEeSubLayerHeightPx(nextH);
+      } else {
+        const dy = e.clientY - start.clientY;
+        const { minH, maxH } = getEeSubLayerHeightBounds(start.top);
+        let nextTop = start.top + dy;
+        let nextH = start.height - dy;
+        if (nextH < minH) {
+          nextTop = start.top + start.height - minH;
+          nextH = minH;
+        } else if (nextH > maxH) {
+          nextTop = start.top + start.height - maxH;
+          nextH = maxH;
+        }
+        const minTop = WORKSPACE_CONTENT_TOP_PX;
+        const maxTopByBottom = Math.max(minTop, window.innerHeight - VIEWPORT_MARGIN - nextH);
+        nextTop = Math.min(Math.max(nextTop, minTop), maxTopByBottom);
+        setEeSubLayerTopOffsetPx(nextTop - lightPosRef.current.y);
+        setEeSubLayerHeightPx(nextH);
+      }
+    }
+    function onUp() {
+      setEeSubResizeEdge(null);
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, [eeSubResizeEdge, getEeSubLayerHeightBounds]);
+
+  const startEeTopResize = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const { minH, maxH } = getEeSubLayerHeightBounds(endEffectorSubLayerLayout.top);
+    const shellH = eeSubLayerShellRef.current?.offsetHeight;
+    const h = Math.min(Math.max(eeSubLayerHeightPx ?? shellH ?? maxH, minH), maxH);
+    eeSubResizeRef.current = {
+      clientY: e.clientY,
+      top: endEffectorSubLayerLayout.top,
+      height: h,
+    };
+    if (eeSubLayerHeightPx == null) setEeSubLayerHeightPx(h);
+    setEeSubResizeEdge('top');
+  }, [eeSubLayerHeightPx, endEffectorSubLayerLayout.top, getEeSubLayerHeightBounds]);
+
+  const startEeBottomResize = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const { minH, maxH } = getEeSubLayerHeightBounds(endEffectorSubLayerLayout.top);
+    const shellH = eeSubLayerShellRef.current?.offsetHeight;
+    const h = Math.min(Math.max(eeSubLayerHeightPx ?? shellH ?? maxH, minH), maxH);
+    eeSubResizeRef.current = {
+      clientY: e.clientY,
+      top: endEffectorSubLayerLayout.top,
+      height: h,
+    };
+    if (eeSubLayerHeightPx == null) setEeSubLayerHeightPx(h);
+    setEeSubResizeEdge('bottom');
+  }, [eeSubLayerHeightPx, endEffectorSubLayerLayout.top, getEeSubLayerHeightBounds]);
 
   const handleLightPosChange = useCallback((x: number, y: number) => {
     if (subLayerOpen) {
@@ -293,7 +438,13 @@ export default function App() {
         onToggleLocale={toggleLocale}
         uiPreviewMode={uiThemeMode}
         onUiPreviewModeChange={setUiThemeMode}
+        sceneInfoPanelHidden={!sceneInfoOpen}
+        onShowSceneInfoPanel={() => setSceneInfoOpen(true)}
       />
+
+      {sceneInfoOpen ? (
+        <SceneInfoPanel theme={uiThemeMode} locale={locale} onClose={() => setSceneInfoOpen(false)} />
+      ) : null}
 
       {/* ── 카테고리 메뉴 (Objects 모달) — 라이트 패널 좌측에 붙어 이동 ── */}
       <CategoryMenu
@@ -317,6 +468,7 @@ export default function App() {
 
       {showEndEffectorSubLayer && (
         <div
+          ref={eeSubLayerShellRef}
           role="complementary"
           aria-label={locale === 'en' ? 'End effector detail settings' : '엔드 이펙터 상세 설정'}
           className="fixed flex flex-col rounded-[14px] overflow-hidden"
@@ -324,7 +476,9 @@ export default function App() {
             left: endEffectorSubLayerLayout.left,
             top: endEffectorSubLayerLayout.top,
             width: END_EFFECTOR_SUBLAYER_WIDTH,
-            height: endEffectorSubLayerLayout.height,
+            height: endEffectorSubLayerLayout.fixedHeight ?? undefined,
+            minHeight: endEffectorSubLayerLayout.minH,
+            maxHeight: endEffectorSubLayerLayout.maxH,
             zIndex: 51,
             background: uiThemeMode === 'dark' ? 'rgba(16,17,20,0.74)' : 'rgba(252,252,253,0.94)',
             backdropFilter: uiThemeMode === 'dark' ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
@@ -335,6 +489,13 @@ export default function App() {
               : '0 16px 40px rgba(0,0,0,0.12)',
           }}
         >
+          <div
+            className="absolute left-0 right-0 top-0 z-[60] h-1.5 cursor-ns-resize hover:bg-[rgba(59,130,246,0.12)]"
+            style={{ touchAction: 'none' }}
+            onPointerDown={startEeTopResize}
+            role="separator"
+            aria-label={locale === 'en' ? 'Resize top edge' : '상단 크기 조절'}
+          />
           <div
             className="flex items-center gap-2 px-4 py-4 shrink-0"
             style={{
@@ -367,16 +528,24 @@ export default function App() {
               data={panelData}
               setData={setPanelData}
               selectedIdx={eeSelectedIdx}
+              setSelectedEeIdx={setEeSelectedIdx}
               theme={uiThemeMode}
               accentColor={POINT_ORANGE}
               mode={endeffectorActiveCategoryId === 'ee-connect' ? 'connection' : 'settings'}
             />
           </div>
+          <div
+            className="absolute left-0 right-0 bottom-0 z-[60] h-1.5 cursor-ns-resize hover:bg-[rgba(59,130,246,0.12)]"
+            style={{ touchAction: 'none' }}
+            onPointerDown={startEeBottomResize}
+            role="separator"
+            aria-label={locale === 'en' ? 'Resize bottom edge' : '하단 크기 조절'}
+          />
         </div>
       )}
 
       {/* ── 라이트 프로퍼티 패널 ── */}
-      {showLight ? (
+      {showLight && (
         <PropertyPanel
           theme={uiThemeMode}
           initialX={lightInitialX}
@@ -396,19 +565,10 @@ export default function App() {
           onCollisionCategoryChange={handleCollisionCategoryChange}
           onEndEffectorCategoryChange={handleEndEffectorCategoryChange}
           endeffectorActiveCategoryId={endeffectorActiveCategoryId}
+          onEeFilledSlotClick={handleEeFilledSlotClick}
           selectedEeIdx={eeSelectedIdx}
           setSelectedEeIdx={setEeSelectedIdx}
         />
-      ) : (
-        <button onClick={() => { placePanelTopRight(); setShowLight(true); }}
-          className="absolute bottom-6 right-6 text-[12px] font-semibold px-3 py-1.5 rounded-[8px]"
-          style={{
-            background: uiThemeMode === 'dark' ? 'rgba(17,24,39,0.96)' : 'rgba(252,252,253,0.92)',
-            color: uiThemeMode === 'dark' ? '#e5e7eb' : '#111',
-            border: uiThemeMode === 'dark' ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(0,0,0,0.10)',
-          }}>
-          Light 패널 열기
-        </button>
       )}
 
     </div>

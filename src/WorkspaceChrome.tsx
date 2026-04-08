@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import {
   BookOpen,
   FolderTree,
@@ -12,15 +12,17 @@ import {
   ChevronRight,
   Search,
   ArrowLeft,
-  Map,
-  User,
   Upload,
+  FileText,
   Settings,
   Sparkles,
   GripHorizontal,
   Play,
   Square,
   Repeat,
+  X,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { accentRgba, POINT_ORANGE } from './pointColorSchemes';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
@@ -31,6 +33,14 @@ import {
   WORKSPACE_HEADER_HEIGHT_PX,
   WORKSPACE_HEADER_TOP_PX,
 } from './chromeLayout';
+import { SafeticsBrandLockup } from './SafeticsBrandLockup';
+import { ProcessInfoEditModal, type ProcessInfoSnapshot } from './ProcessInfoEditModal';
+import { SafetyAiPanel, type SafetyAiColors } from './SafetyAiPanel';
+
+const DEFAULT_HEADER_PROCESS_NAME: Record<'ko' | 'en', string> = {
+  ko: '목업: EV 배터리 팩 조립 라인 01',
+  en: 'Mockup: EV Battery Pack Assembly Line 01',
+};
 
 export type LeftMode = 'library' | 'tree' | 'analysis' | 'riskassessment' | 'safetyai';
 type BottomTab = 'timeline' | 'analysis';
@@ -54,15 +64,29 @@ interface LibraryChip {
 }
 
 interface LibrarySection {
-  id: string;
+  id: 'robot' | 'layout';
   title: string;
-  icon: 'doc' | 'robot' | 'layout' | 'human';
+  icon: 'robot' | 'layout';
   chips: LibraryChip[];
+}
+
+type LibraryDrawingInfo = {
+  fileName: string;
+  sizeLabel: string;
+  updatedAtMs: number;
+};
+
+function formatDrawingFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 const LEFT_GNB_WIDTH = 56;
 const LEFT_PANEL_MIN_WIDTH = 320;
-const LEFT_PANEL_MAX_WIDTH = 460;
+/** 좌측 영역(라이브러리 등) 공통 상한. Safety AI는 선택 시 이 값으로 맞춤 */
+const LEFT_PANEL_MAX_WIDTH = 560;
 const BOTTOM_GAP = 8;
 const BOTTOM_HEIGHT_EXPANDED = 220;
 const BOTTOM_HEIGHT_COLLAPSED = 74;
@@ -143,12 +167,6 @@ const TREE_TYPE_ICON: Record<TreeNodeType, string> = {
 
 const LIBRARY_SECTIONS: LibrarySection[] = [
   {
-    id: 'doc',
-    title: '도면',
-    icon: 'doc',
-    chips: [{ id: 'doc-upload', label: '도면 업로드' }],
-  },
-  {
     id: 'robot',
     title: '로봇',
     icon: 'robot',
@@ -173,13 +191,8 @@ const LIBRARY_SECTIONS: LibrarySection[] = [
       { id: 'box', label: '박스' },
       { id: 'pallet', label: '팔레트' },
       { id: 'etc-layout', label: '기타 설비' },
+      { id: 'worker', label: '작업자' },
     ],
-  },
-  {
-    id: 'human',
-    title: '사람',
-    icon: 'human',
-    chips: [{ id: 'worker', label: '작업자' }],
   },
 ];
 
@@ -207,7 +220,84 @@ const LIBRARY_MODELS: Record<string, string[]> = {
   Universal: ['UR3', 'UR3e', 'UR5', 'UR5e', 'UR10', 'UR10e', 'UR16e', 'UR20'],
 };
 
+function libraryBrandInitials(name: string): string {
+  const t = name.trim();
+  if (!t) return '?';
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const a = words[0][0] ?? '';
+    const b = words[1][0] ?? '';
+    return (a + b).toUpperCase();
+  }
+  return t.slice(0, Math.min(2, t.length)).toUpperCase();
+}
+
+function libraryBrandAvatarColors(brand: string, isDark: boolean): { bg: string; fg: string } {
+  let h = 0;
+  for (let i = 0; i < brand.length; i++) h = (h * 31 + brand.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  if (isDark) {
+    return {
+      bg: `hsl(${hue}, 38%, 24%)`,
+      fg: `hsl(${hue}, 48%, 90%)`,
+    };
+  }
+  return {
+    bg: `hsl(${hue}, 45%, 93%)`,
+    fg: `hsl(${hue}, 58%, 30%)`,
+  };
+}
+
+/** 라이브러리 섹션 헤더용 추상 도형(그라데이션·글로우) — 아이콘 대신 */
+function librarySectionOrbStyle(
+  id: LibrarySection['id'],
+  isDark: boolean,
+): { shell: CSSProperties; glow: CSSProperties } {
+  const shellBase: CSSProperties = {
+    borderRadius: 14,
+    boxShadow: isDark
+      ? '0 10px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.14)'
+      : '0 8px 24px rgba(15,23,42,0.1), inset 0 1px 0 rgba(255,255,255,0.95)',
+  };
+  const glowBase: CSSProperties = {
+    borderRadius: 999,
+    filter: 'blur(12px)',
+    opacity: isDark ? 0.5 : 0.65,
+  };
+  switch (id) {
+    case 'robot':
+      return {
+        shell: {
+          ...shellBase,
+          background: isDark
+            ? `linear-gradient(148deg, ${accentRgba(POINT_ORANGE, 0.65)} 0%, ${accentRgba(POINT_ORANGE, 0.22)} 48%, rgba(15,23,42,0.55) 100%)`
+            : `linear-gradient(148deg, #ffedd5 0%, ${accentRgba(POINT_ORANGE, 0.75)} 38%, #fff7ed 100%)`,
+        },
+        glow: { ...glowBase, background: POINT_ORANGE },
+      };
+    case 'layout':
+      return {
+        shell: {
+          ...shellBase,
+          background: isDark
+            ? 'linear-gradient(148deg, rgba(192,132,252,0.55) 0%, rgba(139,92,246,0.22) 48%, rgba(15,23,42,0.52) 100%)'
+            : 'linear-gradient(148deg, #ddd6fe 0%, #c4b5fd 45%, #faf5ff 100%)',
+        },
+        glow: { ...glowBase, background: isDark ? '#c084fc' : '#8b5cf6' },
+      };
+  }
+}
+
+const LIBRARY_SECTION_ICON_INDEX: Record<LibrarySection['id'], number> = {
+  robot: getItemIconPreference('library-section:robot')?.iconIndex ?? 33,
+  layout: getItemIconPreference('library-section:layout')?.iconIndex ?? 83,
+};
+
 const TIMELINE_TICKS = ['00:00', '00:50', '01:00', '01:50', '02:00', '02:50', '03:00', '03:50', '04:00'];
+
+/** 좌측 패널 토글 · 접힌 타임라인 열기 등 가장자리 플로팅 버튼 공통 */
+const CHROME_EDGE_TOGGLE_BTN_CLASS =
+  'group border transition-all duration-150 inline-flex items-center justify-center active:scale-[0.98]';
 const TIMELINE_PLAYBACK_RATES = [0.1, 0.2, 0.5, 1.0, 1.5, 2.0, 4.0] as const;
 
 const HEADER_VIEW_ICON_INDEX: Record<HeaderViewKey, number> = {
@@ -227,6 +317,7 @@ const HEADER_LEFT_ICON_INDEX = {
   redo: getItemIconPreference('workspace-header:redo')?.iconIndex ?? 157,
 } as const;
 const HEADER_ACTION_ICON_INDEX = {
+  sceneInfo: getItemIconPreference('workspace-header:scene-info')?.iconIndex ?? 80,
   comment: getItemIconPreference('workspace-header:comment')?.iconIndex ?? 59,
   share: getItemIconPreference('workspace-header:share')?.iconIndex ?? 43,
   mypage: getItemIconPreference('workspace-header:mypage')?.iconIndex ?? 61,
@@ -271,12 +362,17 @@ export function WorkspaceChrome({
   onToggleLocale,
   uiPreviewMode: controlledUiPreviewMode,
   onUiPreviewModeChange,
+  sceneInfoPanelHidden,
+  onShowSceneInfoPanel,
 }: {
   locale: 'ko' | 'en';
   rightPanelVisible: boolean;
   onToggleLocale?: () => void;
   uiPreviewMode?: 'light' | 'dark';
   onUiPreviewModeChange?: (mode: 'light' | 'dark') => void;
+  /** true면 헤더에 씬 정보(객체 사용률) 패널 다시 열기 버튼 표시 */
+  sceneInfoPanelHidden?: boolean;
+  onShowSceneInfoPanel?: () => void;
 }) {
   const [leftMode, setLeftMode] = useState<LeftMode>('tree');
   const [leftOpen, setLeftOpen] = useState(true);
@@ -291,7 +387,12 @@ export function WorkspaceChrome({
   const [selectedTimelineTarget, setSelectedTimelineTarget] = useState<TimelineTarget>('cobot2');
   const [librarySearch, setLibrarySearch] = useState('');
   const [libraryStage, setLibraryStage] = useState<LibraryStage>('root');
+  const [libraryDrawing, setLibraryDrawing] = useState<LibraryDrawingInfo | null>(null);
+  const [libraryDrawingModalOpen, setLibraryDrawingModalOpen] = useState(false);
+  const libraryDrawingInputRef = useRef<HTMLInputElement>(null);
   const [internalUiPreviewMode, setInternalUiPreviewMode] = useState<'light' | 'dark'>('light');
+  const [uiModeMenuOpen, setUiModeMenuOpen] = useState(false);
+  const uiModeMenuRef = useRef<HTMLDivElement>(null);
   const [selectedRobotType, setSelectedRobotType] = useState('협동 로봇');
   const [selectedBrand, setSelectedBrand] = useState('Universal');
   const [selectedModel, setSelectedModel] = useState('UR10');
@@ -305,13 +406,48 @@ export function WorkspaceChrome({
     defaults.add('manip-plus-axis');
     return defaults;
   });
+  const [processInfoModalOpen, setProcessInfoModalOpen] = useState(false);
+  const [savedProcessInfo, setSavedProcessInfo] = useState<ProcessInfoSnapshot | null>(null);
   const uiPreviewMode = controlledUiPreviewMode ?? internalUiPreviewMode;
   const isDarkPreview = uiPreviewMode === 'dark';
   const sidePanelTokens = isDarkPreview ? PROPERTY_DARK_TOKENS : PROPERTY_LIGHT_TOKENS;
 
+  const chromeEdgeToggleSurface = useMemo(
+    () => ({
+      borderColor: sidePanelTokens.inputBorder,
+      background: sidePanelTokens.inputBg,
+      color: sidePanelTokens.textPrimary,
+      boxShadow: sidePanelTokens.elevationRaised,
+    }),
+    [sidePanelTokens.elevationRaised, sidePanelTokens.inputBg, sidePanelTokens.inputBorder, sidePanelTokens.textPrimary],
+  );
+
   useEffect(() => {
     if (leftMode === 'analysis') setBottomTab('analysis');
     else setBottomTab('timeline');
+  }, [leftMode]);
+
+  useEffect(() => {
+    if (!uiModeMenuOpen) return;
+    const onDocDown = (e: MouseEvent) => {
+      const el = uiModeMenuRef.current;
+      if (el && !el.contains(e.target as Node)) setUiModeMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUiModeMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [uiModeMenuOpen]);
+
+  /** Safety AI만 넓게, 그 외 모드는 항상 최소 너비 */
+  useEffect(() => {
+    if (leftMode === 'safetyai') setLeftWidth(LEFT_PANEL_MAX_WIDTH);
+    else setLeftWidth(LEFT_PANEL_MIN_WIDTH);
   }, [leftMode]);
 
   const leftOffset = LEFT_GNB_WIDTH + (leftOpen ? leftWidth : 0) + 8;
@@ -324,7 +460,7 @@ export function WorkspaceChrome({
   const bottomResizingRef = useRef<{ startY: number; startH: number } | null>(null);
 
   const onResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!leftOpen) return;
+    if (!leftOpen || leftMode !== 'safetyai') return;
     e.preventDefault();
     resizingRef.current = { startX: e.clientX, startWidth: leftWidth };
     const onMove = (ev: PointerEvent) => {
@@ -340,7 +476,7 @@ export function WorkspaceChrome({
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-  }, [leftOpen, leftWidth]);
+  }, [leftOpen, leftMode, leftWidth]);
 
   const onBottomResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!bottomOpen) return;
@@ -374,6 +510,15 @@ export function WorkspaceChrome({
   const ModeIcon = modeIcon;
   const isRiskMode = leftMode === 'riskassessment';
   const primaryHeaderActionLabel = isRiskMode ? 'Report Issue' : 'Analysis';
+
+  const processInfoFormInitial = useMemo(
+    (): ProcessInfoSnapshot => ({
+      processName: savedProcessInfo?.processName ?? DEFAULT_HEADER_PROCESS_NAME[locale],
+      processType: savedProcessInfo?.processType ?? '',
+      memo: savedProcessInfo?.memo ?? '',
+    }),
+    [savedProcessInfo, locale],
+  );
   const leftMenuRight = leftOpen ? LEFT_GNB_WIDTH + 8 + leftWidth : LEFT_GNB_WIDTH + 2;
   const collapsedTimelineWidth = Math.min(BOTTOM_COLLAPSED_WIDTH, Math.max(300, window.innerWidth - 24));
   const headerViewButtons = locale === 'en'
@@ -402,6 +547,12 @@ export function WorkspaceChrome({
     libraryChipBorder: sidePanelTokens.inputBorder,
     libraryModelCardBg: sidePanelTokens.sectionHeaderBg,
     libraryModelCardDivider: sidePanelTokens.divider,
+    libraryBrandTileBg: sidePanelTokens.inputBg,
+    libraryBrandTileBorder: sidePanelTokens.inputBorder,
+    libraryBrandTileShadow: isDarkPreview
+      ? '0 1px 0 rgba(255,255,255,0.05) inset, 0 6px 16px rgba(0,0,0,0.22)'
+      : '0 1px 2px rgba(15,23,42,0.04), 0 6px 16px rgba(15,23,42,0.05)',
+    libraryBrandEmptyBg: sidePanelTokens.sectionHeaderBg,
   }), [
     isDarkPreview,
     sidePanelTokens.divider,
@@ -411,6 +562,49 @@ export function WorkspaceChrome({
     sidePanelTokens.textPrimary,
     sidePanelTokens.textSecondary,
   ]);
+
+  const timelineUiTokens = useMemo(
+    () => ({
+      shellBg: isDarkPreview ? 'rgba(22,23,28,0.94)' : 'rgba(255,255,255,0.94)',
+      shellBorder: isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.14)',
+      headerBarBorder: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+      rowBorder: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+      rowLabelText: isDarkPreview ? '#e5e7eb' : '#374151',
+      rowLabelDivider: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+      transportBg: isDarkPreview ? 'rgba(16,18,24,0.52)' : 'rgba(255,255,255,0.92)',
+      transportBackdrop: isDarkPreview ? 'blur(20px) saturate(165%)' : 'none',
+      transportBorder: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)',
+      transportText: isDarkPreview ? '#e5e7eb' : '#374151',
+      transportIconBorder: isDarkPreview ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.22)',
+      transportRateBtnBorder: isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.16)',
+      transportRateBtnBg: isDarkPreview ? 'rgba(40,41,48,0.9)' : 'rgba(255,255,255,0.78)',
+      playbackMenuBorder: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)',
+      playbackMenuBg: isDarkPreview ? 'rgba(24,25,30,0.98)' : 'rgba(255,255,255,0.98)',
+      playbackMenuShadow: isDarkPreview ? '0 10px 18px rgba(0,0,0,0.45)' : '0 10px 18px rgba(0,0,0,0.24)',
+      playbackMenuText: isDarkPreview ? '#f3f4f6' : '#1f2937',
+      scrubTrack: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)',
+      rulerBorder: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+      rulerMajorTicks: isDarkPreview
+        ? 'repeating-linear-gradient(to right, rgba(255,255,255,0.22) 0 1px, transparent 1px 10%)'
+        : 'repeating-linear-gradient(to right, rgba(0,0,0,0.18) 0 1px, transparent 1px 10%)',
+      rulerMinorTicks: isDarkPreview
+        ? 'repeating-linear-gradient(to right, rgba(255,255,255,0.1) 0 1px, transparent 1px 2%)'
+        : 'repeating-linear-gradient(to right, rgba(0,0,0,0.08) 0 1px, transparent 1px 2%)',
+      rulerTickText: isDarkPreview ? '#9ca3af' : '#6b7280',
+      detailTabInactiveBorder: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)',
+      detailTabInactiveBg: isDarkPreview ? 'rgba(40,41,48,0.85)' : 'rgba(255,255,255,0.72)',
+      detailTabInactiveText: isDarkPreview ? '#d1d5db' : '#4b5563',
+      toolChangeRowBorder: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+      toolChangeBadgeBg: isDarkPreview ? 'rgba(249,115,22,0.28)' : 'rgba(249,115,22,0.18)',
+      collapsedTooltipBorder: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)',
+      collapsedTooltipBg: isDarkPreview ? 'rgba(24,25,30,0.96)' : 'rgba(255,255,255,0.96)',
+      collapsedTooltipText: isDarkPreview ? '#f3f4f6' : '#111827',
+      collapsedTooltipShadow: isDarkPreview ? '0 6px 14px rgba(0,0,0,0.45)' : '0 6px 14px rgba(0,0,0,0.22)',
+      bottomResizeHandleBg: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.02)',
+      bottomResizeGrip: isDarkPreview ? '#9ca3af' : '#a1a1aa',
+    }),
+    [isDarkPreview],
+  );
 
   const renderTreeNode = useCallback((node: TreeNodeItem, depth: number) => {
     const hasChildren = (node.children?.length ?? 0) > 0;
@@ -489,129 +683,480 @@ export function WorkspaceChrome({
     );
   }, [expandedTreeIds, isDarkPreview, leftUiTokens.treeGuide, leftUiTokens.treeIcon, leftUiTokens.treeText, leftUiTokens.treeToggle, locale, toggleTreeNode]);
 
-  const getSectionIcon = useCallback((icon: LibrarySection['icon']) => {
-    if (icon === 'layout') return <Map className="w-3.5 h-3.5" style={{ color: leftUiTokens.libraryMuted }} />;
-    if (icon === 'human') return <User className="w-3.5 h-3.5" style={{ color: leftUiTokens.libraryMuted }} />;
-    if (icon === 'robot') return <Bot className="w-3.5 h-3.5" style={{ color: leftUiTokens.libraryMuted }} />;
-    return <Upload className="w-3.5 h-3.5" style={{ color: leftUiTokens.libraryMuted }} />;
-  }, [leftUiTokens.libraryMuted]);
-
   const goToLibraryRoot = useCallback(() => {
     setLibraryStage('root');
     setSelectedBrand('Universal');
+    setLibrarySearch('');
   }, []);
 
-  const renderLibraryRoot = useCallback(() => (
-    <div className="flex flex-col gap-3">
-      {LIBRARY_SECTIONS.map((section) => (
-        <section key={section.id} className="pb-3 border-b last:border-b-0" style={{ borderColor: leftUiTokens.librarySectionBorder }}>
-          <div className="flex items-center gap-2 mb-2 px-1">
-            {getSectionIcon(section.icon)}
-            <h4 className="text-[13px] font-semibold" style={{ color: leftUiTokens.libraryTitle }}>{section.title}</h4>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {section.chips.map((chip) => {
-              const isSingle = section.chips.length === 1;
-              return (
-                <button
-                  key={chip.id}
-                  type="button"
-                  className={`h-11 rounded-[8px] text-[12px] font-semibold transition-colors ${isSingle ? 'col-span-2' : ''}`}
-                  style={{
-                    background: leftUiTokens.libraryChipBg,
-                    color: leftUiTokens.libraryBodyText,
-                    border: `1px solid ${leftUiTokens.libraryChipBorder}`,
-                  }}
-                  onClick={() => {
-                    if (chip.id === 'collab-robot') {
-                      setSelectedRobotType(chip.label);
-                      setLibraryStage('brands');
-                    }
-                  }}
-                >
-                  {chip.label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ))}
-    </div>
-  ), [getSectionIcon, leftUiTokens.libraryBodyText, leftUiTokens.libraryChipBg, leftUiTokens.libraryChipBorder, leftUiTokens.librarySectionBorder, leftUiTokens.libraryTitle]);
+  const openLibraryDrawingPicker = useCallback(() => {
+    libraryDrawingInputRef.current?.click();
+  }, []);
 
-  const renderBrandList = useCallback(() => (
-    <div className="flex flex-col">
-      <button
-        type="button"
-        className="h-10 inline-flex items-center gap-2 w-fit px-1 mb-2"
-        onClick={goToLibraryRoot}
-        style={{ color: leftUiTokens.libraryBodyText }}
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span className="text-[27px] font-semibold">{selectedRobotType}</span>
-      </button>
-      <div className="flex flex-col border-t" style={{ borderColor: leftUiTokens.librarySectionBorder }}>
-        {LIBRARY_BRANDS.map((brand) => (
-          <button
-            key={brand}
-            type="button"
-            className="h-10 flex items-center gap-2 border-b px-1"
-            style={{ borderColor: leftUiTokens.librarySectionBorder, color: leftUiTokens.libraryBodyText }}
-            onClick={() => {
-              setSelectedBrand(brand);
-              setLibraryStage('models');
+  const openLibraryDrawingHelpModal = useCallback(() => setLibraryDrawingModalOpen(true), []);
+
+  useEffect(() => {
+    if (!libraryDrawingModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLibraryDrawingModalOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [libraryDrawingModalOpen]);
+
+  const renderLibraryDrawingDock = useCallback(() => {
+    const drawingDate =
+      libraryDrawing &&
+      new Date(libraryDrawing.updatedAtMs).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+
+    return (
+      <>
+        <input
+          ref={libraryDrawingInputRef}
+          type="file"
+          className="hidden"
+          accept=".dwg,.dxf,.pdf,.png,.jpg,.jpeg,.step,.stp,.svg"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) {
+              setLibraryDrawing({
+                fileName: f.name,
+                sizeLabel: formatDrawingFileSize(f.size),
+                updatedAtMs: Date.now(),
+              });
+              setLibraryDrawingModalOpen(false);
+            }
+            e.target.value = '';
+          }}
+        />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: leftUiTokens.libraryMuted }}>
+              {locale === 'en' ? 'Drawing' : '도면'}
+            </span>
+            <span className="text-[9px] font-semibold" style={{ color: leftUiTokens.libraryMuted }}>
+              {locale === 'en' ? 'Always visible' : '항시 표시'}
+            </span>
+          </div>
+          {libraryDrawing ? (
+            <div
+              className="rounded-2xl border px-2.5 py-2"
+              style={{
+                borderColor: isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.1)',
+                background: isDarkPreview ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.95)',
+                boxShadow: isDarkPreview
+                  ? '0 4px 18px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)'
+                  : '0 4px 16px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,1)',
+              }}
+            >
+              <div className="flex items-start gap-2">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                  style={{
+                    background: isDarkPreview ? 'rgba(56,189,248,0.15)' : 'rgba(14,165,233,0.12)',
+                    color: isDarkPreview ? '#7dd3fc' : '#0369a1',
+                  }}
+                  aria-hidden
+                >
+                  <FileText className="w-4 h-4" strokeWidth={2} />
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <p className="text-[11px] font-bold leading-tight truncate" style={{ color: leftUiTokens.libraryTitle }}>
+                    {libraryDrawing.fileName}
+                  </p>
+                  <p className="mt-0.5 text-[10px] leading-snug" style={{ color: leftUiTokens.libraryMuted }}>
+                    {libraryDrawing.sizeLabel}
+                    <span className="mx-1 opacity-50">·</span>
+                    {drawingDate}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[10px] font-bold transition-colors duration-150 hover:opacity-90"
+                  style={{ color: POINT_ORANGE, background: accentRgba(POINT_ORANGE, 0.12) }}
+                  onClick={openLibraryDrawingHelpModal}
+                >
+                  {locale === 'en' ? 'Replace' : '교체'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="flex h-9 w-full items-center gap-2 rounded-xl border border-dashed px-2.5 text-left text-[11px] font-bold transition-all duration-200 hover:opacity-[0.97] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+              style={{
+                borderColor: isDarkPreview ? 'rgba(148,163,184,0.28)' : 'rgba(14,165,233,0.45)',
+                background: isDarkPreview ? 'rgba(255,255,255,0.04)' : 'rgba(240,249,255,0.9)',
+                color: leftUiTokens.libraryBodyText,
+                boxShadow: isDarkPreview
+                  ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
+                  : 'inset 0 1px 0 rgba(255,255,255,1)',
+              }}
+              onClick={openLibraryDrawingHelpModal}
+              aria-label={locale === 'en' ? 'Upload drawing file' : '도면 파일 업로드'}
+            >
+              <Upload className="w-3.5 h-3.5 shrink-0" style={{ color: POINT_ORANGE }} strokeWidth={2.25} aria-hidden />
+              <span className="min-w-0 flex-1 truncate">
+                {locale === 'en' ? 'Upload drawing…' : '도면 업로드…'}
+              </span>
+            </button>
+          )}
+        </div>
+      </>
+    );
+  }, [
+    isDarkPreview,
+    leftUiTokens.libraryBodyText,
+    leftUiTokens.libraryMuted,
+    leftUiTokens.libraryTitle,
+    libraryDrawing,
+    locale,
+    openLibraryDrawingHelpModal,
+  ]);
+
+  const renderLibraryRoot = useCallback(() => (
+    <div className="flex flex-col gap-4 pb-1">
+      {LIBRARY_SECTIONS.map((section) => {
+        const orb = librarySectionOrbStyle(section.id, isDarkPreview);
+        return (
+          <section
+            key={section.id}
+            className="rounded-[18px] p-3.5 transition-shadow duration-300"
+            style={{
+              background: isDarkPreview ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.72)',
+              border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.09)' : 'rgba(15,23,42,0.07)'}`,
+              boxShadow: isDarkPreview
+                ? '0 6px 28px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)'
+                : '0 6px 26px rgba(15,23,42,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
             }}
           >
-            <span className="text-[20px] font-semibold truncate">{brand}</span>
-            <div className="flex-1" />
-            <ChevronRight className="w-4 h-4" style={{ color: leftUiTokens.libraryMuted }} />
-          </button>
-        ))}
-      </div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl">
+                <div className="absolute -right-1 -top-1 h-7 w-7" style={orb.glow} aria-hidden />
+                <div className="relative h-full w-full" style={orb.shell} aria-hidden />
+                <div
+                  className="pointer-events-none absolute inset-[3px] rounded-[10px] opacity-25"
+                  style={{
+                    background: isDarkPreview
+                      ? 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, transparent 55%)'
+                      : 'linear-gradient(180deg, rgba(255,255,255,0.65) 0%, transparent 50%)',
+                  }}
+                  aria-hidden
+                />
+                <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center">
+                  <SfdIconByIndex
+                    index={LIBRARY_SECTION_ICON_INDEX[section.id]}
+                    color={isDarkPreview ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.82)'}
+                    size={22}
+                  />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-[12px] font-bold tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
+                  {section.title}
+                </h4>
+                <p className="mt-0.5 text-[10px] font-medium leading-snug" style={{ color: leftUiTokens.libraryMuted }}>
+                  {section.chips.length}
+                  {locale === 'en' ? ' items' : '개 항목'}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {section.chips.map((chip) => {
+                const isSingle = section.chips.length === 1;
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    className={`group/chip relative overflow-hidden rounded-xl py-2.5 px-3 text-left text-[11px] font-semibold leading-snug transition-all duration-200 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/40 ${isSingle ? 'col-span-2' : ''}`}
+                    style={{
+                      background: isDarkPreview ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.92)',
+                      color: leftUiTokens.libraryBodyText,
+                      border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)'}`,
+                      boxShadow: isDarkPreview
+                        ? '0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)'
+                        : '0 2px 10px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,1)',
+                    }}
+                    onClick={() => {
+                      if (chip.id === 'collab-robot') {
+                        setSelectedRobotType(chip.label);
+                        setLibraryStage('brands');
+                      }
+                    }}
+                  >
+                    <span
+                      className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover/chip:opacity-100"
+                      style={{
+                        background: isDarkPreview
+                          ? `linear-gradient(135deg, ${accentRgba(POINT_ORANGE, 0.12)} 0%, transparent 55%)`
+                          : `linear-gradient(135deg, ${accentRgba(POINT_ORANGE, 0.14)} 0%, transparent 50%)`,
+                      }}
+                      aria-hidden
+                    />
+                    <span className="relative">{chip.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
-  ), [goToLibraryRoot, leftUiTokens.libraryBodyText, leftUiTokens.libraryMuted, leftUiTokens.librarySectionBorder, selectedRobotType]);
+  ), [isDarkPreview, leftUiTokens.libraryBodyText, leftUiTokens.libraryMuted, leftUiTokens.libraryTitle, locale]);
+
+  const renderBrandList = useCallback(() => {
+    const q = librarySearch.trim().toLowerCase();
+    const filtered = q
+      ? LIBRARY_BRANDS.filter((b) => b.toLowerCase().includes(q))
+      : LIBRARY_BRANDS;
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div
+          className="relative overflow-hidden rounded-[18px] p-3.5"
+          style={{
+            background: isDarkPreview
+              ? `linear-gradient(135deg, ${accentRgba(POINT_ORANGE, 0.14)} 0%, rgba(255,255,255,0.04) 48%, rgba(0,0,0,0.15) 100%)`
+              : `linear-gradient(135deg, ${accentRgba(POINT_ORANGE, 0.12)} 0%, rgba(255,255,255,0.95) 45%, #f8fafc 100%)`,
+            border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)'}`,
+            boxShadow: isDarkPreview
+              ? '0 10px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)'
+              : '0 10px 32px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,1)',
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full opacity-40 blur-2xl"
+            style={{ background: POINT_ORANGE }}
+            aria-hidden
+          />
+          <div className="relative flex items-start gap-3">
+            <button
+              type="button"
+              className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+              style={{
+                border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.1)'}`,
+                background: isDarkPreview ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.85)',
+                color: leftUiTokens.libraryBodyText,
+                boxShadow: isDarkPreview ? '0 6px 16px rgba(0,0,0,0.35)' : '0 6px 16px rgba(15,23,42,0.1)',
+              }}
+              onClick={goToLibraryRoot}
+              aria-label={locale === 'en' ? 'Back to library' : '라이브러리로 돌아가기'}
+            >
+              <ArrowLeft className="w-4 h-4" strokeWidth={2.25} />
+            </button>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <div className="mb-1.5 h-1 w-10 rounded-full" style={{ background: accentRgba(POINT_ORANGE, 0.85) }} aria-hidden />
+              <p
+                className="text-[10px] font-bold uppercase tracking-[0.14em]"
+                style={{ color: leftUiTokens.libraryMuted }}
+              >
+                {selectedRobotType}
+              </p>
+              <h2 className="mt-0.5 text-[16px] font-bold leading-snug tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
+                {locale === 'en' ? 'Manufacturers' : '제조사'}
+              </h2>
+              <p className="mt-1.5 text-[10px] leading-relaxed" style={{ color: leftUiTokens.libraryMuted }}>
+                {locale === 'en'
+                  ? 'Pick a brand to browse available robot models.'
+                  : '브랜드를 선택하면 해당 로봇 모델을 확인할 수 있습니다.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {filtered.length === 0 ? (
+            <div
+              className="rounded-[16px] px-4 py-12 text-center text-[11px] leading-relaxed transition-shadow duration-200"
+              style={{
+                border: `1px dashed ${isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.12)'}`,
+                background: isDarkPreview ? 'rgba(255,255,255,0.03)' : 'rgba(248,250,252,0.9)',
+                color: leftUiTokens.libraryMuted,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+              }}
+            >
+              {locale === 'en' ? 'No manufacturers match your search.' : '검색과 일치하는 제조사가 없습니다.'}
+            </div>
+          ) : (
+            filtered.map((brand) => {
+              const av = libraryBrandAvatarColors(brand, isDarkPreview);
+              return (
+                <button
+                  key={brand}
+                  type="button"
+                  className="group/brand relative flex w-full items-center gap-3 overflow-hidden rounded-[14px] px-3 py-2.5 text-left transition-all duration-200 ease-out hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45 active:translate-y-0 active:scale-[0.995]"
+                  style={{
+                    border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)'}`,
+                    background: isDarkPreview ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.88)',
+                    boxShadow: isDarkPreview
+                      ? '0 4px 16px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06)'
+                      : '0 4px 18px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,1)',
+                  }}
+                  onClick={() => {
+                    setSelectedBrand(brand);
+                    setLibraryStage('models');
+                  }}
+                >
+                  <span
+                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover/brand:opacity-100"
+                    style={{
+                      background: isDarkPreview
+                        ? 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 55%)'
+                        : 'linear-gradient(90deg, rgba(255,142,43,0.08) 0%, transparent 50%)',
+                    }}
+                    aria-hidden
+                  />
+                  <div
+                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold tabular-nums tracking-tight"
+                    style={{
+                      background: av.bg,
+                      color: av.fg,
+                      boxShadow: `0 4px 12px rgba(0,0,0,0.15), 0 0 0 2px ${isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)'}`,
+                    }}
+                    aria-hidden
+                  >
+                    {libraryBrandInitials(brand)}
+                  </div>
+                  <span className="relative min-w-0 flex-1 text-[12px] font-bold leading-tight tracking-tight truncate" style={{ color: leftUiTokens.libraryBodyText }}>
+                    {brand}
+                  </span>
+                  <div
+                    className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 group-hover/brand:translate-x-0.5"
+                    style={{
+                      background: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.05)',
+                    }}
+                    aria-hidden
+                  >
+                    <ChevronRight
+                      className="h-4 w-4 opacity-50 transition-opacity duration-200 group-hover/brand:opacity-100"
+                      style={{ color: leftUiTokens.libraryMuted }}
+                      strokeWidth={2.25}
+                    />
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }, [
+    goToLibraryRoot,
+    isDarkPreview,
+    leftUiTokens.libraryBodyText,
+    leftUiTokens.libraryMuted,
+    leftUiTokens.libraryTitle,
+    librarySearch,
+    locale,
+    selectedRobotType,
+  ]);
 
   const renderModelGrid = useCallback(() => {
     const models = LIBRARY_MODELS[selectedBrand] ?? ['RX-1', 'RX-2', 'RX-3', 'RX-5', 'RX-8'];
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-3">
         <button
           type="button"
-          className="h-10 inline-flex items-center gap-2 w-fit px-1 mb-2"
+          className="group/back inline-flex items-center gap-2 rounded-xl py-1.5 pl-1 pr-2 text-[11px] font-semibold transition-colors duration-200 hover:bg-white/5"
+          style={{ color: leftUiTokens.libraryMuted }}
           onClick={() => setLibraryStage('brands')}
-        style={{ color: leftUiTokens.libraryBodyText }}
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-[27px] font-semibold">{selectedRobotType}</span>
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 group-hover/back:-translate-x-0.5"
+            style={{
+              background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)',
+              color: leftUiTokens.libraryBodyText,
+            }}
+          >
+            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2.25} />
+          </span>
+          {locale === 'en' ? 'Manufacturers' : '제조사로 돌아가기'}
         </button>
-        <button
-          type="button"
-          className="h-10 w-full border-b inline-flex items-center"
-          style={{ borderColor: leftUiTokens.librarySectionBorder, color: leftUiTokens.libraryBodyText }}
+
+        <div
+          className="relative overflow-hidden rounded-[18px] p-3"
+          style={{
+            background: isDarkPreview ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.75)',
+            border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)'}`,
+            boxShadow: isDarkPreview
+              ? '0 8px 28px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)'
+              : '0 8px 26px rgba(15,23,42,0.07), inset 0 1px 0 rgba(255,255,255,1)',
+          }}
         >
-          <span className="text-[20px] font-semibold">{selectedBrand}</span>
-          <div className="flex-1" />
-          <ChevronUp className="w-4 h-4" style={{ color: leftUiTokens.libraryMuted }} />
-        </button>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div
+            className="pointer-events-none absolute -left-6 bottom-0 h-20 w-20 rounded-full opacity-30 blur-2xl"
+            style={{ background: POINT_ORANGE }}
+            aria-hidden
+          />
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em]" style={{ color: leftUiTokens.libraryMuted }}>
+                {selectedRobotType}
+              </p>
+              <p className="truncate text-[15px] font-bold tracking-tight" style={{ color: leftUiTokens.libraryTitle }}>
+                {selectedBrand}
+              </p>
+            </div>
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+              style={{
+                background: isDarkPreview ? 'rgba(0,0,0,0.35)' : 'rgba(15,23,42,0.06)',
+                color: leftUiTokens.libraryMuted,
+              }}
+              aria-hidden
+            >
+              <ChevronUp className="w-4 h-4" strokeWidth={2.25} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
           {models.map((model) => {
             const active = selectedModel === model;
             return (
               <button
                 key={model}
                 type="button"
-                className="h-[92px] rounded-[8px] border overflow-hidden"
+                className="group/model relative flex h-[100px] flex-col overflow-hidden rounded-[14px] border text-left transition-all duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45 active:translate-y-0 active:scale-[0.98]"
                 style={{
-                  background: leftUiTokens.libraryModelCardBg,
-                  borderColor: active ? '#ff8e2b' : leftUiTokens.libraryChipBorder,
-                  boxShadow: active ? `0 0 0 1px ${accentRgba(POINT_ORANGE, 0.25)} inset` : 'none',
+                  background: isDarkPreview ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)',
+                  borderColor: active ? accentRgba(POINT_ORANGE, 0.65) : isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)',
+                  boxShadow: active
+                    ? `0 6px 20px ${accentRgba(POINT_ORANGE, 0.2)}, 0 0 0 1px ${accentRgba(POINT_ORANGE, 0.35)} inset`
+                    : isDarkPreview
+                      ? '0 4px 14px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)'
+                      : '0 4px 16px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,1)',
                 }}
                 onClick={() => setSelectedModel(model)}
               >
-                <div className="h-12 flex items-center justify-center text-[14px]" style={{ color: leftUiTokens.libraryMuted }}>
-                  Robot
+                <div
+                  className="relative flex flex-1 flex-col items-center justify-center gap-1"
+                  style={{ color: leftUiTokens.libraryMuted }}
+                >
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover/model:opacity-100"
+                    style={{
+                      background: `radial-gradient(circle at 50% 30%, ${accentRgba(POINT_ORANGE, isDarkPreview ? 0.12 : 0.15)} 0%, transparent 65%)`,
+                    }}
+                    aria-hidden
+                  />
+                  <div className="relative flex flex-col items-center gap-1 opacity-[0.42]">
+                    <div className="h-1.5 w-9 rounded-full bg-current" />
+                    <div className="h-6 w-[52px] rounded-lg bg-current" style={{ opacity: 0.85 }} />
+                    <div className="h-1.5 w-6 rounded-full bg-current" style={{ opacity: 0.65 }} />
+                  </div>
                 </div>
-                <div className="h-10 border-t flex items-center justify-center text-[12px] font-semibold" style={{ borderColor: leftUiTokens.libraryModelCardDivider, color: leftUiTokens.libraryBodyText }}>
+                <div
+                  className="flex h-9 items-center justify-center border-t text-[11px] font-bold tabular-nums"
+                  style={{
+                    borderColor: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.07)',
+                    color: leftUiTokens.libraryBodyText,
+                    background: isDarkPreview ? 'rgba(0,0,0,0.25)' : 'rgba(248,250,252,0.95)',
+                  }}
+                >
                   {model}
                 </div>
               </button>
@@ -620,7 +1165,16 @@ export function WorkspaceChrome({
         </div>
       </div>
     );
-  }, [leftUiTokens.libraryBodyText, leftUiTokens.libraryChipBorder, leftUiTokens.libraryModelCardBg, leftUiTokens.libraryModelCardDivider, leftUiTokens.libraryMuted, leftUiTokens.librarySectionBorder, selectedBrand, selectedModel, selectedRobotType]);
+  }, [
+    isDarkPreview,
+    leftUiTokens.libraryBodyText,
+    leftUiTokens.libraryMuted,
+    leftUiTokens.libraryTitle,
+    locale,
+    selectedBrand,
+    selectedModel,
+    selectedRobotType,
+  ]);
 
   const renderLibraryContent = useCallback(() => {
     if (libraryStage === 'models') return renderModelGrid();
@@ -638,14 +1192,14 @@ export function WorkspaceChrome({
       type="button"
       className={`${compact ? 'h-7' : 'h-8'} w-full grid grid-cols-[58px_1fr] border-b text-left transition-colors duration-150`}
       style={{
-        borderColor: 'rgba(0,0,0,0.08)',
+        borderColor: timelineUiTokens.rowBorder,
         cursor: onClick ? 'pointer' : 'default',
         background: 'transparent',
       }}
       onClick={onClick}
       disabled={!onClick}
     >
-      <div className="px-2 text-[10px] font-semibold flex items-center border-r truncate" style={{ borderColor: 'rgba(0,0,0,0.08)', color: '#374151' }}>
+      <div className="px-2 text-[10px] font-semibold flex items-center border-r truncate" style={{ borderColor: timelineUiTokens.rowLabelDivider, color: timelineUiTokens.rowLabelText }}>
         {label}
       </div>
       <div className="flex items-center gap-1 px-1 overflow-hidden">
@@ -664,21 +1218,23 @@ export function WorkspaceChrome({
         })}
       </div>
     </button>
-  ), []);
+  ), [timelineUiTokens.rowBorder, timelineUiTokens.rowLabelDivider, timelineUiTokens.rowLabelText]);
 
   const renderTimelineTransportBar = useCallback((compact = false) => (
     <div
       className={`${compact ? 'h-9' : 'h-10'} w-full rounded-[9px] border px-3 flex items-center gap-2`}
       style={{
-        borderColor: 'rgba(0,0,0,0.12)',
-        background: 'rgba(255,255,255,0.92)',
-        color: '#374151',
+        borderColor: timelineUiTokens.transportBorder,
+        background: timelineUiTokens.transportBg,
+        color: timelineUiTokens.transportText,
+        backdropFilter: timelineUiTokens.transportBackdrop,
+        WebkitBackdropFilter: timelineUiTokens.transportBackdrop,
       }}
     >
-      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: 'rgba(0,0,0,0.22)' }}>
+      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: timelineUiTokens.transportIconBorder }}>
         <Play className="w-3 h-3" />
       </button>
-      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: 'rgba(0,0,0,0.22)' }}>
+      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: timelineUiTokens.transportIconBorder }}>
         <Square className="w-2.5 h-2.5" />
       </button>
       <span className="text-[11px] font-semibold tabular-nums">00:00.0/04:07.1</span>
@@ -686,7 +1242,7 @@ export function WorkspaceChrome({
         <button
           type="button"
           className="h-6 px-2 rounded-[6px] border text-[10px] font-semibold"
-          style={{ borderColor: 'rgba(0,0,0,0.16)', background: 'rgba(255,255,255,0.78)' }}
+          style={{ borderColor: timelineUiTokens.transportRateBtnBorder, background: timelineUiTokens.transportRateBtnBg }}
           onClick={() => setPlaybackMenuOpen((v) => !v)}
         >
           x {playbackRate.toFixed(1)}
@@ -695,9 +1251,9 @@ export function WorkspaceChrome({
           <div
             className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 rounded-[8px] border p-1 flex flex-col gap-0.5 z-10"
             style={{
-              borderColor: 'rgba(0,0,0,0.14)',
-              background: 'rgba(255,255,255,0.98)',
-              boxShadow: '0 10px 18px rgba(0,0,0,0.24)',
+              borderColor: timelineUiTokens.playbackMenuBorder,
+              background: timelineUiTokens.playbackMenuBg,
+              boxShadow: timelineUiTokens.playbackMenuShadow,
             }}
           >
             {TIMELINE_PLAYBACK_RATES.map((rate) => (
@@ -706,7 +1262,7 @@ export function WorkspaceChrome({
                 type="button"
                 className="h-6 px-2 rounded-[6px] text-[10px] font-semibold text-left"
                 style={{
-                  color: rate === playbackRate ? POINT_ORANGE : '#1f2937',
+                  color: rate === playbackRate ? POINT_ORANGE : timelineUiTokens.playbackMenuText,
                   background: rate === playbackRate ? accentRgba(POINT_ORANGE, 0.22) : 'transparent',
                 }}
                 onClick={() => {
@@ -720,43 +1276,61 @@ export function WorkspaceChrome({
           </div>
         )}
       </div>
-      <div className="flex-1 h-1.5 rounded-full relative" style={{ background: 'rgba(0,0,0,0.14)' }}>
+      <div className="flex-1 h-1.5 rounded-full relative" style={{ background: timelineUiTokens.scrubTrack }}>
         <div className="absolute left-[35%] top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full" style={{ background: '#ff8e2b' }} />
       </div>
-      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: 'rgba(0,0,0,0.18)' }}>
+      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: timelineUiTokens.transportIconBorder }}>
         <Repeat className="w-3 h-3" />
       </button>
     </div>
-  ), [playbackMenuOpen, playbackRate]);
+  ), [
+    playbackMenuOpen,
+    playbackRate,
+    timelineUiTokens.playbackMenuBg,
+    timelineUiTokens.playbackMenuBorder,
+    timelineUiTokens.playbackMenuShadow,
+    timelineUiTokens.playbackMenuText,
+    timelineUiTokens.scrubTrack,
+    timelineUiTokens.transportBackdrop,
+    timelineUiTokens.transportBg,
+    timelineUiTokens.transportBorder,
+    timelineUiTokens.transportIconBorder,
+    timelineUiTokens.transportRateBtnBg,
+    timelineUiTokens.transportRateBtnBorder,
+    timelineUiTokens.transportText,
+  ]);
 
   const renderTimelineRuler = useCallback(() => (
-    <div className="h-10 px-2 grid grid-cols-[58px_1fr] border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+    <div className="h-10 px-2 grid grid-cols-[58px_1fr] border-b" style={{ borderColor: timelineUiTokens.rulerBorder }}>
       <div />
       <div className="relative">
         <div
           className="absolute inset-x-0 top-0 bottom-4"
           style={{
-            background:
-              'repeating-linear-gradient(to right, rgba(0,0,0,0.18) 0 1px, transparent 1px 10%)',
+            background: timelineUiTokens.rulerMajorTicks,
           }}
         />
         <div
           className="absolute inset-x-0 top-0 bottom-5"
           style={{
-            background:
-              'repeating-linear-gradient(to right, rgba(0,0,0,0.08) 0 1px, transparent 1px 2%)',
+            background: timelineUiTokens.rulerMinorTicks,
           }}
         />
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between text-[9px]" style={{ color: '#6b7280' }}>
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between text-[9px]" style={{ color: timelineUiTokens.rulerTickText }}>
           {TIMELINE_TICKS.map((tick) => <span key={tick}>{tick}</span>)}
         </div>
       </div>
     </div>
-  ), []);
+  ), [
+    timelineUiTokens.rulerBorder,
+    timelineUiTokens.rulerMajorTicks,
+    timelineUiTokens.rulerMinorTicks,
+    timelineUiTokens.rulerTickText,
+  ]);
 
   const renderTimelineOverview = useCallback(() => (
-    <div className="h-full rounded-[10px] overflow-hidden border" style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.94)' }}>
-      <div className="h-[46px] px-2 py-1 border-b flex flex-col gap-1 justify-center" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+    <div className="h-full rounded-[10px] overflow-hidden border" style={{ borderColor: timelineUiTokens.shellBorder, background: timelineUiTokens.shellBg }}>
+      <div className="h-[46px] px-2 py-1 border-b flex flex-col gap-1 justify-center" style={{ borderColor: timelineUiTokens.headerBarBorder }}>
         {renderTimelineTransportBar(true)}
       </div>
       {renderTimelineRuler()}
@@ -795,7 +1369,7 @@ export function WorkspaceChrome({
             })}
           </>
         ) : (
-          <div className="border-b" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+          <div className="border-b" style={{ borderColor: timelineUiTokens.rowBorder }}>
             {renderTimelineRow('MOBILE', [
               { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' }, { w: 19, tone: 'green', text: '이동' }, { w: 19, tone: 'green', text: '정지' },
             ], true, () => {
@@ -812,16 +1386,25 @@ export function WorkspaceChrome({
         )}
       </div>
     </div>
-  ), [renderTimelineRow, timelineCollapsedTree, renderTimelineRuler, renderTimelineTransportBar]);
+  ), [
+    renderTimelineRow,
+    timelineCollapsedTree,
+    renderTimelineRuler,
+    renderTimelineTransportBar,
+    timelineUiTokens.headerBarBorder,
+    timelineUiTokens.rowBorder,
+    timelineUiTokens.shellBg,
+    timelineUiTokens.shellBorder,
+  ]);
 
   const renderTimelineDetail = useCallback(() => (
-    <div className="h-full rounded-[10px] overflow-hidden border" style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.94)' }}>
-      <div className="h-[72px] px-2 py-1 border-b flex flex-col gap-1" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+    <div className="h-full rounded-[10px] overflow-hidden border" style={{ borderColor: timelineUiTokens.shellBorder, background: timelineUiTokens.shellBg }}>
+      <div className="h-[72px] px-2 py-1 border-b flex flex-col gap-1" style={{ borderColor: timelineUiTokens.headerBarBorder }}>
         <div className="h-6 flex items-center gap-2">
           <button
             type="button"
             className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
-            style={{ borderColor: 'rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.72)', color: '#4b5563' }}
+            style={{ borderColor: timelineUiTokens.detailTabInactiveBorder, background: timelineUiTokens.detailTabInactiveBg, color: timelineUiTokens.detailTabInactiveText }}
             onClick={() => setTimelineView('overview')}
           >
             전체 보기
@@ -838,9 +1421,9 @@ export function WorkspaceChrome({
             type="button"
             className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
             style={{
-              borderColor: selectedTimelineTarget === 'additional' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
-              background: selectedTimelineTarget === 'additional' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
-              color: selectedTimelineTarget === 'additional' ? POINT_ORANGE : '#4b5563',
+              borderColor: selectedTimelineTarget === 'additional' ? accentRgba(POINT_ORANGE, 0.45) : timelineUiTokens.detailTabInactiveBorder,
+              background: selectedTimelineTarget === 'additional' ? accentRgba(POINT_ORANGE, 0.2) : timelineUiTokens.detailTabInactiveBg,
+              color: selectedTimelineTarget === 'additional' ? POINT_ORANGE : timelineUiTokens.detailTabInactiveText,
             }}
             onClick={() => setSelectedTimelineTarget('additional')}
           >
@@ -850,9 +1433,9 @@ export function WorkspaceChrome({
             type="button"
             className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
             style={{
-              borderColor: selectedTimelineTarget === 'cobot2' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
-              background: selectedTimelineTarget === 'cobot2' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
-              color: selectedTimelineTarget === 'cobot2' ? POINT_ORANGE : '#4b5563',
+              borderColor: selectedTimelineTarget === 'cobot2' ? accentRgba(POINT_ORANGE, 0.45) : timelineUiTokens.detailTabInactiveBorder,
+              background: selectedTimelineTarget === 'cobot2' ? accentRgba(POINT_ORANGE, 0.2) : timelineUiTokens.detailTabInactiveBg,
+              color: selectedTimelineTarget === 'cobot2' ? POINT_ORANGE : timelineUiTokens.detailTabInactiveText,
             }}
             onClick={() => setSelectedTimelineTarget('cobot2')}
           >
@@ -862,9 +1445,9 @@ export function WorkspaceChrome({
             type="button"
             className="h-6 px-2 rounded-[6px] text-[10px] font-semibold border"
             style={{
-              borderColor: selectedTimelineTarget === 'mobile' ? accentRgba(POINT_ORANGE, 0.45) : 'rgba(0,0,0,0.14)',
-              background: selectedTimelineTarget === 'mobile' ? accentRgba(POINT_ORANGE, 0.2) : 'rgba(255,255,255,0.72)',
-              color: selectedTimelineTarget === 'mobile' ? POINT_ORANGE : '#4b5563',
+              borderColor: selectedTimelineTarget === 'mobile' ? accentRgba(POINT_ORANGE, 0.45) : timelineUiTokens.detailTabInactiveBorder,
+              background: selectedTimelineTarget === 'mobile' ? accentRgba(POINT_ORANGE, 0.2) : timelineUiTokens.detailTabInactiveBg,
+              color: selectedTimelineTarget === 'mobile' ? POINT_ORANGE : timelineUiTokens.detailTabInactiveText,
             }}
             onClick={() => setSelectedTimelineTarget('mobile')}
           >
@@ -891,12 +1474,12 @@ export function WorkspaceChrome({
             {renderTimelineRow('엔드이펙터', [
               { w: 28, tone: 'cyan', text: 'SEG24' }, { w: 28, tone: 'cyan', text: 'SEG32' }, { w: 28, tone: 'cyan', text: 'XEG34' },
             ])}
-            <div className="relative h-10 border-b" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+            <div className="relative h-10 border-b" style={{ borderColor: timelineUiTokens.toolChangeRowBorder }}>
               <div className="absolute inset-x-1 top-3 h-4 rounded-[3px]" style={{ background: '#0f4ea3' }} />
               {[20, 46, 72].map((left, idx) => (
                 <div key={idx} className="absolute top-1 h-8 w-[2px]" style={{ left: `${left}%`, background: '#f97316' }} />
               ))}
-              <div className="absolute top-0 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px]" style={{ background: 'rgba(249,115,22,0.18)', color: POINT_ORANGE }}>
+              <div className="absolute top-0 right-2 text-[9px] font-semibold px-1.5 py-0.5 rounded-[4px]" style={{ background: timelineUiTokens.toolChangeBadgeBg, color: POINT_ORANGE }}>
                 툴 체인지
               </div>
             </div>
@@ -940,18 +1523,27 @@ export function WorkspaceChrome({
         )}
       </div>
     </div>
-  ), [renderTimelineRow, selectedTimelineTarget, renderTimelineRuler, renderTimelineTransportBar]);
+  ), [
+    renderTimelineRow,
+    selectedTimelineTarget,
+    renderTimelineRuler,
+    renderTimelineTransportBar,
+    timelineUiTokens.detailTabInactiveBg,
+    timelineUiTokens.detailTabInactiveBorder,
+    timelineUiTokens.detailTabInactiveText,
+    timelineUiTokens.headerBarBorder,
+    timelineUiTokens.shellBg,
+    timelineUiTokens.shellBorder,
+    timelineUiTokens.toolChangeBadgeBg,
+    timelineUiTokens.toolChangeRowBorder,
+  ]);
 
   const renderCollapsedTimeline = useCallback(() => (
     <div className="h-full flex flex-col items-center justify-center gap-1.5 px-3">
       <button
         type="button"
-        className="group relative h-6 w-12 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
-        style={{
-          borderColor: 'rgba(0,0,0,0.14)',
-          background: 'rgba(255,255,255,0.95)',
-          color: '#374151',
-        }}
+        className={`${CHROME_EDGE_TOGGLE_BTN_CLASS} relative h-6 w-12 rounded-[10px]`}
+        style={chromeEdgeToggleSurface}
         onClick={() => setBottomOpen(true)}
         title="클릭하여 타임라인 열기"
       >
@@ -959,10 +1551,10 @@ export function WorkspaceChrome({
         <span
           className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
           style={{
-            borderColor: 'rgba(0,0,0,0.12)',
-            color: '#111827',
-            background: 'rgba(255,255,255,0.96)',
-            boxShadow: '0 6px 14px rgba(0,0,0,0.22)',
+            borderColor: timelineUiTokens.collapsedTooltipBorder,
+            color: timelineUiTokens.collapsedTooltipText,
+            background: timelineUiTokens.collapsedTooltipBg,
+            boxShadow: timelineUiTokens.collapsedTooltipShadow,
           }}
           aria-hidden
         >
@@ -971,7 +1563,14 @@ export function WorkspaceChrome({
       </button>
       {renderTimelineTransportBar(true)}
     </div>
-  ), [renderTimelineTransportBar]);
+  ), [
+    chromeEdgeToggleSurface,
+    renderTimelineTransportBar,
+    timelineUiTokens.collapsedTooltipBg,
+    timelineUiTokens.collapsedTooltipBorder,
+    timelineUiTokens.collapsedTooltipShadow,
+    timelineUiTokens.collapsedTooltipText,
+  ]);
 
   const renderTreeAreaLayout = useCallback(() => (
     <div className="h-full flex flex-col border rounded-[10px] overflow-hidden" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.tabBarBg }}>
@@ -1013,17 +1612,29 @@ export function WorkspaceChrome({
     </div>
   ), [sidePanelTokens.inputBg, sidePanelTokens.inputBorder, sidePanelTokens.sectionHeaderBg, sidePanelTokens.tabBarBg, sidePanelTokens.textPrimary]);
 
-  const renderSafetyAiAreaLayout = useCallback(() => (
-    <div className="h-full border rounded-[10px] overflow-hidden relative" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.tabBarBg }}>
-      <div className="absolute inset-x-0 top-0 h-[72%] border-b" style={{ borderColor: sidePanelTokens.inputBorder }} />
-      <div className="absolute inset-x-4 bottom-8 h-24 rounded-[8px] border" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.inputBg }} />
-      <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
-        style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.sectionHeaderBg }}
-        aria-hidden
-      />
-    </div>
-  ), [sidePanelTokens.inputBg, sidePanelTokens.inputBorder, sidePanelTokens.sectionHeaderBg, sidePanelTokens.tabBarBg]);
+  const safetyAiColors: SafetyAiColors = useMemo(
+    () => ({
+      bg: sidePanelTokens.tabBarBg,
+      border: sidePanelTokens.inputBorder,
+      text: sidePanelTokens.textPrimary,
+      muted: sidePanelTokens.textSecondary,
+      inputBg: sidePanelTokens.inputBg,
+      sidebarBg: sidePanelTokens.sectionHeaderBg,
+      cardBg: isDarkPreview ? 'rgba(255,255,255,0.04)' : '#ffffff',
+      aiBubble: isDarkPreview ? 'rgba(255,255,255,0.1)' : '#f4f4f5',
+      bannerBg: isDarkPreview ? 'rgba(251,191,36,0.12)' : '#fef3c7',
+      userBubble: POINT_ORANGE,
+    }),
+    [
+      isDarkPreview,
+      sidePanelTokens.inputBg,
+      sidePanelTokens.inputBorder,
+      sidePanelTokens.sectionHeaderBg,
+      sidePanelTokens.tabBarBg,
+      sidePanelTokens.textPrimary,
+      sidePanelTokens.textSecondary,
+    ],
+  );
 
   return (
     <>
@@ -1075,15 +1686,12 @@ export function WorkspaceChrome({
       </div>
       <button
         type="button"
-        className="group fixed z-[31] h-14 w-7 rounded-[10px] border transition-colors duration-150 inline-flex items-center justify-center"
+        className={`${CHROME_EDGE_TOGGLE_BTN_CLASS} fixed z-[31] h-14 w-7 rounded-[10px]`}
         style={{
           left: leftMenuRight + 2,
           top: `calc(${WORKSPACE_CONTENT_TOP_PX}px + (100vh - ${WORKSPACE_CONTENT_TOP_PX + 8}px) / 2)`,
           transform: 'translateY(-50%)',
-          borderColor: sidePanelTokens.inputBorder,
-          background: sidePanelTokens.inputBg,
-          color: sidePanelTokens.textPrimary,
-          boxShadow: sidePanelTokens.elevationRaised,
+          ...chromeEdgeToggleSurface,
         }}
         onClick={() => setLeftOpen((v) => !v)}
       >
@@ -1111,26 +1719,66 @@ export function WorkspaceChrome({
           }}
         >
           <div className="h-full flex flex-col">
-            <div className="px-3 py-2.5 border-b flex items-center gap-2" style={{ borderColor: sidePanelTokens.divider, background: sidePanelTokens.sectionHeaderBg }}>
-              {modeIcon === FolderTree
-                ? <FolderTree className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />
-                : <ModeIcon className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />}
-              <span className="text-[12px] font-semibold" style={{ color: sidePanelTokens.textPrimary }}>
-                {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
-              </span>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto sfd-scroll p-3">
+            {leftMode !== 'safetyai' && (
+              <div className="px-3 py-2.5 border-b flex items-center gap-2" style={{ borderColor: sidePanelTokens.divider, background: sidePanelTokens.sectionHeaderBg }}>
+                {modeIcon === FolderTree
+                  ? <FolderTree className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />
+                  : <ModeIcon className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />}
+                <span className="text-[12px] font-semibold" style={{ color: sidePanelTokens.textPrimary }}>
+                  {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
+                </span>
+              </div>
+            )}
+            <div
+              className={
+                leftMode === 'safetyai'
+                  ? 'flex-1 min-h-0 overflow-hidden'
+                  : 'flex-1 min-h-0 overflow-y-auto sfd-scroll p-3'
+              }
+            >
               {leftMode === 'library' ? (
-                <div className="flex flex-col gap-3">
-                  <div className="h-10 rounded-[8px] border px-3 flex items-center gap-2" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.inputBg }}>
-                    <Search className="w-4 h-4" style={{ color: sidePanelTokens.textSecondary }} />
-                    <input
-                      value={librarySearch}
-                      onChange={(e) => setLibrarySearch(e.target.value)}
-                      placeholder={locale === 'en' ? 'Search by keyword' : '검색어를 입력해 주세요.'}
-                      className="bg-transparent outline-none w-full text-[12px] placeholder:text-zinc-500"
-                      style={{ color: sidePanelTokens.textPrimary }}
-                    />
+                <div className="flex min-h-0 flex-col gap-0">
+                  <div
+                    className="sticky top-0 z-[4] -mx-1 mb-2 space-y-2 px-1 pb-2 pt-0"
+                    style={{
+                      background: isDarkPreview ? 'rgba(18,19,24,0.94)' : 'rgba(252,252,253,0.96)',
+                      borderBottom: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+                      boxShadow: isDarkPreview ? '0 10px 24px rgba(0,0,0,0.4)' : '0 6px 18px rgba(15,23,42,0.06)',
+                      backdropFilter: 'blur(12px) saturate(140%)',
+                      WebkitBackdropFilter: 'blur(12px) saturate(140%)',
+                    }}
+                  >
+                    <div
+                      className="group/libsearch flex h-11 items-center gap-2.5 rounded-2xl px-3.5 transition-all duration-200 focus-within:ring-2 focus-within:ring-orange-400/35"
+                      style={{
+                        border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.1)'}`,
+                        background: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.88)',
+                        boxShadow: isDarkPreview
+                          ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
+                          : '0 2px 10px rgba(15,23,42,0.04), inset 0 1px 0 rgba(255,255,255,1)',
+                      }}
+                    >
+                      <Search
+                        className="h-4 w-4 shrink-0 transition-transform duration-200 group-focus-within/libsearch:scale-105"
+                        style={{ color: sidePanelTokens.textSecondary }}
+                      />
+                      <input
+                        value={librarySearch}
+                        onChange={(e) => setLibrarySearch(e.target.value)}
+                        placeholder={
+                          libraryStage === 'brands'
+                            ? locale === 'en'
+                              ? 'Search manufacturers…'
+                              : '제조사 검색…'
+                            : locale === 'en'
+                              ? 'Search by keyword'
+                              : '검색어를 입력해 주세요.'
+                        }
+                        className={`bg-transparent outline-none w-full text-[12px] ${isDarkPreview ? 'placeholder:text-slate-500' : 'placeholder:text-zinc-500'}`}
+                        style={{ color: sidePanelTokens.textPrimary }}
+                      />
+                    </div>
+                    {renderLibraryDrawingDock()}
                   </div>
                   {renderLibraryContent()}
                 </div>
@@ -1139,7 +1787,12 @@ export function WorkspaceChrome({
               ) : leftMode === 'analysis' || leftMode === 'riskassessment' ? (
                 renderAnalysisAreaLayout()
               ) : leftMode === 'safetyai' ? (
-                renderSafetyAiAreaLayout()
+                <SafetyAiPanel
+                  locale={locale}
+                  isDark={isDarkPreview}
+                  colors={safetyAiColors}
+                  onClosePanel={() => setLeftOpen(false)}
+                />
               ) : (
                 <div className="rounded-[10px] p-3 text-[11px] leading-relaxed" style={{ background: sidePanelTokens.sectionHeaderBg, color: sidePanelTokens.textSecondary }}>
                   {locale === 'en'
@@ -1149,21 +1802,23 @@ export function WorkspaceChrome({
               )}
             </div>
           </div>
-          <div
-            className="absolute top-0 right-0 w-2 h-full cursor-ew-resize"
-            onPointerDown={onResizeStart}
-            title={locale === 'en' ? 'Resize' : '너비 조절'}
-          >
-            <div className="w-full h-full flex items-center justify-center opacity-30">
-              <GripVertical className="w-3 h-3" />
+          {leftMode === 'safetyai' && (
+            <div
+              className="absolute top-0 right-0 w-2 h-full cursor-ew-resize"
+              onPointerDown={onResizeStart}
+              title={locale === 'en' ? 'Resize' : '너비 조절'}
+            >
+              <div className="w-full h-full flex items-center justify-center opacity-30">
+                <GripVertical className="w-3 h-3" />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* Header (top_area) */}
       <div
-        className="fixed z-[28] flex flex-col px-3 py-2 gap-2"
+        className="fixed z-[28] flex flex-col px-3 py-2.5 gap-2.5"
         style={{
           left: 0,
           right: 0,
@@ -1176,62 +1831,146 @@ export function WorkspaceChrome({
         }}
       >
         <div
-          className="h-8 flex items-center gap-3 rounded-[8px] px-2"
+          className="h-11 min-h-[44px] flex items-center gap-3 rounded-[10px] px-2"
           style={{ background: isDarkPreview ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.04)' }}
         >
-          <button
-            type="button"
-            className="h-7 px-2.5 rounded-[7px] border text-[10px] font-semibold"
+          <div
+            className="flex h-9 shrink-0 items-center rounded-[8px] border px-2.5"
             style={{
               borderColor: 'rgba(255,255,255,0.16)',
-              color: '#e5e7eb',
-              background: 'rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.07)',
+              boxShadow: '0 0 0 1px rgba(255,142,43,0.12) inset',
             }}
           >
-            Statics
-          </button>
+            <SafeticsBrandLockup />
+          </div>
           <div className="flex-1 min-w-0 flex justify-start">
             <div
-              className="h-8 min-w-[340px] max-w-[520px] px-3 border rounded-[8px] text-[11px] font-semibold flex items-center justify-start"
-              style={{ borderColor: 'rgba(255,255,255,0.18)', color: '#e5e7eb', background: 'rgba(255,255,255,0.08)' }}
+              className="h-10 min-w-[300px] max-w-[520px] pl-3 pr-1 border rounded-[9px] text-[12px] font-semibold flex items-center"
+              style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#f3f4f6', background: 'rgba(255,255,255,0.09)' }}
             >
-              <span className="flex-1 min-w-0 truncate">
-                {locale === 'en' ? 'Mockup: EV Battery Pack Assembly Line 01' : '목업: EV 배터리 팩 조립 라인 01'}
-              </span>
+              <span className="flex-1 min-w-0 truncate pr-2">{processInfoFormInitial.processName}</span>
               <button
                 type="button"
-                className="group relative h-6 w-6 rounded-[6px] border inline-flex items-center justify-center shrink-0 transition-colors duration-150"
+                className="group relative h-9 w-9 shrink-0 rounded-[6px] inline-flex items-center justify-center transition-colors duration-150 hover:bg-white/[0.08] active:bg-white/[0.12]"
                 style={{
-                  borderColor: 'rgba(255,255,255,0.16)',
-                  color: '#e5e7eb',
-                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  color: '#f3f4f6',
+                  background: 'transparent',
                 }}
                 aria-label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'}
+                onClick={() => setProcessInfoModalOpen(true)}
               >
-                <Settings className="w-3.5 h-3.5" strokeWidth={2} />
+                <Settings className="w-4 h-4" strokeWidth={2.1} />
                 <CustomTooltip label={locale === 'en' ? 'Edit process info' : '공정 정보 수정'} placement="bottom" />
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <select
-              className="h-7 px-2 rounded-[7px] border text-[10px] font-semibold outline-none"
-              style={{
-                borderColor: 'rgba(255,255,255,0.16)',
-                color: '#e5e7eb',
-                background: 'rgba(255,255,255,0.08)',
-              }}
-              value={uiPreviewMode}
-              onChange={(e) => {
-                const next = e.target.value as 'light' | 'dark';
-                setInternalUiPreviewMode(next);
-                onUiPreviewModeChange?.(next);
-              }}
-              aria-label={locale === 'en' ? 'UI mode' : 'UI 모드'}
-            >
-              <option value="light">{locale === 'en' ? 'Light' : '라이트'}</option>
-              <option value="dark">{locale === 'en' ? 'Dark' : '다크'}</option>
-            </select>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative shrink-0" ref={uiModeMenuRef}>
+              <button
+                type="button"
+                id="workspace-ui-mode-trigger"
+                className="h-9 min-w-[128px] pl-2.5 pr-2 rounded-[8px] border text-[12px] font-semibold outline-none cursor-pointer inline-flex items-center justify-between gap-2 transition-colors duration-150 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-0"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  color: '#f3f4f6',
+                  background: 'rgba(255,255,255,0.1)',
+                }}
+                aria-haspopup="listbox"
+                aria-expanded={uiModeMenuOpen}
+                aria-controls="workspace-ui-mode-listbox"
+                aria-label={locale === 'en' ? 'UI mode' : 'UI 모드'}
+                onClick={() => setUiModeMenuOpen((o) => !o)}
+              >
+                <span className="inline-flex items-center gap-2 min-w-0">
+                  {uiPreviewMode === 'light' ? (
+                    <Sun className="w-4 h-4 shrink-0 text-amber-300" strokeWidth={2.1} aria-hidden />
+                  ) : (
+                    <Moon className="w-4 h-4 shrink-0 text-sky-300" strokeWidth={2.1} aria-hidden />
+                  )}
+                  <span className="truncate">
+                    {uiPreviewMode === 'light'
+                      ? locale === 'en'
+                        ? 'Light'
+                        : '라이트'
+                      : locale === 'en'
+                        ? 'Dark'
+                        : '다크'}
+                  </span>
+                </span>
+                <ChevronDown
+                  className="w-3.5 h-3.5 shrink-0 opacity-70 transition-transform duration-200"
+                  strokeWidth={2.2}
+                  aria-hidden
+                  style={{ transform: uiModeMenuOpen ? 'rotate(180deg)' : undefined }}
+                />
+              </button>
+              {uiModeMenuOpen && (
+                <div
+                  id="workspace-ui-mode-listbox"
+                  role="listbox"
+                  aria-labelledby="workspace-ui-mode-trigger"
+                  className="absolute right-0 top-[calc(100%+6px)] z-[40] min-w-full rounded-[10px] border py-1 shadow-xl"
+                  style={{
+                    borderColor: 'rgba(255,255,255,0.18)',
+                    background: 'rgba(14,16,22,0.98)',
+                    boxShadow: '0 16px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                  }}
+                >
+                  {(
+                    [
+                      { mode: 'light' as const, Icon: Sun, iconClass: 'text-amber-300', labelKo: '라이트', labelEn: 'Light' },
+                      { mode: 'dark' as const, Icon: Moon, iconClass: 'text-sky-300', labelKo: '다크', labelEn: 'Dark' },
+                    ] as const
+                  ).map(({ mode, Icon, iconClass, labelKo, labelEn }) => {
+                    const selected = uiPreviewMode === mode;
+                    const label = locale === 'en' ? labelEn : labelKo;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        className={`w-full px-2.5 py-2 text-left text-[12px] font-semibold flex items-center gap-2.5 transition-colors duration-150 ${
+                          selected ? '' : 'hover:bg-white/[0.06]'
+                        }`}
+                        style={{
+                          color: selected ? POINT_ORANGE : '#e5e7eb',
+                          background: selected ? accentRgba(POINT_ORANGE, 0.14) : 'transparent',
+                        }}
+                        onClick={() => {
+                          setInternalUiPreviewMode(mode);
+                          onUiPreviewModeChange?.(mode);
+                          setUiModeMenuOpen(false);
+                        }}
+                      >
+                        <Icon className={`w-4 h-4 shrink-0 ${iconClass}`} strokeWidth={2.1} aria-hidden />
+                        <span className="truncate">{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {sceneInfoPanelHidden && onShowSceneInfoPanel ? (
+              <button
+                type="button"
+                className="group relative h-9 w-9 rounded-[8px] border inline-flex items-center justify-center"
+                style={{
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  color: '#f3f4f6',
+                  background: 'rgba(255,255,255,0.1)',
+                }}
+                onClick={onShowSceneInfoPanel}
+                aria-label={locale === 'en' ? 'Show object usage panel' : '객체 사용률 패널 표시'}
+              >
+                <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.sceneInfo} color="currentColor" size={15} />
+                <CustomTooltip label={locale === 'en' ? 'Scene Info · Object usage' : 'Scene Info · 객체 사용률'} placement="bottom" />
+              </button>
+            ) : null}
             {([
               { id: 'comment', ko: '코멘트', en: 'Comment', iconIndex: HEADER_ACTION_ICON_INDEX.comment },
               { id: 'share', ko: '공유', en: 'Share', iconIndex: HEADER_ACTION_ICON_INDEX.share },
@@ -1239,67 +1978,68 @@ export function WorkspaceChrome({
               <button
                 key={item.id}
                 type="button"
-                className="group relative h-7 w-7 rounded-[7px] border inline-flex items-center justify-center"
+                className="group relative h-9 w-9 rounded-[8px] border inline-flex items-center justify-center"
                 style={{
-                  borderColor: 'rgba(255,255,255,0.16)',
-                  color: '#e5e7eb',
-                  background: 'rgba(255,255,255,0.08)',
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  color: '#f3f4f6',
+                  background: 'rgba(255,255,255,0.1)',
                 }}
                 aria-label={locale === 'en' ? item.en : item.ko}
               >
-                <SfdIconByIndex index={item.iconIndex} color="currentColor" size={12} />
+                <SfdIconByIndex index={item.iconIndex} color="currentColor" size={15} />
                 <CustomTooltip label={locale === 'en' ? item.en : item.ko} placement="bottom" />
               </button>
             ))}
             <button
               type="button"
-              className="group relative h-8 px-3 rounded-[8px] border text-[10px] font-bold inline-flex items-center gap-1.5"
+              className="group relative h-9 min-h-9 px-3.5 rounded-[9px] border-2 text-[12px] font-bold inline-flex items-center gap-2"
               style={{
-                borderColor: 'rgba(255,196,64,0.55)',
-                color: '#fff7ed',
-                background: 'linear-gradient(135deg, rgba(255,170,84,0.98) 0%, rgba(255,142,43,0.98) 56%, rgba(235,115,21,0.98) 100%)',
-                boxShadow: '0 8px 20px rgba(255,120,16,0.35), inset 0 1px 0 rgba(255,255,255,0.45)',
+                borderColor: 'rgba(255,220,140,0.95)',
+                color: '#1a0a00',
+                background: 'linear-gradient(180deg, #fff4e0 0%, #ffcc66 18%, #ff8e2b 55%, #ea6c12 100%)',
+                boxShadow:
+                  '0 0 0 1px rgba(255,255,255,0.55) inset, 0 10px 28px rgba(255,110,20,0.55), 0 2px 8px rgba(0,0,0,0.35)',
               }}
-              aria-label={locale === 'en' ? 'Plan info' : '플랜 정보'}
+              aria-label={locale === 'en' ? 'Plan' : '플랜'}
             >
-              <Sparkles className="w-3.5 h-3.5 shrink-0" strokeWidth={2.2} />
-              <span className="leading-none">{locale === 'en' ? 'Plan Info' : '플랜 정보'}</span>
-              <CustomTooltip label={locale === 'en' ? 'Premium trigger' : '유료 기능 안내'} placement="bottom" />
+              <Sparkles className="w-4 h-4 shrink-0" strokeWidth={2.4} style={{ color: '#7c2d12' }} />
+              <span className="leading-none tracking-tight">{locale === 'en' ? 'Plan' : '플랜'}</span>
+              <CustomTooltip label={locale === 'en' ? 'Premium & billing' : '유료 플랜·결제 안내'} placement="bottom" />
             </button>
             <button
               type="button"
-              className="group relative h-7 w-7 rounded-[7px] border inline-flex items-center justify-center"
+              className="group relative h-9 w-9 rounded-[8px] border inline-flex items-center justify-center"
               style={{
-                borderColor: 'rgba(255,255,255,0.16)',
-                color: '#e5e7eb',
-                background: 'rgba(255,255,255,0.08)',
+                borderColor: 'rgba(255,255,255,0.2)',
+                color: '#f3f4f6',
+                background: 'rgba(255,255,255,0.1)',
               }}
               aria-label={locale === 'en' ? 'My Page' : '마이페이지'}
             >
-              <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.mypage} color="currentColor" size={12} />
+              <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.mypage} color="currentColor" size={15} />
               <CustomTooltip label={locale === 'en' ? 'My Page' : '마이페이지'} placement="bottom" />
             </button>
             <button
               type="button"
-              className="group relative h-7 w-7 rounded-[7px] border inline-flex items-center justify-center"
+              className="group relative h-9 w-9 rounded-[8px] border inline-flex items-center justify-center"
               style={{
-                borderColor: 'rgba(255,255,255,0.16)',
-                color: '#e5e7eb',
-                background: 'rgba(255,255,255,0.08)',
+                borderColor: 'rgba(255,255,255,0.2)',
+                color: '#f3f4f6',
+                background: 'rgba(255,255,255,0.1)',
               }}
               onClick={onToggleLocale}
               aria-label={locale === 'en' ? 'Switch language' : '언어 변경'}
             >
-              <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.lang} color="currentColor" size={12} />
+              <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.lang} color="currentColor" size={15} />
               <CustomTooltip label={locale === 'en' ? 'language' : '언어'} placement="bottom" />
             </button>
           </div>
         </div>
         <div
-          className="h-8 flex items-center gap-3 rounded-[8px] px-2"
+          className="h-11 min-h-[44px] flex items-center gap-3 rounded-[10px] px-2"
           style={{ background: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.1)' }}
         >
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {([
               { id: 'menu', index: HEADER_LEFT_ICON_INDEX.menu, active: true, ko: '메뉴', en: 'menu' },
               { id: 'undo', index: HEADER_LEFT_ICON_INDEX.undo, active: false, ko: '실행 취소', en: 'undo' },
@@ -1308,11 +2048,11 @@ export function WorkspaceChrome({
               <button
                 key={item.id}
                 type="button"
-                className="group relative h-7 w-9 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
+                className="group relative h-9 w-10 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
                 style={{
-                  borderColor: item.active ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(255,255,255,0.16)',
-                  color: item.active ? POINT_ORANGE : '#e5e7eb',
-                  background: item.active ? accentRgba(POINT_ORANGE, 0.18) : 'rgba(255,255,255,0.08)',
+                  borderColor: item.active ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(255,255,255,0.2)',
+                  color: item.active ? POINT_ORANGE : '#f3f4f6',
+                  background: item.active ? accentRgba(POINT_ORANGE, 0.22) : 'rgba(255,255,255,0.1)',
                 }}
                 title={locale === 'en' ? item.en : item.ko}
                 aria-label={locale === 'en' ? item.en : item.ko}
@@ -1320,14 +2060,14 @@ export function WorkspaceChrome({
                 <SfdIconByIndex
                   index={item.index}
                   color="currentColor"
-                  size={12}
+                  size={15}
                   style={item.id === 'redo' ? { transform: 'scaleX(-1)', transformOrigin: 'center' } : undefined}
                 />
               </button>
             ))}
           </div>
           <div className="flex-1 min-w-0 flex justify-center">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
             {headerViewButtons.map((label) => {
               const iconIndex = HEADER_VIEW_ICON_INDEX[label];
               const isActive = label === 'view';
@@ -1335,18 +2075,18 @@ export function WorkspaceChrome({
                 <button
                   key={label}
                   type="button"
-                    className="group relative h-7 w-8 rounded-[7px] border transition-colors duration-150 inline-flex items-center justify-center"
+                    className="group relative h-9 w-9 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
                   style={{
-                    borderColor: isActive ? accentRgba(POINT_ORANGE, 0.42) : 'rgba(255,255,255,0.16)',
-                    color: isActive ? POINT_ORANGE : '#e5e7eb',
+                    borderColor: isActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(255,255,255,0.2)',
+                    color: isActive ? POINT_ORANGE : '#f3f4f6',
                     background: isActive
-                      ? accentRgba(POINT_ORANGE, 0.18)
-                      : 'rgba(255,255,255,0.08)',
+                      ? accentRgba(POINT_ORANGE, 0.22)
+                      : 'rgba(255,255,255,0.1)',
                   }}
                   title={label}
                   aria-label={label}
                 >
-                  <SfdIconByIndex index={iconIndex} color="currentColor" size={12} />
+                  <SfdIconByIndex index={iconIndex} color="currentColor" size={15} />
                 </button>
               );
             })}
@@ -1354,11 +2094,12 @@ export function WorkspaceChrome({
           </div>
           <button
             type="button"
-            className="h-8 px-3 text-[11px] rounded-[8px] border font-semibold shrink-0"
+            className="h-9 min-h-9 px-4 text-[12px] rounded-[9px] border font-semibold shrink-0"
             style={{
-              borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(255,255,255,0.16)',
+              borderColor: headerPrimaryActive ? accentRgba(POINT_ORANGE, 0.55) : 'rgba(255,255,255,0.22)',
               color: '#ffffff',
               background: isRiskMode ? '#f59e0b' : POINT_ORANGE,
+              boxShadow: headerPrimaryActive ? `0 6px 18px ${accentRgba(POINT_ORANGE, 0.35)}` : '0 4px 12px rgba(0,0,0,0.25)',
             }}
           >
             {primaryHeaderActionLabel}
@@ -1391,9 +2132,9 @@ export function WorkspaceChrome({
             <div
               className="h-2 cursor-ns-resize flex items-center justify-center"
               onPointerDown={onBottomResizeStart}
-              style={{ background: 'rgba(0,0,0,0.02)' }}
+              style={{ background: timelineUiTokens.bottomResizeHandleBg }}
             >
-              <GripHorizontal className="w-4 h-4 text-zinc-400" />
+              <GripHorizontal className="w-4 h-4" style={{ color: timelineUiTokens.bottomResizeGrip }} />
             </div>
             <div className="h-[calc(100%-8px)]">
               {bottomTab === 'timeline' ? (
@@ -1453,6 +2194,123 @@ export function WorkspaceChrome({
           })}
         </div>
       )}
+      <ProcessInfoEditModal
+        open={processInfoModalOpen}
+        locale={locale}
+        theme={uiPreviewMode}
+        initial={processInfoFormInitial}
+        onClose={() => setProcessInfoModalOpen(false)}
+        onSave={setSavedProcessInfo}
+      />
+
+      {libraryDrawingModalOpen && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          style={{
+            background: isDarkPreview ? 'rgba(0,0,0,0.62)' : 'rgba(0,0,0,0.5)',
+            backdropFilter: isDarkPreview ? 'blur(6px)' : 'blur(2px)',
+            WebkitBackdropFilter: isDarkPreview ? 'blur(6px)' : 'blur(2px)',
+          }}
+          role="presentation"
+          onClick={() => setLibraryDrawingModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="library-drawing-modal-title"
+            className="w-full max-w-[min(420px,calc(100vw-2rem))] rounded-2xl border shadow-2xl overflow-hidden"
+            style={{
+              background: isDarkPreview ? 'rgba(18,20,26,0.96)' : '#ffffff',
+              borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.1)',
+              boxShadow: isDarkPreview
+                ? '0 24px 56px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset'
+                : '0 24px 48px rgba(15,23,42,0.18)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="flex items-start justify-between gap-3 px-4 pt-4 pb-3 border-b"
+              style={{ borderColor: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)' }}
+            >
+              <h2
+                id="library-drawing-modal-title"
+                className="text-[15px] font-bold leading-tight pr-2"
+                style={{ color: isDarkPreview ? '#f4f4f5' : '#18181b' }}
+              >
+                {libraryDrawing
+                  ? locale === 'en'
+                    ? 'Replace drawing'
+                    : '도면 교체'
+                  : locale === 'en'
+                    ? 'Upload drawing'
+                    : '도면 업로드'}
+              </h2>
+              <button
+                type="button"
+                className="shrink-0 rounded-lg p-1.5 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+                style={{ color: isDarkPreview ? 'rgba(228,228,231,0.75)' : '#52525b' }}
+                onClick={() => setLibraryDrawingModalOpen(false)}
+                aria-label={locale === 'en' ? 'Close' : '닫기'}
+              >
+                <X className="w-4 h-4" strokeWidth={2} />
+              </button>
+            </div>
+            <div className="px-4 py-3">
+              <p
+                className="text-[13px] leading-relaxed"
+                style={{ color: isDarkPreview ? 'rgba(228,228,231,0.78)' : '#52525b' }}
+              >
+                {locale === 'en' ? (
+                  <>
+                    Reference drawing for the workspace (e.g. header strip). Formats: DWG, DXF, PDF, STEP/STP, PNG,
+                    JPG, SVG. This is <strong style={{ color: isDarkPreview ? '#e4e4e7' : '#27272a' }}>not</strong> a
+                    library asset—nothing is added to the library tree.
+                  </>
+                ) : (
+                  <>
+                    작업 영역 참고용 도면입니다(예: 상단 스트립). 형식: DWG, DXF, PDF, STEP(STP), 이미지, SVG 등.{' '}
+                    <strong style={{ color: isDarkPreview ? '#e4e4e7' : '#27272a' }}>라이브러리 자산과 별개</strong>이며
+                    트리에 항목이 추가되지 않습니다.
+                  </>
+                )}
+              </p>
+            </div>
+            <div
+              className="flex items-center justify-end gap-2 px-4 py-3 border-t"
+              style={{
+                borderColor: isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)',
+                background: isDarkPreview ? 'rgba(12,14,18,0.92)' : 'rgba(250,250,250,0.96)',
+              }}
+            >
+              <button
+                type="button"
+                className="rounded-lg px-3 py-2 text-[12px] font-bold transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+                style={{
+                  background: isDarkPreview ? 'transparent' : '#ffffff',
+                  border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.2)' : 'rgba(15,23,42,0.14)'}`,
+                  color: isDarkPreview ? '#e4e4e7' : '#27272a',
+                }}
+                onClick={() => setLibraryDrawingModalOpen(false)}
+              >
+                {locale === 'en' ? 'Close' : '닫기'}
+              </button>
+              <button
+                type="button"
+                className="rounded-lg px-3 py-2 text-[12px] font-bold transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+                style={{
+                  background: accentRgba(POINT_ORANGE, 0.18),
+                  border: `1px solid ${accentRgba(POINT_ORANGE, 0.42)}`,
+                  color: POINT_ORANGE,
+                }}
+                onClick={openLibraryDrawingPicker}
+              >
+                {locale === 'en' ? 'Choose file' : '파일 선택'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {bottomOpen && (
         <button
           type="button"

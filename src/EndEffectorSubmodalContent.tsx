@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type React from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { EeSlot, PanelData } from './panelData';
+import { adjustEeSelectedIdxAfterClear, compactEeSlotsToFront } from './panelData';
 import { useLocale } from './localeContext';
 import {
   Section,
@@ -64,6 +66,7 @@ export function EndEffectorSubmodalContent({
   data,
   setData,
   selectedIdx,
+  setSelectedEeIdx,
   theme,
   accentColor,
   mode = 'settings',
@@ -71,6 +74,8 @@ export function EndEffectorSubmodalContent({
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
   selectedIdx: number | null;
+  /** 리스트 압축 시 App 쪽 선택 인덱스 보정용 */
+  setSelectedEeIdx?: Dispatch<SetStateAction<number | null>>;
   theme: 'light' | 'dark';
   accentColor: string;
   mode?: 'settings' | 'connection';
@@ -80,6 +85,16 @@ export function EndEffectorSubmodalContent({
   const isDark = theme === 'dark';
   const [eePickerOpen, setEePickerOpen] = useState(false);
   const selectedEe = selectedIdx !== null ? data.eeSlots[selectedIdx] : null;
+  const eeSubmodalRenderCountRef = useRef(0);
+  eeSubmodalRenderCountRef.current += 1;
+  console.log('[Render][EndEffectorSubmodalContent]', {
+    count: eeSubmodalRenderCountRef.current,
+    mode,
+    selectedIdx,
+    selectedEeExists: selectedEe != null,
+    eePickerOpen,
+    eeFilledCount: data.eeSlots.filter(Boolean).length,
+  });
 
   function assignSlotFromPicker(slot: number, m: PickedEeModel) {
     setData((p) => {
@@ -108,8 +123,9 @@ export function EndEffectorSubmodalContent({
     setData((p) => {
       const slots = [...p.eeSlots] as (EeSlot | null)[];
       slots[idx] = null;
-      return { ...p, eeSlots: slots };
+      return { ...p, eeSlots: compactEeSlotsToFront(slots) };
     });
+    setSelectedEeIdx?.((prev: number | null) => adjustEeSelectedIdxAfterClear(prev, idx));
   }
 
   function updateEeField(idx: number, field: keyof EeSlot, value: string) {

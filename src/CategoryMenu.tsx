@@ -49,9 +49,10 @@ const SUB_MODAL_OBJECT_IDS = new Set(['motion', 'collision', 'collab']);
 export const SUB_MODAL_WIDTH = 320;
 export const SUB_MODAL_GAP = 8;
 export const VIEWPORT_MARGIN = 8;
-const SUB_MODAL_MIN_HEIGHT = 280;
-const SUB_MODAL_MAX_HEIGHT = 900;
-const SUB_MODAL_FLOOR_HEIGHT = 160;
+/** 서브모달·엔드이펙터 서브레이어 높이 클램프 공통 상수 */
+export const SUB_MODAL_MIN_HEIGHT = 280;
+export const SUB_MODAL_MAX_HEIGHT = 900;
+export const SUB_MODAL_FLOOR_HEIGHT = 160;
 
 function computeSubModalPosition(menuRect: DOMRect, subWidth: number, subHeight: number): { left: number; top: number } {
   const vw = window.innerWidth;
@@ -348,6 +349,19 @@ export default function CategoryMenu({
   const effectiveMotionUploadDefault = motionUploadDefault && !anyEditMode;
   const effectiveMotionGenerateDefaults = motionGenerateDefaults && !anyEditMode;
   const effectiveCollisionDefaultsMode = collisionDefaultsMode && !anyEditMode;
+  const categoryMenuRenderCountRef = useRef(0);
+  categoryMenuRenderCountRef.current += 1;
+  console.log('[Render][CategoryMenu]', {
+    count: categoryMenuRenderCountRef.current,
+    selectedObjectId,
+    endeffectorActiveCategoryId,
+    eeSelectedIdx,
+    showSubModal,
+    showSubModalEffective,
+    subModalClosed,
+    motionCat,
+    collisionActiveCategoryId,
+  });
   const selectedManipRobotName =
     panelData?.manipRobots?.length && panelData.manipSelectedRobotIdx != null
       ? panelData.manipRobots[

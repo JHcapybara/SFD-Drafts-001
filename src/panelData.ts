@@ -192,6 +192,25 @@ export interface EeSlot {
   linkedItems: ManipLinkedRow[];
 }
 
+/** 채워진 슬롯만 앞에서부터 연속으로 붙이고, 나머지는 null (배열 길이 유지) */
+export function compactEeSlotsToFront(slots: (EeSlot | null)[]): (EeSlot | null)[] {
+  const len = slots.length;
+  const filled = slots.filter((s): s is EeSlot => s != null);
+  const tail = Array.from({ length: Math.max(0, len - filled.length) }, () => null as null);
+  return [...filled, ...tail];
+}
+
+/** 슬롯 제거 후 선택 인덱스 보정 (압축과 동일한 규칙) */
+export function adjustEeSelectedIdxAfterClear(
+  prev: number | null,
+  clearedIdx: number,
+): number | null {
+  if (prev === null) return null;
+  if (prev === clearedIdx) return null;
+  if (prev > clearedIdx) return prev - 1;
+  return prev;
+}
+
 /** 매니퓰레이터 스펙 — 로봇 유형 (도메인 상수) */
 export const MANIP_ROBOT_TYPES = ['MANIPULATOR', 'MOBILE', 'MOBILE_MANIPULATOR', 'DUAL_ARM'] as const;
 export type ManipRobotType = (typeof MANIP_ROBOT_TYPES)[number];
@@ -663,46 +682,7 @@ export const DEFAULT_DATA: PanelData = {
     },
   ],
   manipSelectedRobotIdx: null,
-  eeSlots: [
-    {
-      objectName: 'object_name',
-      name: 'EGP 64',
-      modelFileName: 'EGP64.stl',
-      type: 'Gripper',
-      mass: '2.5',
-      makerLabel: 'Schunk',
-      source: 'catalog',
-      tcpPos: { x: '0', y: '0', z: '200' },
-      tcpRot: { rx: '0', ry: '0', rz: '0' },
-      eeSize: { w: '120', d: '80', h: '95' },
-      eeOuterDiam: '0',
-      eeCom: { cx: '0', cy: '0', cz: '40' },
-      eeAutoCom: true,
-      linkedItems: [
-        { name: 'EE_Group_01', model: 'Schunk EGP 64', kind: 'End effector' },
-        { name: 'Fieldbus_A1', model: 'PROFINET I/O', kind: 'Fieldbus' },
-      ],
-    },
-    {
-      objectName: 'object_name',
-      name: 'Cognex 3D',
-      modelFileName: 'Cognex3D.stl',
-      type: 'Vision',
-      mass: '0.8',
-      makerLabel: 'Cognex',
-      source: 'catalog',
-      tcpPos: { x: '0', y: '0', z: '150' },
-      tcpRot: { rx: '0', ry: '0', rz: '0' },
-      eeSize: { w: '90', d: '60', h: '45' },
-      eeOuterDiam: '0',
-      eeCom: { cx: '0', cy: '0', cz: '20' },
-      eeAutoCom: true,
-      linkedItems: [
-        { name: 'Vision_Link_01', model: 'Cognex 3D', kind: 'Vision IO' },
-      ],
-    },
-    null, null, null,
-  ],
+  eeSlots: [null, null, null, null, null],
   pathType: 'Linear', blendRadius: '50',
   maxSpeed: '1,000', acceleration: '500', jerk: '200',
   ...MOTION_ADD_DEFAULTS,

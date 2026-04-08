@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Info, GripHorizontal, Plus, Lock, Eye, FileText,
+  Info, GripVertical, Plus, Lock, Eye, FileText,
   Bot, Minus,
 } from 'lucide-react';
 import type { TabContentId } from './types';
@@ -22,8 +22,10 @@ import {
   createMotionSeqItemMove,
   createMotionSeqItemStop,
   DEFAULT_DATA,
+  compactEeSlotsToFront,
   formatUploadDurationSecDisplay,
   sumAllUploadGroupsDurationSec,
+  adjustEeSelectedIdxAfterClear,
 } from './panelData';
 import {
   getCollisionEntityList,
@@ -76,6 +78,10 @@ function sumMotionDurationSec(items: MotionSeqItem[]): number {
 const PANEL_WIDTH = 320;
 /** ???? ?? ? ?? ?? ?? ?? */
 const PANEL_MIN_HEIGHT = 640;
+
+/** 엔드이펙터 슬롯 리스트와 동일 높이 — 프로퍼티 모달 내 선택형 리스트 행 공통 */
+const PROPERTY_MODAL_LIST_ROW_CLASS =
+  'w-full flex items-center gap-2.5 px-3 py-2 min-h-[52px] box-border transition-all duration-150 text-left';
 
 // ?? ??? ?? ?????????????????????????????????????????????????????????????
 export interface Tokens {
@@ -774,7 +780,7 @@ export function MotionUploadSection({
 }
 
 // ?? ????? ?? + ?? ???? ?????????????????????????????????????????
-function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant, accentColor }: {
+function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant, accentColor, onFilledSlotClick }: {
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
   t: Tokens;
@@ -782,11 +788,37 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
   setSelectedIdx: React.Dispatch<React.SetStateAction<number | null>>;
   variant: 'settings' | 'settings-list-only' | 'connection';
   accentColor: string;
+  onFilledSlotClick?: (idx: number) => void;
 }) {
   const { L } = useLocale();
   const MAX_SLOTS = 5;
   const selectedEe = selectedIdx !== null ? data.eeSlots[selectedIdx] : null;
   const [eePickerOpen, setEePickerOpen] = useState(false);
+  const [eeFillOrderHint, setEeFillOrderHint] = useState<string | null>(null);
+  const eeFillOrderHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eeListRenderCountRef = useRef(0);
+  eeListRenderCountRef.current += 1;
+  const showEeFillOrderHint = useCallback(() => {
+    if (eeFillOrderHintTimerRef.current) clearTimeout(eeFillOrderHintTimerRef.current);
+    setEeFillOrderHint(L.eeFillInOrderHint);
+    eeFillOrderHintTimerRef.current = setTimeout(() => {
+      setEeFillOrderHint(null);
+      eeFillOrderHintTimerRef.current = null;
+    }, 2800);
+  }, [L.eeFillInOrderHint]);
+
+  useEffect(() => () => {
+    if (eeFillOrderHintTimerRef.current) clearTimeout(eeFillOrderHintTimerRef.current);
+  }, []);
+
+  console.log('[Render][PropertyPanel/EeListSection]', {
+    count: eeListRenderCountRef.current,
+    variant,
+    selectedIdx,
+    selectedEeExists: selectedEe != null,
+    eePickerOpen,
+    eeFilledCount: data.eeSlots.filter(Boolean).length,
+  });
 
   function assignSlotFromPicker(slot: number, m: PickedEeModel) {
     setData((p) => {
@@ -815,9 +847,9 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
     setData((p) => {
       const slots = [...p.eeSlots] as (EeSlot | null)[];
       slots[idx] = null;
-      return { ...p, eeSlots: slots };
+      return { ...p, eeSlots: compactEeSlotsToFront(slots) };
     });
-    setSelectedIdx(null);
+    setSelectedIdx((prev) => adjustEeSelectedIdxAfterClear(prev, idx));
   }
 
   function updateEeField(idx: number, field: keyof EeSlot, value: string) {
@@ -872,9 +904,24 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
         isDark={isDark}
       />
       {/* ?? ?? */}
-      <div className="rounded-[12px] overflow-hidden shrink-0" style={{ border: `1px solid ${t.panelBorder}` }}>
+      <div className="rounded-[12px] overflow-visible shrink-0 relative" style={{ border: `1px solid ${t.panelBorder}` }}>
+        {eeFillOrderHint ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute left-2 right-2 bottom-2 z-20 rounded-[8px] px-3 py-2 text-[11px] font-medium leading-snug shadow-lg pointer-events-none"
+            style={{
+              background: isDark ? 'rgba(30,31,36,0.96)' : 'rgba(17,24,39,0.94)',
+              color: isDark ? '#f3f4f6' : '#fafafa',
+              border: isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(0,0,0,0.12)',
+              boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.45)' : '0 8px 24px rgba(0,0,0,0.12)',
+            }}
+          >
+            {eeFillOrderHint}
+          </div>
+        ) : null}
         {/* ?? */}
-        <div className="flex items-center gap-2 px-3 py-2.5" style={{ background: t.sectionHeaderBg }}>
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-t-[12px]" style={{ background: t.sectionHeaderBg }}>
           <div className="w-[8px] h-[8px] rounded-[2px] shrink-0" style={{ background: accentColor }} />
           <span className="flex-1 text-[12px]" style={{ color: t.textPrimary, fontWeight: 600 }}>{L.eeListTitle}</span>
           <span className="text-[10px]" style={{ color: t.textSecondary }}>
@@ -884,26 +931,48 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
         <div style={{ height: 1, background: t.divider }} />
 
         {/* ?? ??? */}
-        <div className="flex flex-col">
+        <div className="flex flex-col overflow-hidden rounded-b-[12px]">
           {Array.from({ length: MAX_SLOTS }, (_, i) => {
             const ee = data.eeSlots[i];
             const isSelected = selectedIdx === i;
+            /** 1번부터 순서대로만 추가: i번을 채우려면 앞 슬롯이 모두 채워져 있어야 함 */
+            const canAddToEmptySlot =
+              i === 0 || data.eeSlots.slice(0, i).every((s) => s != null);
+            const emptySlotBlocked = !ee && variant !== 'connection' && !canAddToEmptySlot;
 
             return (
               <div key={i}>
                 {i > 0 && <div style={{ height: 1, background: t.divider }} />}
                 <button
-                  className="w-full flex items-center gap-2.5 px-3 py-2 transition-all duration-150 text-left"
+                  type="button"
+                  aria-disabled={emptySlotBlocked}
+                  title={emptySlotBlocked ? L.eeFillInOrderHint : undefined}
+                  className={`${PROPERTY_MODAL_LIST_ROW_CLASS} ${
+                    emptySlotBlocked ? 'opacity-45 cursor-not-allowed' : ''
+                  }`}
                   style={{ background: isSelected ? slotActiveBg : 'transparent' }}
                   onClick={() => {
                     if (!ee && variant !== 'connection') {
+                      if (!canAddToEmptySlot) {
+                        showEeFillOrderHint();
+                        return;
+                      }
                       setSelectedIdx(i);
                       setEePickerOpen(true);
                       return;
                     }
-                    // 엔드이펙터 상세 서브레이어와 선택 상태가 흔들리지 않도록
-                    // 리스트 클릭은 항상 "선택" 동작만 수행한다.
-                    if (!isSelected) setSelectedIdx(i);
+                    if (!ee) return;
+                    if (!isSelected) {
+                      setSelectedIdx(i);
+                      return;
+                    }
+                    onFilledSlotClick?.(i);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!emptySlotBlocked) return;
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    showEeFillOrderHint();
                   }}
                 >
                   {/* ?? ?? ?? */}
@@ -917,11 +986,11 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
 
                   {ee ? (
                     <>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 py-0.5">
                         <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: isSelected ? accentColor : t.textPrimary }}>
                           {ee.objectName}
                         </p>
-                        <p className="text-[10px] leading-none mt-0.5 truncate" style={{ color: t.textSecondary }}>
+                        <p className="text-[10px] leading-none truncate" style={{ color: t.textSecondary }}>
                           {ee.name}{' \u00B7 '}{ee.type}{' \u00B7 '}{ee.mass} kg
                         </p>
                       </div>
@@ -929,12 +998,17 @@ function EeListSection({ data, setData, t, selectedIdx, setSelectedIdx, variant,
                         expanded={isSelected}
                         color={isSelected ? accentColor : t.textSecondary}
                         size={14}
+                        className="shrink-0 self-center"
                       />
                     </>
                   ) : (
                     <>
-                      <p className="flex-1 text-[11px]" style={{ color: t.textSecondary, fontStyle: 'italic' }}>{L.eeSlotEmpty}</p>
-                      <Plus className="w-3.5 h-3.5 shrink-0" strokeWidth={2} style={{ color: t.textSecondary, opacity: 0.4 }} />
+                      <div className="flex-1 min-w-0 self-stretch flex items-center min-h-0">
+                        <p className="text-[12px] font-medium leading-tight truncate" style={{ color: t.textSecondary, fontStyle: 'italic' }}>
+                          {L.eeSlotEmpty}
+                        </p>
+                      </div>
+                      <Plus className="w-3.5 h-3.5 shrink-0 self-center" strokeWidth={2} style={{ color: t.textSecondary, opacity: 0.4 }} />
                     </>
                   )}
                 </button>
@@ -1149,7 +1223,7 @@ function CollisionEntityZoneContent({
                 {i > 0 && <div style={{ height: 1, background: t.divider }} />}
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2.5 px-3 py-2 transition-all duration-150 text-left"
+                  className={PROPERTY_MODAL_LIST_ROW_CLASS}
                   style={{
                     background: isSelected ? slotActiveBg : 'transparent',
                     borderLeft: isSelected ? `3px solid ${accentColor}` : '3px solid transparent',
@@ -1165,13 +1239,18 @@ function CollisionEntityZoneContent({
                   >
                     {i + 1}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 py-0.5">
                     <p className="text-[12px] font-semibold leading-tight truncate" style={{ color: isSelected ? accentColor : t.textPrimary }}>
                       {ent.objectName}
                     </p>
-                    <p className="text-[10px] leading-none mt-0.5 truncate" style={{ color: t.textSecondary }}>{ent.subtitle}</p>
+                    <p className="text-[10px] leading-none truncate" style={{ color: t.textSecondary }}>{ent.subtitle}</p>
                   </div>
-                  <SfdChevronTree expanded={isSelected} color={isSelected ? accentColor : t.textSecondary} size={14} />
+                  <SfdChevronTree
+                    expanded={isSelected}
+                    color={isSelected ? accentColor : t.textSecondary}
+                    size={14}
+                    className="shrink-0 self-center"
+                  />
                 </button>
               </div>
             );
@@ -1489,7 +1568,7 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
               {i > 0 && <div style={{ height: 1, background: t.divider }} />}
               <button
                 type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 transition-all duration-150 text-left"
+                className={PROPERTY_MODAL_LIST_ROW_CLASS}
                 style={{ background: isSelected ? slotActiveBg : 'transparent' }}
                 onClick={() => setData((p) => ({ ...p, manipSelectedRobotIdx: i }))}
               >
@@ -1502,19 +1581,16 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
                 >
                   {i + 1}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="text-[12px] font-semibold leading-tight truncate"
-                    style={{ color: isSelected ? accentColor : t.textPrimary }}
-                  >
-                    {r.manipObjectName}
-                  </p>
-                  <p className="text-[10px] leading-none mt-0.5 truncate" style={{ color: t.textSecondary }}>
-                    {r.manipModel}{' \u00B7 '}{r.manipMaker}
-                  </p>
-                  <div className="mt-1 flex items-center gap-1.5">
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 py-0.5">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
+                    <p
+                      className="text-[12px] font-semibold leading-tight truncate min-w-0 flex-1"
+                      style={{ color: isSelected ? accentColor : t.textPrimary }}
+                    >
+                      {r.manipObjectName}
+                    </p>
                     <span
-                      className="inline-flex items-center rounded-[6px] px-1.5 py-0.5 text-[9px] font-semibold"
+                      className="shrink-0 inline-flex items-center rounded-[5px] px-1.5 py-0.5 text-[9px] font-semibold leading-none"
                       style={{
                         color: isSelected ? accentColor : t.textSecondary,
                         background: isSelected ? accentRgba(accentColor, 0.14) : t.tabBarBg,
@@ -1524,11 +1600,15 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
                       {isSingle ? L.manipListSingleItemTag : `${L.manipListCombinedItemTag} ${i + 1}`}
                     </span>
                   </div>
+                  <p className="text-[10px] leading-none truncate" style={{ color: t.textSecondary }}>
+                    {r.manipModel}{' \u00B7 '}{r.manipMaker}
+                  </p>
                 </div>
                 <SfdChevronTree
                   expanded={isSelected}
                   color={isSelected ? accentColor : t.textSecondary}
                   size={14}
+                  className="shrink-0 self-center"
                 />
               </button>
             </div>
@@ -1558,7 +1638,7 @@ function ManipulatorListSection({ data, setData, t, accentColor }: {
 }
 
 // ?? ?? ?? ??? ????????????????????????????????????????????????????????
-function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, theme, activeCategoryId, objectAccent }: {
+function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, theme, activeCategoryId, objectAccent, onEeFilledSlotClick }: {
   tabId: TabContentId;
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
@@ -1568,6 +1648,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
   theme: 'light' | 'dark';
   activeCategoryId?: string;
   objectAccent: string;
+  onEeFilledSlotClick?: (idx: number) => void;
 }) {
   const { L, locale } = useLocale();
   function f(key: keyof PanelData) { return (v: string) => setData((p) => ({ ...p, [key]: v })); }
@@ -1584,6 +1665,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
           setSelectedIdx={setEeSelectedIdx}
           variant="settings-list-only"
           accentColor={objectAccent}
+          onFilledSlotClick={onEeFilledSlotClick}
         />
       );
     case 'ee-conn':
@@ -1596,6 +1678,7 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
           setSelectedIdx={setEeSelectedIdx}
           variant="settings-list-only"
           accentColor={objectAccent}
+          onFilledSlotClick={onEeFilledSlotClick}
         />
       );
 
@@ -1733,6 +1816,7 @@ interface PropertyPanelProps {
   onCollisionCategoryChange?: (categoryId: string) => void;
   onEndEffectorCategoryChange?: (categoryId: string) => void;
   endeffectorActiveCategoryId?: string;
+  onEeFilledSlotClick?: (idx: number) => void;
 }
 
 export default function PropertyPanel({
@@ -1756,6 +1840,7 @@ export default function PropertyPanel({
   onCollisionCategoryChange,
   onEndEffectorCategoryChange,
   endeffectorActiveCategoryId: controlledEndeffectorCategoryId,
+  onEeFilledSlotClick,
 }: PropertyPanelProps) {
   const { L, objects, pointScheme } = useLocale();
   const objectAccent = useMemo(
@@ -1792,10 +1877,14 @@ export default function PropertyPanel({
   const isMotionObject = selectedObject.id === 'motion';
   const isManipulatorObject = selectedObject.id === 'manipulator';
   const [activeCategoryId, setActiveCategoryId] = useState(selectedObject.categories[0].id);
+  const effectiveActiveCategoryId = selectedObject.categories.some((c) => c.id === activeCategoryId)
+    ? activeCategoryId
+    : selectedObject.categories[0].id;
 
   useEffect(() => {
     const obj = objects.find((o) => o.id === selectedObjectId) ?? objects[0];
-    setActiveCategoryId(obj.categories[0].id);
+    const nextCategoryId = obj.categories[0].id;
+    setActiveCategoryId((prev) => (prev === nextCategoryId ? prev : nextCategoryId));
   }, [selectedObjectId, objects]);
 
   useEffect(() => {
@@ -1810,21 +1899,21 @@ export default function PropertyPanel({
 
   useEffect(() => {
     if (selectedObject.id === 'motion' && onMotionCategoryChange) {
-      onMotionCategoryChange(activeCategoryId);
+      onMotionCategoryChange(effectiveActiveCategoryId);
     }
-  }, [activeCategoryId, selectedObject.id, onMotionCategoryChange]);
+  }, [effectiveActiveCategoryId, selectedObject.id, onMotionCategoryChange]);
 
   useEffect(() => {
     if (selectedObject.id === 'collision' && onCollisionCategoryChange) {
-      onCollisionCategoryChange(activeCategoryId);
+      onCollisionCategoryChange(effectiveActiveCategoryId);
     }
-  }, [activeCategoryId, selectedObject.id, onCollisionCategoryChange]);
+  }, [effectiveActiveCategoryId, selectedObject.id, onCollisionCategoryChange]);
 
   useEffect(() => {
     if (selectedObject.id === 'endeffector' && onEndEffectorCategoryChange) {
-      onEndEffectorCategoryChange(activeCategoryId);
+      onEndEffectorCategoryChange(effectiveActiveCategoryId);
     }
-  }, [activeCategoryId, selectedObject.id, onEndEffectorCategoryChange]);
+  }, [effectiveActiveCategoryId, selectedObject.id, onEndEffectorCategoryChange]);
 
   useEffect(() => {
     setPanelHeightPx(null);
@@ -1876,9 +1965,22 @@ export default function PropertyPanel({
     };
   }, [resizeEdge, onPosChange]);
 
-  const activeCategory = selectedObject.categories.find((c) => c.id === activeCategoryId) ?? selectedObject.categories[0];
+  const activeCategory =
+    selectedObject.categories.find((c) => c.id === effectiveActiveCategoryId) ?? selectedObject.categories[0];
   const isMotionUploadCategory = isMotionObject && activeCategory.id === 'motion-upload';
   const isMotionGenerateCategory = isMotionObject && activeCategory.id === 'motion-generate';
+  const propertyPanelRenderCountRef = useRef(0);
+  propertyPanelRenderCountRef.current += 1;
+  console.log('[Render][PropertyPanel]', {
+    count: propertyPanelRenderCountRef.current,
+    selectedObjectId: selectedObject.id,
+    activeCategoryId,
+    effectiveActiveCategoryId,
+    eeSelectedIdx,
+    panelHeightPx,
+    isDragging,
+    pos,
+  });
 
   const startTopResize = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -2014,7 +2116,7 @@ export default function PropertyPanel({
         }}
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       >
-        <div className="shrink-0" style={{ color: t.dragHandleColor }}><GripHorizontal className="w-4 h-4" strokeWidth={2} /></div>
+        <div className="shrink-0" style={{ color: t.dragHandleColor }}><GripVertical className="w-4 h-4" strokeWidth={2} /></div>
         <div className="flex-1 min-w-0">
           <p className="text-[14px] leading-tight truncate" style={{ color: t.textPrimary, fontWeight: 700, letterSpacing: '-0.02em' }}>
             {selectedObject.id === 'endeffector'
@@ -2063,7 +2165,7 @@ export default function PropertyPanel({
             onMouseLeave={scrollCategoryTabsToStart}
           >
             {selectedObject.categories.map((cat) => {
-              const isActive = cat.id === activeCategoryId;
+              const isActive = cat.id === effectiveActiveCategoryId;
               return (
                 <button
                   key={cat.id}
@@ -2132,8 +2234,9 @@ export default function PropertyPanel({
                   eeSelectedIdx={eeSelectedIdx}
                   setEeSelectedIdx={setEeSelectedIdx}
                   theme={theme}
-                  activeCategoryId={activeCategoryId}
+                  activeCategoryId={effectiveActiveCategoryId}
                   objectAccent={objectAccent}
+                  onEeFilledSlotClick={onEeFilledSlotClick}
                 />
               ))}
             </div>
