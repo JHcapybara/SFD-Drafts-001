@@ -14,6 +14,7 @@ import { accentRgba, getObjectAccent, POINT_ORANGE } from './pointColorSchemes';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
 import { workspaceHeaderIconIndex } from './sfd/objectGroupHeaderIcon';
 import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
+import { SFD_ONBOARDING_TARGET_ATTR, SfdOnboardingTarget } from './sfd/sfdOnboardingTargets';
 import { DARK as PROPERTY_DARK_TOKENS, LIGHT as PROPERTY_LIGHT_TOKENS } from './PropertyPanel';
 
 /** Objects 1뎁스 — `sfd-icon-2026` 파일 인덱스 */
@@ -617,6 +618,7 @@ export default function CategoryMenu({
     <>
     <div
       ref={menuRef}
+      {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.categoryMenuObjectsModal }}
       className="absolute flex flex-col rounded-[14px] overflow-hidden"
       style={{
         left: renderedLeft,
@@ -888,6 +890,7 @@ export default function CategoryMenu({
     {showSubModalEffective && selectedObjectDef && (
       <div
         ref={subModalRef}
+        {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.categoryMenuSubModal }}
         role="complementary"
         aria-label={L.subModalSectionTitle}
         className="fixed flex flex-col rounded-[14px] overflow-hidden"

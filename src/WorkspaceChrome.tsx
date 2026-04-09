@@ -36,7 +36,15 @@ import {
 import { SafeticsBrandLockup } from './SafeticsBrandLockup';
 import { ProcessInfoEditModal, type ProcessInfoSnapshot } from './ProcessInfoEditModal';
 import { ModalExamplesLayer } from './ModalExamplesLayer';
+import type { OnboardingOpenAppAction } from './onboardingAppActions';
+import { OnboardingGuideLayer } from './OnboardingGuideLayer';
+import { SFD_ONBOARDING_TARGET_ATTR, SfdOnboardingTarget } from './sfd/sfdOnboardingTargets';
 import { SafetyAiPanel, type SafetyAiColors } from './SafetyAiPanel';
+import { SafetyDiagnosisCellPickerModal, type SafetyDiagnosisCellItem } from './SafetyDiagnosisCellPickerModal';
+import { SafetyDiagnosisModal } from './SafetyDiagnosisModal';
+import { SensorSafetyDistanceCalculatorModal } from './SensorSafetyDistanceCalculatorModal';
+import { CriLegend } from './CriLegend';
+import { AnalysisSidePanel } from './AnalysisSidePanel';
 
 const DEFAULT_HEADER_PROCESS_NAME: Record<'ko' | 'en', string> = {
   ko: '목업: EV 배터리 팩 조립 라인 01',
@@ -365,6 +373,7 @@ export function WorkspaceChrome({
   onUiPreviewModeChange,
   sceneInfoPanelHidden,
   onShowSceneInfoPanel,
+  onOnboardingAppAction,
 }: {
   locale: 'ko' | 'en';
   rightPanelVisible: boolean;
@@ -374,6 +383,8 @@ export function WorkspaceChrome({
   /** true면 헤더에 씬 정보(객체 사용률) 패널 다시 열기 버튼 표시 */
   sceneInfoPanelHidden?: boolean;
   onShowSceneInfoPanel?: () => void;
+  /** 온보딩 Play 시 App 쪽 상태(객체·충돌·모션 등)만 조정 — 라이브러리/GNB/타임라인은 크롬 내부 처리 */
+  onOnboardingAppAction?: (action: OnboardingOpenAppAction) => void;
 }) {
   const [leftMode, setLeftMode] = useState<LeftMode>('tree');
   const [leftOpen, setLeftOpen] = useState(true);
@@ -409,6 +420,12 @@ export function WorkspaceChrome({
   });
   const [processInfoModalOpen, setProcessInfoModalOpen] = useState(false);
   const [modalExamplesOpen, setModalExamplesOpen] = useState(false);
+  const [onboardingGuideOpen, setOnboardingGuideOpen] = useState(false);
+  const [safetyDiagnosisCellPickerOpen, setSafetyDiagnosisCellPickerOpen] = useState(false);
+  const [safetyDiagnosisModalOpen, setSafetyDiagnosisModalOpen] = useState(false);
+  const [safetyDiagnosisPickedCell, setSafetyDiagnosisPickedCell] = useState<SafetyDiagnosisCellItem | null>(null);
+  const [sensorSafetyCalculatorOpen, setSensorSafetyCalculatorOpen] = useState(false);
+  const analysisHeaderActionRef = useRef<HTMLButtonElement>(null);
   const [savedProcessInfo, setSavedProcessInfo] = useState<ProcessInfoSnapshot | null>(null);
   const uiPreviewMode = controlledUiPreviewMode ?? internalUiPreviewMode;
   const isDarkPreview = uiPreviewMode === 'dark';
@@ -422,6 +439,32 @@ export function WorkspaceChrome({
       boxShadow: sidePanelTokens.elevationRaised,
     }),
     [sidePanelTokens.elevationRaised, sidePanelTokens.inputBg, sidePanelTokens.inputBorder, sidePanelTokens.textPrimary],
+  );
+
+  const handleOnboardingOpenRelated = useCallback(
+    (action: OnboardingOpenAppAction) => {
+      if (action.kind === 'library') {
+        setLeftMode('library');
+        setLeftOpen(true);
+        return;
+      }
+      if (action.kind === 'left-gnb-mode') {
+        setLeftMode(action.mode);
+        setLeftOpen(true);
+        return;
+      }
+      if (action.kind === 'timeline-dock') {
+        setBottomOpen(true);
+        setBottomTab('timeline');
+        return;
+      }
+      if (action.kind === 'bottom-dock-open') {
+        setBottomOpen(true);
+        return;
+      }
+      onOnboardingAppAction?.(action);
+    },
+    [onOnboardingAppAction],
   );
 
   useEffect(() => {
@@ -446,10 +489,13 @@ export function WorkspaceChrome({
     };
   }, [uiModeMenuOpen]);
 
-  /** Safety AI만 넓게, 그 외 모드는 항상 최소 너비 */
+  const prevLeftModeRef = useRef<LeftMode>(leftMode);
+  /** Safety AI 선택 시 최대 너비, Safety AI 종료 시에만 최소로 복귀. 분석·트리 등은 사용자 조절 너비 유지 */
   useEffect(() => {
+    const prev = prevLeftModeRef.current;
+    prevLeftModeRef.current = leftMode;
     if (leftMode === 'safetyai') setLeftWidth(LEFT_PANEL_MAX_WIDTH);
-    else setLeftWidth(LEFT_PANEL_MIN_WIDTH);
+    else if (prev === 'safetyai') setLeftWidth(LEFT_PANEL_MIN_WIDTH);
   }, [leftMode]);
 
   const leftOffset = LEFT_GNB_WIDTH + (leftOpen ? leftWidth : 0) + 8;
@@ -461,9 +507,17 @@ export function WorkspaceChrome({
   } | null>(null);
   const bottomResizingRef = useRef<{ startY: number; startH: number } | null>(null);
 
+  const leftPanelResizable =
+    leftMode === 'safetyai' || leftMode === 'analysis' || leftMode === 'riskassessment';
+
   const onResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!leftOpen || leftMode !== 'safetyai') return;
+    if (!leftOpen || !leftPanelResizable) return;
     e.preventDefault();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
     resizingRef.current = { startX: e.clientX, startWidth: leftWidth };
     const onMove = (ev: PointerEvent) => {
       const r = resizingRef.current;
@@ -478,7 +532,7 @@ export function WorkspaceChrome({
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-  }, [leftOpen, leftMode, leftWidth]);
+  }, [leftOpen, leftPanelResizable, leftWidth]);
 
   const onBottomResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!bottomOpen) return;
@@ -512,6 +566,15 @@ export function WorkspaceChrome({
   const ModeIcon = modeIcon;
   const isRiskMode = leftMode === 'riskassessment';
   const primaryHeaderActionLabel = isRiskMode ? 'Report Issue' : 'Analysis';
+
+  useEffect(() => {
+    if (isRiskMode) {
+      setSafetyDiagnosisCellPickerOpen(false);
+      setSafetyDiagnosisModalOpen(false);
+      setSafetyDiagnosisPickedCell(null);
+      setSensorSafetyCalculatorOpen(false);
+    }
+  }, [isRiskMode]);
 
   const processInfoFormInitial = useMemo(
     (): ProcessInfoSnapshot => ({
@@ -735,7 +798,10 @@ export function WorkspaceChrome({
             e.target.value = '';
           }}
         />
-        <div className="flex flex-col gap-2">
+        <div
+          className="flex flex-col gap-2"
+          {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.libraryDrawingUpload }}
+        >
           <div className="flex items-center justify-between gap-2 px-0.5">
             <span className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: leftUiTokens.libraryMuted }}>
               {locale === 'en' ? 'Drawing' : '도면'}
@@ -827,6 +893,11 @@ export function WorkspaceChrome({
         return (
           <section
             key={section.id}
+            {...(section.id === 'robot'
+              ? { [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.librarySectionRobot }
+              : section.id === 'layout'
+                ? { [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.librarySectionLayout }
+                : {})}
             className="rounded-[18px] p-3.5 transition-shadow duration-300"
             style={{
               background: isDarkPreview ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.72)',
@@ -874,6 +945,9 @@ export function WorkspaceChrome({
                   <button
                     key={chip.id}
                     type="button"
+                    {...(chip.id === 'collab-robot'
+                      ? { [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.libraryChipCollabRobot }
+                      : {})}
                     className={`group/chip relative overflow-hidden rounded-xl py-2.5 px-3 text-left text-[11px] font-semibold leading-[16px] transition-all duration-200 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/40 ${isSingle ? 'col-span-2' : ''}`}
                     style={{
                       background: isDarkPreview ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.92)',
@@ -1590,30 +1664,34 @@ export function WorkspaceChrome({
     </div>
   ), [renderTreeNode, sidePanelTokens.inputBorder, sidePanelTokens.tabBarBg, sidePanelTokens.textPrimary]);
 
-  const renderAnalysisAreaLayout = useCallback(() => (
-    <div className="h-full relative flex flex-col border rounded-[10px] overflow-hidden p-3 gap-3" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.tabBarBg }}>
-      <div className="w-[112px] h-8 rounded-[7px] border px-3 flex items-center justify-between text-[11px] font-semibold" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.inputBg, color: sidePanelTokens.textPrimary }}>
-        <span>Robot Cell</span>
-        <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
-      </div>
-      <div className="text-[12px] font-semibold" style={{ color: sidePanelTokens.textPrimary }}>Recommend Solution</div>
-      <div className="h-28 rounded-[8px] border" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.inputBg }} />
-      <div className="h-28 rounded-[8px] border" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.inputBg }} />
-      <div className="mt-2 text-[12px] font-semibold" style={{ color: sidePanelTokens.textPrimary }}>Robot Analysis Result</div>
-      <div className="h-36 rounded-[8px] border" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.inputBg }} />
-      <div className="mt-2 text-[12px] font-semibold" style={{ color: sidePanelTokens.textPrimary }}>Unresolved Issues</div>
-      <div className="flex flex-col gap-2">
-        {Array.from({ length: 4 }).map((_, idx) => (
-          <div key={idx} className="h-10 rounded-[8px] border" style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.inputBg }} />
-        ))}
-      </div>
-      <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[7px] w-3.5 h-10 rounded-r-[4px] border"
-        style={{ borderColor: sidePanelTokens.inputBorder, background: sidePanelTokens.sectionHeaderBg }}
-        aria-hidden
+  const renderAnalysisAreaLayout = useCallback(
+    () => (
+      <AnalysisSidePanel
+        locale={locale}
+        isDark={isDarkPreview}
+        tokens={{
+          textPrimary: sidePanelTokens.textPrimary,
+          textSecondary: sidePanelTokens.textSecondary,
+          inputBorder: sidePanelTokens.inputBorder,
+          inputBg: sidePanelTokens.inputBg,
+          tabBarBg: sidePanelTokens.tabBarBg,
+          sectionHeaderBg: sidePanelTokens.sectionHeaderBg,
+        }}
+        onOpenSensorCalculator={() => setSensorSafetyCalculatorOpen(true)}
+        onSensorCalcDetailViewClick={() => setSensorSafetyCalculatorOpen(true)}
       />
-    </div>
-  ), [sidePanelTokens.inputBg, sidePanelTokens.inputBorder, sidePanelTokens.sectionHeaderBg, sidePanelTokens.tabBarBg, sidePanelTokens.textPrimary]);
+    ),
+    [
+      isDarkPreview,
+      locale,
+      sidePanelTokens.inputBg,
+      sidePanelTokens.inputBorder,
+      sidePanelTokens.sectionHeaderBg,
+      sidePanelTokens.tabBarBg,
+      sidePanelTokens.textPrimary,
+      sidePanelTokens.textSecondary,
+    ],
+  );
 
   const safetyAiColors: SafetyAiColors = useMemo(
     () => ({
@@ -1662,6 +1740,7 @@ export function WorkspaceChrome({
                 <button
                   key={id}
                   type="button"
+                  {...(id === 'library' ? { [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.leftGnbLibrary } : {})}
                   className="group relative w-full aspect-square shrink-0 rounded-[12px] flex items-center justify-center transition-all duration-150 border box-border"
                   style={{
                     background: active
@@ -1709,6 +1788,7 @@ export function WorkspaceChrome({
       {leftOpen && (
         <div
           className="fixed z-[29] rounded-[14px] overflow-hidden"
+          {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.leftWorkspaceLibraryPanel }}
           style={{
             left: LEFT_GNB_WIDTH + 8,
             top: WORKSPACE_CONTENT_TOP_PX,
@@ -1736,7 +1816,9 @@ export function WorkspaceChrome({
               className={
                 leftMode === 'safetyai'
                   ? 'flex-1 min-h-0 overflow-hidden'
-                  : 'flex-1 min-h-0 overflow-y-auto sfd-scroll p-3'
+                  : leftMode === 'analysis' || leftMode === 'riskassessment'
+                    ? 'flex-1 min-h-0 overflow-y-auto sfd-scroll px-2.5 py-2'
+                    : 'flex-1 min-h-0 overflow-y-auto sfd-scroll p-3'
               }
             >
               {leftMode === 'library' ? (
@@ -1805,14 +1887,23 @@ export function WorkspaceChrome({
               )}
             </div>
           </div>
-          {leftMode === 'safetyai' && (
+          {leftPanelResizable && (
             <div
-              className="absolute top-0 right-0 w-2 h-full cursor-ew-resize"
+              className="absolute top-0 right-0 z-20 w-2.5 h-full cursor-ew-resize group flex items-center justify-center pointer-events-auto touch-none select-none"
               onPointerDown={onResizeStart}
-              title={locale === 'en' ? 'Resize' : '너비 조절'}
+              title={locale === 'en' ? 'Drag to resize panel' : '드래그하여 패널 너비 조절'}
+              aria-label={locale === 'en' ? 'Resize left panel' : '좌측 패널 너비 조절'}
             >
-              <div className="w-full h-full flex items-center justify-center opacity-30">
-                <GripVertical className="w-3 h-3" />
+              <div
+                className="absolute inset-y-3 right-1 w-px rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: sidePanelTokens.textSecondary }}
+              />
+              <div
+                className={`relative flex h-8 w-full items-center justify-center rounded-md opacity-40 group-hover:opacity-90 transition-opacity ${
+                  isDarkPreview ? 'group-hover:bg-white/[0.08]' : 'group-hover:bg-black/[0.05]'
+                }`}
+              >
+                <GripVertical className="w-3.5 h-3.5" style={{ color: sidePanelTokens.textSecondary }} />
               </div>
             </div>
           )}
@@ -1883,6 +1974,20 @@ export function WorkspaceChrome({
               onClick={() => setModalExamplesOpen((o) => !o)}
             >
               {locale === 'en' ? 'Modal examples' : '모달 예시'}
+            </button>
+            <button
+              type="button"
+              className="h-9 px-2.5 rounded-[8px] border text-[12px] font-semibold outline-none cursor-pointer inline-flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-0 shrink-0"
+              style={{
+                borderColor: accentRgba(POINT_ORANGE, 0.35),
+                color: '#fff7ed',
+                background: accentRgba(POINT_ORANGE, 0.12),
+              }}
+              aria-pressed={onboardingGuideOpen}
+              aria-label={locale === 'en' ? 'Onboarding guide' : '온보딩 가이드'}
+              onClick={() => setOnboardingGuideOpen((o) => !o)}
+            >
+              {locale === 'en' ? 'Onboarding' : '온보딩 가이드'}
             </button>
             <div className="relative shrink-0" ref={uiModeMenuRef}>
               <button
@@ -2110,6 +2215,7 @@ export function WorkspaceChrome({
             </div>
           </div>
           <button
+            ref={analysisHeaderActionRef}
             type="button"
             className="h-9 min-h-9 px-4 text-[12px] rounded-[9px] border font-semibold shrink-0"
             style={{
@@ -2117,6 +2223,13 @@ export function WorkspaceChrome({
               color: '#ffffff',
               background: isRiskMode ? '#f59e0b' : POINT_ORANGE,
               boxShadow: headerPrimaryActive ? `0 6px 18px ${accentRgba(POINT_ORANGE, 0.35)}` : '0 4px 12px rgba(0,0,0,0.25)',
+            }}
+            aria-haspopup="dialog"
+            aria-expanded={!isRiskMode ? safetyDiagnosisCellPickerOpen : undefined}
+            aria-controls={!isRiskMode ? 'safety-cell-picker-panel' : undefined}
+            onClick={() => {
+              if (isRiskMode) return;
+              setSafetyDiagnosisCellPickerOpen((o) => !o);
             }}
           >
             {primaryHeaderActionLabel}
@@ -2127,6 +2240,7 @@ export function WorkspaceChrome({
       {/* Bottom area (timeline / analysis) */}
       <div
         className="fixed z-[28] rounded-[14px] overflow-hidden"
+        {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.bottomTimelineDock }}
         style={{
           left: bottomOpen ? leftOffset : '50%',
           right: bottomOpen ? rightReserve : undefined,
@@ -2211,6 +2325,38 @@ export function WorkspaceChrome({
           })}
         </div>
       )}
+      <SafetyDiagnosisCellPickerModal
+        open={safetyDiagnosisCellPickerOpen}
+        locale={locale}
+        isDark={isDarkPreview}
+        anchorRef={analysisHeaderActionRef}
+        onClose={() => setSafetyDiagnosisCellPickerOpen(false)}
+        onConfirm={(picked) => {
+          setSafetyDiagnosisPickedCell(picked);
+          setSafetyDiagnosisModalOpen(true);
+        }}
+      />
+      <SafetyDiagnosisModal
+        open={safetyDiagnosisModalOpen}
+        locale={locale}
+        isDark={isDarkPreview}
+        cell={safetyDiagnosisPickedCell}
+        onClose={() => {
+          setSafetyDiagnosisModalOpen(false);
+          setSafetyDiagnosisPickedCell(null);
+        }}
+        onStartAnalysis={() => {
+          setLeftMode('analysis');
+          setLeftOpen(true);
+        }}
+      />
+      <SensorSafetyDistanceCalculatorModal
+        open={sensorSafetyCalculatorOpen}
+        locale={locale}
+        isDark={isDarkPreview}
+        cellLabel={processInfoFormInitial.processName}
+        onClose={() => setSensorSafetyCalculatorOpen(false)}
+      />
       <ProcessInfoEditModal
         open={processInfoModalOpen}
         locale={locale}
@@ -2224,6 +2370,13 @@ export function WorkspaceChrome({
         onClose={() => setModalExamplesOpen(false)}
         isDark={isDarkPreview}
         locale={locale}
+      />
+      <OnboardingGuideLayer
+        open={onboardingGuideOpen}
+        onClose={() => setOnboardingGuideOpen(false)}
+        isDark={isDarkPreview}
+        locale={locale}
+        onOpenRelatedUI={handleOnboardingOpenRelated}
       />
 
       {libraryDrawingModalOpen && (
@@ -2356,6 +2509,8 @@ export function WorkspaceChrome({
           <CustomTooltip label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'} placement="top" />
         </button>
       )}
+
+      <CriLegend visible={leftMode === 'analysis'} locale={locale} />
     </>
   );
 }

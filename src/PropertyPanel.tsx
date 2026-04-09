@@ -45,6 +45,7 @@ import {
 } from './panelChromeHeights';
 import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
+import { SFD_ONBOARDING_TARGET_ATTR, SfdOnboardingTarget } from './sfd/sfdOnboardingTargets';
 import {
   SFD_ICON_HAND_GUIDING_ADD_MOVE,
   SFD_ICON_HAND_GUIDING_ADD_STOP,
@@ -2114,6 +2115,7 @@ export default function PropertyPanel({
   return (
     <div
       ref={panelRef}
+      {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.propertyPanelModal }}
       className="absolute flex flex-col w-[320px] rounded-[16px] overflow-hidden"
       style={{
         left: pos.x,

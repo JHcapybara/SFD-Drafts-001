@@ -1,0 +1,314 @@
+import { type ReactNode } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { accentRgba, POINT_ORANGE } from './pointColorSchemes';
+import { ANALYSIS_DANGER, ANALYSIS_SAFE } from './analysisPanelSemantics';
+
+type PanelTokens = {
+  textPrimary: string;
+  textSecondary: string;
+  inputBorder: string;
+  inputBg: string;
+  tabBarBg: string;
+  sectionHeaderBg: string;
+};
+
+type Props = {
+  locale: 'ko' | 'en';
+  isDark: boolean;
+  tokens: PanelTokens;
+  onPflViewClick?: (id: string, kind: 'interval' | 'collab') => void;
+};
+
+function strings(locale: 'ko' | 'en') {
+  if (locale === 'en') {
+    return {
+      robotPrefix: 'Robot:',
+      analysisResult: 'Analysis result',
+      maxCri: 'MAX CRI',
+      analysisTime: 'Analysis time',
+      completedAtLabel: 'Analysis completion time',
+      pass: 'PASS',
+      fail: 'FAIL',
+      pfl: 'PFL',
+      conditionChangeTitle: 'How to change conditions',
+      conditionItems: [
+        'Safely reshape the expected collision area',
+        'Adjust robot speed',
+        'Switch to safe collision via soft cover',
+      ],
+      criByIntervalTitle: 'CRI by analysis interval',
+      overallMaxCri: 'Overall MAX CRI',
+      intervalName: (n: number) => `Analysis interval ${n}`,
+      collabCriTitle: 'CRI by collaborative workspace',
+      collabRows: [
+        { id: 'cw1', label: 'Collaborative workspace 1: Upper arm' },
+        { id: 'cw2', label: 'Collaborative workspace 2: Chest' },
+        { id: 'cw3', label: 'Collaborative workspace 1: Forearm' },
+      ],
+      view: 'View',
+    };
+  }
+  return {
+    robotPrefix: '로봇:',
+    analysisResult: '분석 결과',
+    maxCri: 'MAX CRI',
+    analysisTime: '분석 시간',
+    completedAtLabel: '분석 완료 시간',
+    pass: 'PASS',
+    fail: 'FAIL',
+    pfl: 'PFL',
+    conditionChangeTitle: '조건 변경 방법',
+    conditionItems: [
+      '충돌예상부위 안전하게 형상 변경하기',
+      '로봇 속도 조절',
+      '소프트 커버를 통해 안전한 충돌로 변경하기',
+    ],
+    criByIntervalTitle: '분석 구간 별 CRI 결과',
+    overallMaxCri: '전체 MAX CRI',
+    intervalName: (n: number) => `분석 구간 ${n}`,
+    collabCriTitle: '협동작업영역 별 CRI 분석 결과',
+    collabRows: [
+      { id: 'cw1', label: '협동작업영역 1: 상완' },
+      { id: 'cw2', label: '협동작업영역 2: 가슴' },
+      { id: 'cw3', label: '협동작업영역 1: 전완' },
+    ],
+    view: '보기',
+  };
+}
+
+const ROBOT_MODEL = 'IRB 1600-6/1.2';
+const TIME_MAIN = '00:00:00 ~ 00:03:00';
+const TIME_INTERVAL = '00:00:00 ~ 00:02:00';
+const COMPLETED_AT = '2026.01.01 15:35:32';
+
+export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewClick }: Props) {
+  const S = strings(locale);
+  const surfaceMuted = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.05)';
+  const surfaceCard = isDark ? 'rgba(255,255,255,0.04)' : '#f4f4f5';
+
+  const badgePass = (
+    <span
+      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
+      style={{
+        background: ANALYSIS_SAFE.bgStrong,
+        color: ANALYSIS_SAFE.textStrong,
+        border: `1px solid ${ANALYSIS_SAFE.border}`,
+      }}
+    >
+      {S.pass}
+    </span>
+  );
+  const badgeFail = (
+    <span
+      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
+      style={{
+        background: ANALYSIS_DANGER.bgStrong,
+        color: ANALYSIS_DANGER.textStrong,
+        border: `1px solid ${ANALYSIS_DANGER.border}`,
+      }}
+    >
+      {S.fail}
+    </span>
+  );
+  const badgePfl = (
+    <span
+      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold"
+      style={{
+        background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)',
+        color: t.textPrimary,
+        border: `1px solid ${t.inputBorder}`,
+      }}
+    >
+      {S.pfl}
+    </span>
+  );
+
+  const rowLine = (label: string, value: ReactNode) => (
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <span style={{ color: t.textSecondary }}>{label}</span>
+      <div className="text-right font-semibold min-w-0" style={{ color: t.textPrimary }}>
+        {value}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* PASS — 녹색 강조 */}
+      <div
+        className="rounded-xl border overflow-hidden border-l-4"
+        style={{ borderColor: t.inputBorder, borderLeftColor: ANALYSIS_SAFE.border, background: t.inputBg }}
+      >
+        <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: t.inputBorder, background: isDark ? 'rgba(34,197,94,0.08)' : ANALYSIS_SAFE.bg }}>
+          {badgePass}
+          <span className="flex-1 min-w-0 text-base font-bold truncate" style={{ color: t.textPrimary }}>
+            {S.robotPrefix} {ROBOT_MODEL}
+          </span>
+        </div>
+        <div className="px-4 py-4 space-y-3" style={{ background: surfaceCard }}>
+          {rowLine(S.analysisResult, badgePass)}
+          {rowLine(S.maxCri, <span className="tabular-nums text-lg font-bold">0.9</span>)}
+          {rowLine(S.analysisTime, <span className="tabular-nums font-semibold">{TIME_MAIN}</span>)}
+          <p className="text-xs text-right pt-1" style={{ color: t.textSecondary }}>
+            {S.completedAtLabel} {COMPLETED_AT}
+          </p>
+        </div>
+      </div>
+
+      {/* FAIL — 적색 강조 */}
+      <div
+        className="rounded-xl border overflow-hidden border-l-4"
+        style={{ borderColor: t.inputBorder, borderLeftColor: ANALYSIS_DANGER.border, background: t.inputBg }}
+      >
+        <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: t.inputBorder, background: isDark ? 'rgba(239,68,68,0.1)' : ANALYSIS_DANGER.bg }}>
+          {badgeFail}
+          <span className="flex-1 min-w-0 text-base font-bold truncate" style={{ color: t.textPrimary }}>
+            {S.robotPrefix} {ROBOT_MODEL}
+          </span>
+        </div>
+        <div className="px-4 py-4 space-y-4 border-t" style={{ borderColor: t.inputBorder, background: surfaceCard }}>
+          <div
+            className="rounded-lg border px-3 py-2.5 flex items-center gap-2"
+            style={{ borderColor: t.inputBorder, background: t.inputBg }}
+          >
+            <span className="flex-1 text-sm font-semibold" style={{ color: t.textPrimary }}>
+              {S.robotPrefix} {ROBOT_MODEL}
+            </span>
+            {badgePfl}
+          </div>
+
+          <div className="space-y-2">
+            {rowLine(S.analysisResult, badgeFail)}
+            {rowLine(S.analysisTime, <span className="tabular-nums font-semibold">{TIME_MAIN}</span>)}
+            <p className="text-xs text-right" style={{ color: t.textSecondary }}>
+              {S.completedAtLabel} {COMPLETED_AT}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm font-bold mb-2" style={{ color: ANALYSIS_DANGER.textStrong }}>
+              {S.conditionChangeTitle}
+            </p>
+            <ul className="flex flex-col gap-2">
+              {S.conditionItems.map((line, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors"
+                  style={{
+                    borderColor: t.inputBorder,
+                    background: surfaceMuted,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.12)' : 'rgba(254,242,242,0.9)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = surfaceMuted;
+                  }}
+                >
+                  <span className="leading-snug" style={{ color: t.textPrimary }}>
+                    {line}
+                  </span>
+                  <ChevronRight className="w-4 h-4 shrink-0 opacity-50" style={{ color: t.textSecondary }} aria-hidden />
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-sm font-bold mb-2" style={{ color: t.textPrimary }}>
+              {S.criByIntervalTitle}
+            </p>
+            <p className="text-sm mb-2" style={{ color: t.textSecondary }}>
+              {S.overallMaxCri}{' '}
+              <span className="font-bold tabular-nums text-lg" style={{ color: t.textPrimary }}>
+                0.9
+              </span>
+            </p>
+            <ul className="flex flex-col gap-2">
+              {[
+                { id: 'int1', n: 1, cri: '1.3' },
+                { id: 'int2', n: 2, cri: '1.7' },
+              ].map((it) => (
+                <li
+                  key={it.id}
+                  className="rounded-lg border px-3 py-3 flex flex-col gap-2"
+                  style={{ borderColor: t.inputBorder, background: t.inputBg }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold" style={{ color: t.textPrimary }}>
+                      {S.intervalName(it.n)}
+                    </span>
+                    {badgePass}
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="tabular-nums" style={{ color: t.textSecondary }}>
+                      {TIME_INTERVAL}
+                    </span>
+                    <span style={{ color: t.textSecondary }}>
+                      {S.maxCri}: <strong style={{ color: t.textPrimary }}>{it.cri}</strong>
+                    </span>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border"
+                      style={{
+                        borderColor: accentRgba(POINT_ORANGE, 0.45),
+                        color: POINT_ORANGE,
+                        background: isDark ? 'rgba(255,142,43,0.1)' : 'rgba(255,142,43,0.08)',
+                      }}
+                      onClick={() => onPflViewClick?.(it.id, 'interval')}
+                    >
+                      {S.view}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-sm font-bold mb-2" style={{ color: t.textPrimary }}>
+              {S.collabCriTitle}
+            </p>
+            <ul className="flex flex-col gap-2">
+              {S.collabRows.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex items-center gap-3 rounded-lg border px-3 py-2.5"
+                  style={{ borderColor: t.inputBorder, background: surfaceMuted }}
+                >
+                  <div
+                    className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-xs"
+                    style={{
+                      background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)',
+                      color: t.textSecondary,
+                    }}
+                    aria-hidden
+                  >
+                    ●
+                  </div>
+                  <span className="flex-1 min-w-0 text-sm font-medium leading-snug" style={{ color: t.textPrimary }}>
+                    {row.label}
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg border"
+                    style={{
+                      borderColor: accentRgba(POINT_ORANGE, 0.45),
+                      color: POINT_ORANGE,
+                      background: isDark ? 'rgba(255,142,43,0.1)' : 'rgba(255,142,43,0.08)',
+                    }}
+                    onClick={() => onPflViewClick?.(row.id, 'collab')}
+                  >
+                    {S.view}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

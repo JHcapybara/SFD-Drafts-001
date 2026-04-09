@@ -14,11 +14,13 @@ import { useLocale } from './localeContext';
 import { WorkspaceChrome } from './WorkspaceChrome';
 import type { PanelData } from './panelData';
 import { DEFAULT_DATA } from './panelData';
+import { OBJECTS_MODAL_CONTEXT } from './menuData';
 import { CollabSubModalAnchorContext } from './collabSubModalAnchorContext';
 import type { CollabSubModalAnchorRect } from './collabSubModalAnchorContext';
 import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
 import { SceneInfoPanel } from './SceneInfoPanel';
 import { POINT_ORANGE } from './pointColorSchemes';
+import type { OnboardingOpenAppAction } from './onboardingAppActions';
 // 헤더 메타는 menuData의 OBJECTS_MODAL_CONTEXT (상위 로봇 1대). 씬별로 바꾸려면 CategoryMenu에 workspaceContext={...} 전달
 
 // Objects 모달 너비 + 간격
@@ -353,6 +355,49 @@ export default function App() {
     setSubModalReopenSignal((n) => n + 1);
   }, []);
 
+  /** 온보딩 Play → 프로퍼티 패널·충돌·모션 등 App 상태 동기화 (라이브러리/GNB/타임라인은 WorkspaceChrome) */
+  const applyOnboardingAppAction = useCallback((action: OnboardingOpenAppAction) => {
+    setShowLight(true);
+    if (
+      action.kind === 'library' ||
+      action.kind === 'left-gnb-mode' ||
+      action.kind === 'timeline-dock' ||
+      action.kind === 'bottom-dock-open'
+    ) {
+      return;
+    }
+    switch (action.kind) {
+      case 'select-object':
+        setSelectedObjectId(action.objectId);
+        break;
+      case 'collision-category':
+        setSelectedObjectId('collision');
+        setCollisionActiveCategoryId(action.categoryId);
+        break;
+      case 'collision-eef-first-area': {
+        setSelectedObjectId('collision');
+        setCollisionActiveCategoryId('collision-endeffector');
+        setPanelData((p) => {
+          const id = action.areaId ?? p.collisionEndEffectorList[0]?.expectedAreas[0]?.id ?? null;
+          return { ...p, collisionEndEffectorSelectedIdx: 0, selectedCollisionAreaId: id };
+        });
+        setSubModalReopenSignal((n) => n + 1);
+        break;
+      }
+      case 'motion-category':
+        setSelectedObjectId('motion');
+        setMotionActiveCategoryId(action.categoryId);
+        break;
+      case 'bump-submodal':
+        setSubModalReopenSignal((n) => n + 1);
+        break;
+      default: {
+        const _exhaustive: never = action;
+        void _exhaustive;
+      }
+    }
+  }, []);
+
   /** 서브레이어(모션/충돌/협동)가 열린 상태에서 자동 회피/수동 우선 공존 클램프 */
   useEffect(() => {
     const wasOpen = prevSubLayerOpenRef.current;
@@ -445,6 +490,7 @@ export default function App() {
         onUiPreviewModeChange={setUiThemeMode}
         sceneInfoPanelHidden={!sceneInfoOpen}
         onShowSceneInfoPanel={() => setSceneInfoOpen(true)}
+        onOnboardingAppAction={applyOnboardingAppAction}
       />
 
       {sceneInfoOpen ? (
