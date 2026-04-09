@@ -1,5 +1,5 @@
 import {
-  Bot, Wrench, Zap, AlertTriangle, Users, Link2,
+  Bot, Wrench, Zap, AlertTriangle, Users, Link2, LayoutGrid, Building2,
 } from 'lucide-react';
 import type { AppLocale, ObjectDef, ObjectHeaderMeta, TabDef } from './types';
 import { POINT_ORANGE } from './pointColorSchemes';
@@ -32,6 +32,40 @@ function getObjectsBase(locale: AppLocale): ObjectDef[] {
   const collisionPanelSub = locale === 'en' ? 'IRB 6700 · ABB' : 'IRB 6700 · ABB';
 
   return [
+    {
+      id: 'cell',
+      label: locale === 'en' ? 'Robot cell' : '로봇 셀',
+      icon: LayoutGrid,
+      color: '#a78bfa',
+      categories: [
+        {
+          id: 'cell-overview',
+          label: locale === 'en' ? 'Cell' : '셀',
+          icon: LayoutGrid,
+          color: '#a78bfa',
+          panelTitle: locale === 'en' ? 'Robot cell' : '로봇 셀',
+          panelSubtitle: locale === 'en' ? 'Tree selection' : '트리 선택',
+          tabs: [{ id: 'tree-context-stub', label: locale === 'en' ? 'Overview' : '개요' }],
+        },
+      ],
+    },
+    {
+      id: 'facility',
+      label: locale === 'en' ? 'Facility' : '설비',
+      icon: Building2,
+      color: '#a78bfa',
+      categories: [
+        {
+          id: 'facility-overview',
+          label: locale === 'en' ? 'Facility' : '설비',
+          icon: Building2,
+          color: '#a78bfa',
+          panelTitle: locale === 'en' ? 'Facility' : '설비',
+          panelSubtitle: locale === 'en' ? 'Tree selection' : '트리 선택',
+          tabs: [{ id: 'tree-context-stub', label: locale === 'en' ? 'Overview' : '개요' }],
+        },
+      ],
+    },
     {
       id: 'manipulator',
       label: locale === 'en' ? 'Manipulator' : '매니퓰레이터',

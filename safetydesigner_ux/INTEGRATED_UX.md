@@ -101,6 +101,9 @@ Figma·외부 링크는 `wireframe_guide_kr.md` 내 노드 URL을 따른다.
 2. **같은 객체**를 좌·우·3D에서 볼 때 ID·이름이 일치하는가?
 3. Analysis·Bottom을 동시에 쓸 때 **스코프**(어느 로봇·어느 구간)를 사용자가 잃지 않는가?
 4. [`Property/menu`](./Property/menu)에 해당 객체 조합이 있으면 탭 구성이 스펙과 맞는가?
+5. **프로퍼티 모달·서브 모달**: 화면에 나오는 필드가 [`Property/property_db/`](./Property/property_db/) 해당 md(로봇·셀·엔드이펙터·facility 등)와 **필드키·라벨·노출 여부**까지 맞는지 작업마다 대조한다.  
+   - 불일치 시 **코드 기준** vs **문서 기준** vs **둘 다 수정** 중 무엇으로 맞출지 **사용자에게 반드시 확인**한다.  
+   - 답이 없으면 **구현을 진행하지 않고**, 이후에도 **답이 나올 때까지 같은 질문을 반복**한다. (에이전트 규칙: `.cursor/rules/sfd-property-db-modals.mdc`)
 
 ---
 
@@ -125,3 +128,4 @@ Figma·외부 링크는 `wireframe_guide_kr.md` 내 노드 URL을 따른다.
 | 2026-04-09 | 초안 작성. `wireframe_guide_kr.md`, `Property/menu`를 기준으로 통합 방향·현재 갭·참고 경로·백로그 정리. |
 | 2026-04-09 | 속성 DB: `Property/property_db/gripper.md` 삭제, `end-effector.md`를 정식 참조로 전환. 통합 문서 §1 링크 갱신. `robot_property_db.md` 경로를 `property_db/`로 수정. |
 | 2026-04-09 | `property_db/facility.md` 추가(설비 속성 필드). 통합 문서 §1에 링크. |
+| 2026-04-09 | §5: 프로퍼티·서브 모달 ↔ `property_db` 정합 검토 및 불일치 시 사용자 결정 절차 추가. Cursor 규칙 `sfd-property-db-modals.mdc` 추가. |

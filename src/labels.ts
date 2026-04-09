@@ -235,6 +235,11 @@ export const L_KO = {
   eeRemoveFromList: "리스트에서 삭제",
   panelEeDetailTitle: "엔드 이펙터 상세 설정",
   panelManipulatorDetailTitle: "로봇 상세 설정",
+  panelCellTitle: "로봇 셀",
+  panelFacilityTitle: "설비",
+  treeContextStubTab: "개요",
+  treeContextStubHint:
+    "셀 트리에서 선택한 항목입니다. 상세 필드는 property_db(셀·설비·안전장치)와 단계적으로 연결할 수 있습니다.",
   manipListTitle: "로봇 리스트",
   manipListPanelSubtitle: "로봇을 선택하세요",
   manipListHintSingle: "선택된 객체에 결합된 로봇 리스트가 1개입니다. 현재 단일 항목만 출력됩니다.",
@@ -544,6 +549,11 @@ export const L_EN: AppLabels = {
   eeRemoveFromList: "Remove from list",
   panelEeDetailTitle: "End effector detail",
   panelManipulatorDetailTitle: "Robot detail settings",
+  panelCellTitle: "Robot cell",
+  panelFacilityTitle: "Facility",
+  treeContextStubTab: "Overview",
+  treeContextStubHint:
+    "Selected from the cell tree. Fields will be wired to property_db (cell, facility, safety devices) incrementally.",
   manipListTitle: "Robot list",
   manipListPanelSubtitle: "Select a robot",
   manipListHintSingle: "One robot is currently bound to the selected object. Only a single item is shown.",

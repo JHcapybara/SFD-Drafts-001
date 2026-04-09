@@ -16,7 +16,9 @@ export type TabContentId =
   | 'collision-zone'
   | 'collision-detect'
   // 협동 작업 영역
-  | 'collab-workspaces';
+  | 'collab-workspaces'
+  // 셀 트리 연동(설비·안전 조건 등 — property_db 연계 전 스텁)
+  | 'tree-context-stub';
 
 // ── 탭 정의 ─────────────────────────────────────
 export interface TabDef {

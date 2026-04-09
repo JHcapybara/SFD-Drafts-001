@@ -1,0 +1,28 @@
+---
+description: 프로퍼티·서브 모달 ↔ property_db 정합 검토; 불일치 시 사용자 결정 전까지 방향 질문 반복
+alwaysApply: true
+---
+
+# 프로퍼티 모달 ↔ property_db 정합성
+
+## 적용 시점
+
+`PropertyPanel`, `CategoryMenu`, `panelData`, 프로퍼티 관련 모달·서브모달(파일명에 `Modal` / `Submodal` 포함), 이들과 직접 연결된 `App.tsx` 등을 **수정·추가**할 때마다 아래를 수행한다.
+
+## 검토 절차
+
+1. 해당 UI가 다루는 **객체 종류**(로봇, 셀, 엔드이펙터, 설비 등)를 식별한다.
+2. `safetydesigner_ux/Property/property_db/`에서 대응하는 md를 연다.  
+   예: `robot_property_db.md`, `cell.md`, `end-effector.md`, `facility.md` 등.
+3. 모달·서브모달에 **노출되는 필드명·라벨·타입·단위·노출 여부**가 문서 표와 **일치하는지** 대조한다.
+4. `safetydesigner_ux/INTEGRATED_UX.md` §5에 요약된 다른 속성 규칙(`Property/menu` 등)이 있으면 함께 본다.
+
+## 불일치가 있을 때 (필수)
+
+- **코드를 문서에 맞출지**, **문서를 구현에 맞출지**, **둘 다 수정할지** 사용자에게 **명시적으로** 묻는다. (추측으로 한쪽만 고치지 않는다.)
+- 사용자가 아직 답하지 않았으면, **해당 불일치를 해소하는 구현 작업은 보류**한다.
+- 사용자가 답할 때까지 **이후 응답에서도** 동일한 선택 질문을 **반복**한다. (잊지 않도록 작업 요약에 “대기 중: property_db 정합 방향 미결정”을 남긴다.)
+
+## 문서 갱신
+
+사용자가 방향을 정한 뒤, 선택에 따라 코드 또는 `property_db` md(및 필요 시 `INTEGRATED_UX.md` 변경 이력)를 갱신한다.

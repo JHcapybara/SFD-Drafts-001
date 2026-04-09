@@ -3,7 +3,7 @@
  * 이후에는 이 파일만 보면 됩니다. (에이전트/사람 공용 소스 오브 트루스)
  *
  * 실제 매핑은 코드에도 반영됨: `CategoryMenu` OBJECT_ROW_ICON_INDEX, `panelData` COLLAB_BODY_PART_ICON_INDEX,
- * `SfdChevronIcons`(055 기본 위), `CollisionSubmodalContent` PRIMITIVE_ICONS 등.
+ * `WorkspaceChrome` 좌측 GNB(`workspace-gnb:*`), 헤더 플랜(`workspace-header:plan`), `SfdChevronIcons`(055 기본 위), `CollisionSubmodalContent` PRIMITIVE_ICONS 등.
  */
 
 export type IconScreenDirection = 'right' | 'down' | 'left' | 'up';
@@ -32,10 +32,20 @@ export const ITEM_ICON_PREFERENCES: Record<string, ItemIconPreference> = {
   'workspace-header:undo': { iconIndex: 157 },
   'workspace-header:redo': { iconIndex: 157, direction: 'left' },
   'workspace-header:scene-info': { iconIndex: 80 },
+  /** 상단 헤더 플랜(프리미엄) 버튼 */
+  'workspace-header:plan': { iconIndex: 186 },
   'workspace-header:comment': { iconIndex: 59 },
   'workspace-header:share': { iconIndex: 43 },
   'workspace-header:mypage': { iconIndex: 61 },
   'workspace-header:lang': { iconIndex: 62 },
+  /** 좌측 GNB 모드 버튼 (`WorkspaceChrome`) */
+  'workspace-gnb:library': { iconIndex: 45 },
+  'workspace-gnb:tree': { iconIndex: 70 },
+  'workspace-gnb:analysis': { iconIndex: 164 },
+  'workspace-gnb:riskassessment': { iconIndex: 47 },
+  'workspace-gnb:safetyai': { iconIndex: 197 },
+  /** Safety AI 패널 사이드바 펼침/접힘 토글 */
+  'safetyai:sidebar-toggle': { iconIndex: 198 },
   'library-section:robot': { iconIndex: 33 },
   'library-section:layout': { iconIndex: 83 },
   'category-menu:manipulator': { iconIndex: 33 },

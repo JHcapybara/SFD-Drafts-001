@@ -1662,7 +1662,7 @@ function ManipulatorListSection({ data, setData, t, accentColor, onListInteract 
 }
 
 // ?? ?? ?? ??? ????????????????????????????????????????????????????????
-function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, theme, activeCategoryId, objectAccent, onEeFilledSlotClick, onSubModalListInteract }: {
+function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, theme, activeCategoryId, objectAccent, onEeFilledSlotClick, onSubModalListInteract, treeContextNote }: {
   tabId: TabContentId;
   data: PanelData;
   setData: React.Dispatch<React.SetStateAction<PanelData>>;
@@ -1674,6 +1674,8 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
   objectAccent: string;
   onEeFilledSlotClick?: (idx: number) => void;
   onSubModalListInteract?: () => void;
+  /** 셀 트리에서 선택된 노드 라벨(있으면 스텁 상단에 표시) */
+  treeContextNote?: string | null;
 }) {
   const { L, locale } = useLocale();
   function f(key: keyof PanelData) { return (v: string) => setData((p) => ({ ...p, [key]: v })); }
@@ -1813,6 +1815,21 @@ function TabSection({ tabId, data, setData, t, eeSelectedIdx, setEeSelectedIdx, 
           onListInteract={onSubModalListInteract}
         />
       );
+    case 'tree-context-stub': {
+      const note = treeContextNote?.trim();
+      return (
+        <div className="flex flex-col gap-2 px-0.5 py-1">
+          {note ? (
+            <p className="text-[12px] font-semibold leading-snug" style={{ color: t.textPrimary }}>
+              {note}
+            </p>
+          ) : null}
+          <p className="text-[11px] leading-relaxed" style={{ color: t.textSecondary }}>
+            {L.treeContextStubHint}
+          </p>
+        </div>
+      );
+    }
     default:
       return null;
   }
@@ -1848,6 +1865,8 @@ interface PropertyPanelProps {
   onEeFilledSlotClick?: (idx: number) => void;
   /** 프로퍼티 패널 내 리스트·행 클릭 시 Objects 서브모달 재표시(App → CategoryMenu) */
   onSubModalListInteract?: () => void;
+  /** 셀 트리 선택 시 헤더 부제·스텁에 표시할 라벨(Objects 메뉴 직접 선택 시에는 비움) */
+  treeLinkedDescription?: string | null;
 }
 
 export default function PropertyPanel({
@@ -1873,6 +1892,7 @@ export default function PropertyPanel({
   endeffectorActiveCategoryId: controlledEndeffectorCategoryId,
   onEeFilledSlotClick,
   onSubModalListInteract,
+  treeLinkedDescription,
 }: PropertyPanelProps) {
   const { L, objects, pointScheme } = useLocale();
   const objectAccent = useMemo(
@@ -1999,6 +2019,18 @@ export default function PropertyPanel({
 
   const activeCategory =
     selectedObject.categories.find((c) => c.id === effectiveActiveCategoryId) ?? selectedObject.categories[0];
+  const headerSubtitle = (() => {
+    const treeNote = treeLinkedDescription?.trim();
+    if (treeNote) return treeNote;
+    if (isManipulatorObject) {
+      const robots = data.manipRobots;
+      if (data.manipSelectedRobotIdx == null) return L.manipListPanelSubtitle;
+      const idx = Math.min(Math.max(0, data.manipSelectedRobotIdx), Math.max(0, robots.length - 1));
+      const r = robots[idx];
+      return r ? `${r.manipObjectName} · ${r.manipModel}` : L.manipListPanelSubtitle;
+    }
+    return activeCategory.panelSubtitle;
+  })();
   const isMotionUploadCategory = isMotionObject && activeCategory.id === 'motion-upload';
   const isMotionGenerateCategory = isMotionObject && activeCategory.id === 'motion-generate';
   const propertyPanelRenderCountRef = useRef(0);
@@ -2156,18 +2188,14 @@ export default function PropertyPanel({
               ? L.panelEeDetailTitle
               : selectedObject.id === 'manipulator'
                 ? L.panelManipulatorDetailTitle
-                : selectedObject.label}
+                : selectedObject.id === 'cell'
+                  ? L.panelCellTitle
+                  : selectedObject.id === 'facility'
+                    ? L.panelFacilityTitle
+                    : selectedObject.label}
           </p>
           <p className="text-[10px] leading-none mt-0.5 truncate" style={{ color: t.textSecondary }}>
-            {isManipulatorObject
-              ? (() => {
-                  const robots = data.manipRobots;
-                  if (data.manipSelectedRobotIdx == null) return L.manipListPanelSubtitle;
-                  const idx = Math.min(Math.max(0, data.manipSelectedRobotIdx), Math.max(0, robots.length - 1));
-                  const r = robots[idx];
-                  return r ? `${r.manipObjectName} · ${r.manipModel}` : L.manipListPanelSubtitle;
-                })()
-              : activeCategory.panelSubtitle}
+            {headerSubtitle}
           </p>
         </div>
         <button onClick={onClose}
@@ -2272,6 +2300,7 @@ export default function PropertyPanel({
                   objectAccent={objectAccent}
                   onEeFilledSlotClick={onEeFilledSlotClick}
                   onSubModalListInteract={onSubModalListInteract}
+                  treeContextNote={treeLinkedDescription}
                 />
               ))}
             </div>

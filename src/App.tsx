@@ -12,6 +12,7 @@ import PropertyPanel, { DARK as PP_DARK, LIGHT as PP_LIGHT } from './PropertyPan
 import { EndEffectorSubmodalContent } from './EndEffectorSubmodalContent';
 import { useLocale } from './localeContext';
 import { WorkspaceChrome } from './WorkspaceChrome';
+import { treeNodeToPropertyBridge, type CellTreeNodeType } from './treePropertyBridge';
 import type { PanelData } from './panelData';
 import { DEFAULT_DATA } from './panelData';
 import { OBJECTS_MODAL_CONTEXT } from './menuData';
@@ -39,12 +40,15 @@ const CATEGORY_MENU_EXPAND_ON_HOVER = true;
 
 export default function App() {
   const { locale, toggleLocale } = useLocale();
-  const [showLight, setShowLight] = useState(true);
+  const [showLight, setShowLight] = useState(false);
   const [uiThemeMode, setUiThemeMode] = useState<'light' | 'dark'>('light');
-  const [sceneInfoOpen, setSceneInfoOpen] = useState(true);
+  const [sceneInfoOpen, setSceneInfoOpen] = useState(false);
 
   // 선택된 오브젝트 상태 (PropertyPanel 탭 구성에 사용)
   const [selectedObjectId, setSelectedObjectId] = useState('manipulator');
+  /** 셀 트리 포커스(프로퍼티 패널과 동기화) */
+  const [selectedTreeNodeId, setSelectedTreeNodeId] = useState<string | null>('manip-main');
+  const [treeLinkedDescription, setTreeLinkedDescription] = useState<string | null>(null);
 
   const lightInitialX = Math.max(0, window.innerWidth - 348);
   const lightInitialY = WORKSPACE_CONTENT_TOP_PX;
@@ -105,6 +109,7 @@ export default function App() {
   }, []);
 
   const handleObjectChange = useCallback((objectId: string) => {
+    setTreeLinkedDescription(null);
     const isObjectChanged = selectedObjectId !== objectId;
     if (isObjectChanged) {
       setSelectedObjectId(objectId);
@@ -117,6 +122,33 @@ export default function App() {
     }
     setShowLight(true);
   }, [placePanelTopRight, selectedObjectId, showLight]);
+
+  const handleTreeNodeSelect = useCallback(
+    (node: { id: string; type: string; label: string }) => {
+      const bridge = treeNodeToPropertyBridge({
+        id: node.id,
+        type: node.type as CellTreeNodeType,
+        label: node.label,
+      });
+      setSelectedTreeNodeId(node.id);
+      setSelectedObjectId(bridge.objectId);
+      setTreeLinkedDescription(bridge.contextLabel ?? null);
+      if (bridge.collisionCategoryId) {
+        setCollisionActiveCategoryId(bridge.collisionCategoryId);
+      }
+      if (bridge.motionActiveCategoryId) {
+        setMotionActiveCategoryId(bridge.motionActiveCategoryId);
+      }
+      if (bridge.endeffectorActiveCategoryId) {
+        setEndeffectorActiveCategoryId(bridge.endeffectorActiveCategoryId);
+      }
+      if (!showLight) {
+        placePanelTopRight();
+      }
+      setShowLight(true);
+    },
+    [placePanelTopRight, showLight],
+  );
 
   const [collisionActiveCategoryId, setCollisionActiveCategoryId] = useState('collision-robot');
   const handleCollisionCategoryChange = useCallback((categoryId: string) => {
@@ -369,14 +401,20 @@ export default function App() {
     switch (action.kind) {
       case 'select-object':
         setSelectedObjectId(action.objectId);
+        setTreeLinkedDescription(null);
+        setSelectedTreeNodeId(null);
         break;
       case 'collision-category':
         setSelectedObjectId('collision');
         setCollisionActiveCategoryId(action.categoryId);
+        setTreeLinkedDescription(null);
+        setSelectedTreeNodeId(null);
         break;
       case 'collision-eef-first-area': {
         setSelectedObjectId('collision');
         setCollisionActiveCategoryId('collision-endeffector');
+        setTreeLinkedDescription(null);
+        setSelectedTreeNodeId(null);
         setPanelData((p) => {
           const id = action.areaId ?? p.collisionEndEffectorList[0]?.expectedAreas[0]?.id ?? null;
           return { ...p, collisionEndEffectorSelectedIdx: 0, selectedCollisionAreaId: id };
@@ -387,6 +425,8 @@ export default function App() {
       case 'motion-category':
         setSelectedObjectId('motion');
         setMotionActiveCategoryId(action.categoryId);
+        setTreeLinkedDescription(null);
+        setSelectedTreeNodeId(null);
         break;
       case 'bump-submodal':
         setSubModalReopenSignal((n) => n + 1);
@@ -491,6 +531,8 @@ export default function App() {
         sceneInfoPanelHidden={!sceneInfoOpen}
         onShowSceneInfoPanel={() => setSceneInfoOpen(true)}
         onOnboardingAppAction={applyOnboardingAppAction}
+        selectedTreeNodeId={selectedTreeNodeId}
+        onTreeNodeSelect={handleTreeNodeSelect}
       />
 
       {sceneInfoOpen ? (
@@ -619,6 +661,7 @@ export default function App() {
           selectedEeIdx={eeSelectedIdx}
           setSelectedEeIdx={setEeSelectedIdx}
           onSubModalListInteract={bumpSubModalFromPropertyList}
+          treeLinkedDescription={treeLinkedDescription}
         />
       )}
 

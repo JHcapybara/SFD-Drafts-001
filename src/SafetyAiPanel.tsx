@@ -1,8 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   X,
-  Search,
-  PanelLeft,
   Plus,
   MoreVertical,
   Send,
@@ -15,8 +13,12 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { POINT_ORANGE, accentRgba } from './pointColorSchemes';
+import { SfdIconByIndex } from './sfd/SfdIconByIndex';
+import { getItemIconPreference } from './sfd/itemIconPreferences';
 
 const MAX_INPUT = 300;
+const SIDEBAR_EXPANDED_WIDTH = 172;
+const SIDEBAR_TOGGLE_ICON_INDEX = getItemIconPreference('safetyai:sidebar-toggle')?.iconIndex ?? 198;
 
 export type SafetyAiColors = {
   bg: string;
@@ -88,7 +90,7 @@ const MOCK_REPLY_EN = `Before restarting robots in industrial settings, verify s
 • For cobots, re-verify PFL/SSM safety distances`;
 
 export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
-  const [sidebarNarrow, setSidebarNarrow] = useState(false);
+  const [sidebarNarrow, setSidebarNarrow] = useState(true);
   const [conversations, setConversations] = useState<ConvItem[]>([
     {
       id: '1',
@@ -116,7 +118,6 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
             newChat: 'New chat',
             collapseSidebar: 'Collapse list',
             expandSidebar: 'Expand list',
-            search: 'Search',
             more: 'More',
             welcomeTitle: 'Ask about robot system safety',
             welcomeSub: 'Pick a suggested keyword or type your question',
@@ -143,7 +144,6 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
             newChat: '새 대화',
             collapseSidebar: '목록 접기',
             expandSidebar: '목록 펼치기',
-            search: '검색',
             more: '더보기',
             welcomeTitle: '로봇 시스템 안전에 대해 물어보세요',
             welcomeSub: '추천 키워드를 선택하거나 질문을 입력해주세요',
@@ -362,30 +362,25 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
         <aside
           className="flex flex-col border-r shrink-0 transition-[width] duration-200 overflow-hidden"
           style={{
-            width: sidebarNarrow ? 0 : 108,
+            width: sidebarNarrow ? 0 : SIDEBAR_EXPANDED_WIDTH,
             borderColor: colors.border,
             background: colors.sidebarBg,
           }}
         >
-          <div className="w-[108px] flex flex-col h-full min-h-0">
+          <div className="h-full min-h-0 flex flex-col" style={{ width: SIDEBAR_EXPANDED_WIDTH }}>
             <div className="flex items-center justify-between px-2 py-1.5 border-b gap-1" style={{ borderColor: colors.border }}>
               <span className="text-[10px] font-bold truncate" style={{ color: colors.text }}>
                 {L.chatList}
               </span>
-              <div className="flex items-center gap-0.5 shrink-0">
-                <button type="button" className="p-1 rounded" style={{ color: colors.muted }} aria-label={L.search}>
-                  <Search className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  className="p-1 rounded"
-                  style={{ color: colors.muted }}
-                  aria-label={L.collapseSidebar}
-                  onClick={() => setSidebarNarrow(true)}
-                >
-                  <PanelLeft className="w-3 h-3" />
-                </button>
-              </div>
+              <button
+                type="button"
+                className="p-1 rounded shrink-0"
+                style={{ color: colors.muted }}
+                aria-label={L.collapseSidebar}
+                onClick={() => setSidebarNarrow(true)}
+              >
+                <SfdIconByIndex index={SIDEBAR_TOGGLE_ICON_INDEX} className="w-3.5 h-3.5" color="currentColor" />
+              </button>
             </div>
             <div className="p-1.5 shrink-0">
               <button
@@ -437,13 +432,18 @@ export function SafetyAiPanel({ locale, isDark, colors, onClosePanel }: Props) {
         {sidebarNarrow && (
           <button
             type="button"
-            className="w-7 shrink-0 border-r flex items-center justify-center"
-            style={{ borderColor: colors.border, background: colors.sidebarBg, color: colors.muted }}
+            className="w-12 h-12 mt-2 ml-2 rounded-xl border flex items-center justify-center shrink-0 transition-colors"
+            style={{
+              borderColor: colors.border,
+              background: colors.sidebarBg,
+              color: colors.text,
+              boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.35)' : '0 2px 8px rgba(0,0,0,0.12)',
+            }}
             onClick={() => setSidebarNarrow(false)}
             title={L.expandSidebar}
             aria-label={L.expandSidebar}
           >
-            <PanelLeft className="w-3.5 h-3.5 rotate-180" />
+            <SfdIconByIndex index={SIDEBAR_TOGGLE_ICON_INDEX} className="w-6 h-6" color="currentColor" />
           </button>
         )}
 

@@ -1,21 +1,14 @@
 import { useMemo, useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import {
-  BookOpen,
-  FolderTree,
-  BarChart3,
-  ShieldAlert,
-  Bot,
   GripVertical,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Search,
   ArrowLeft,
   Upload,
   FileText,
   Settings,
-  Sparkles,
   GripHorizontal,
   Play,
   Square,
@@ -27,7 +20,7 @@ import {
 import { accentRgba, POINT_ORANGE } from './pointColorSchemes';
 import { SfdIconByIndex } from './sfd/SfdIconByIndex';
 import { DARK as PROPERTY_DARK_TOKENS, LIGHT as PROPERTY_LIGHT_TOKENS } from './PropertyPanel';
-import { getItemIconPreference } from './sfd/itemIconPreferences';
+import { getItemIconPreference, rotationDegForPreference } from './sfd/itemIconPreferences';
 import {
   WORKSPACE_CONTENT_TOP_PX,
   WORKSPACE_HEADER_HEIGHT_PX,
@@ -45,6 +38,33 @@ import { SafetyDiagnosisModal } from './SafetyDiagnosisModal';
 import { SensorSafetyDistanceCalculatorModal } from './SensorSafetyDistanceCalculatorModal';
 import { CriLegend } from './CriLegend';
 import { AnalysisSidePanel } from './AnalysisSidePanel';
+import {
+  GridCanvasEditMenuPopover,
+  LayoutAlignEditMenuPopover,
+  ScaleEditMenuPopover,
+  RulerEditMenuPopover,
+  SnapSettingsEditMenuPopover,
+  ObjectSnapEditMenuPopover,
+  ViewModeEditMenuPopover,
+  type CanvasBackgroundId,
+  type HeaderEditToolPopover,
+  type SnapModeId,
+} from './WorkspaceEditMenuPopover';
+import type { CellTreeNodeType } from './treePropertyBridge';
+
+const HEADER_EDIT_POPOVER_KEYS: HeaderEditToolPopover[] = [
+  'grid',
+  'view',
+  'layout',
+  'scale',
+  'ruler',
+  'object snap',
+  'snap',
+];
+
+function isHeaderEditPopoverKey(label: string): label is HeaderEditToolPopover {
+  return HEADER_EDIT_POPOVER_KEYS.includes(label as HeaderEditToolPopover);
+}
 
 const DEFAULT_HEADER_PROCESS_NAME: Record<'ko' | 'en', string> = {
   ko: '목업: EV 배터리 팩 조립 라인 01',
@@ -52,8 +72,22 @@ const DEFAULT_HEADER_PROCESS_NAME: Record<'ko' | 'en', string> = {
 };
 
 export type LeftMode = 'library' | 'tree' | 'analysis' | 'riskassessment' | 'safetyai';
+
+const LEFT_GNB_ICON_FALLBACK: Record<LeftMode, number> = {
+  library: 45,
+  tree: 70,
+  analysis: 164,
+  riskassessment: 47,
+  safetyai: 197,
+};
+
+function leftGnbIconIndex(mode: LeftMode): number {
+  const p = getItemIconPreference(`workspace-gnb:${mode}`);
+  return p?.iconIndex ?? LEFT_GNB_ICON_FALLBACK[mode];
+}
+
 type BottomTab = 'timeline' | 'analysis';
-type TreeNodeType = 'cell' | 'manipulator' | 'gripper' | 'zone' | 'impact' | 'axis' | 'mobile';
+type TreeNodeType = CellTreeNodeType;
 type LibraryStage = 'root' | 'brands' | 'models';
 type HeaderViewKey = 'grid' | 'view' | 'rotate' | 'layout' | 'scale' | 'ruler' | 'object snap' | 'snap';
 type TimelineTarget = 'additional' | 'cobot1' | 'cobot2' | 'mobile' | 'mobile_ee' | 'manipulator';
@@ -112,7 +146,7 @@ const TREE_DATA: TreeNodeItem[] = [
     children: [
       {
         id: 'manip-main',
-        label: '매니퓰레이터',
+        label: '머니퓰레이터',
         type: 'manipulator',
         cri: '0.7',
         processBadge: true,
@@ -129,37 +163,136 @@ const TREE_DATA: TreeNodeItem[] = [
             ],
           },
           {
-            id: 'robot-settings',
-            label: '로봇 설정',
+            id: 'motion-settings',
+            label: '모션 설정',
             type: 'manipulator',
+            children: [{ id: 'motion-file', label: '모션 파일명', type: 'motion' }],
+          },
+          { id: 'zone-operating', label: '운전 영역', type: 'zone' },
+          { id: 'zone-max', label: '최대운전영역', type: 'zone' },
+          { id: 'zone-collab', label: '협동작업영역', type: 'zone' },
+          { id: 'impact-robot', label: '로봇 충돌예상부위', type: 'impact' },
+        ],
+      },
+      {
+        id: 'mobile-manip',
+        label: '모바일 머니퓰레이터',
+        type: 'mobile',
+        children: [
+          {
+            id: 'mobile-base',
+            label: '모바일',
+            type: 'mobile',
+            processBadge: true,
             children: [
-              { id: 'zone-operating', label: '운전 영역', type: 'zone' },
-              { id: 'zone-max', label: '최대운전영역', type: 'zone' },
-              { id: 'zone-collab', label: '협동작업영역', type: 'zone' },
-              { id: 'impact-robot', label: '로봇 충돌예상부위', type: 'impact' },
+              { id: 'mobile-path', label: '경로 설정', type: 'mobile' },
+              { id: 'mobile-drive-1', label: '모바일 1 운전 구역 1', type: 'zone' },
+              { id: 'mobile-work-1', label: '모바일 1 작업 구역 1', type: 'zone' },
+            ],
+          },
+          {
+            id: 'mobile-inner-manip',
+            label: '머니퓰레이터',
+            type: 'manipulator',
+            cri: '0.7',
+            processBadge: true,
+            children: [
+              { id: 'zone-operating-mm', label: '운전 영역', type: 'zone' },
+              { id: 'zone-max-mm', label: '최대운전영역', type: 'zone' },
+              { id: 'zone-collab-mm', label: '협동작업영역', type: 'zone' },
             ],
           },
         ],
       },
       {
-        id: 'mobile-manip',
-        label: '모바일 매니퓰레이터',
-        type: 'mobile',
-        children: [
-          { id: 'mobile-base', label: '모바일', type: 'mobile', processBadge: true },
-          { id: 'mobile-manipulator', label: '매니퓰레이터', type: 'manipulator', cri: '0.7', processBadge: true },
-        ],
-      },
-      {
         id: 'manip-plus-axis',
-        label: '매니퓰레이터 + 부가축',
+        label: '머니퓰레이터 + 부가축',
         type: 'manipulator',
         children: [
-          { id: 'main-manip', label: '매니퓰레이터', type: 'manipulator', cri: '0.7', processBadge: true },
+          { id: 'main-manip', label: '머니퓰레이터', type: 'manipulator', cri: '0.7', processBadge: true },
           { id: 'axis-1', label: '부가축 1', type: 'axis', processBadge: true },
           { id: 'axis-2', label: '부가축 2', type: 'axis', processBadge: true },
         ],
       },
+      {
+        id: 'safety-conditions',
+        label: '로봇 셀 안전 분석 조건',
+        type: 'safety',
+        children: [
+          {
+            id: 'estop-group',
+            label: '비상정지 버튼',
+            type: 'safety',
+            children: [
+              { id: 'estop-a', label: '비상정지 버튼(0정지) · 로봇 1', type: 'safety' },
+              { id: 'estop-b', label: '비상정지 버튼(1정지) · 로봇 2, 로봇 3', type: 'safety' },
+            ],
+          },
+          {
+            id: 'fence-group',
+            label: '펜스 그룹',
+            type: 'safety',
+            children: [
+              { id: 'fence-1', label: '펜스 1', type: 'safety' },
+              { id: 'fence-dist-1', label: '안전 설치 거리', type: 'safety' },
+              { id: 'fence-2', label: '펜스 2', type: 'safety' },
+              { id: 'fence-dist-2', label: '안전 설치 거리', type: 'safety' },
+            ],
+          },
+          {
+            id: 'laser-group',
+            label: '레이저 스캐너',
+            type: 'safety',
+            children: [
+              { id: 'laser-dev-1', label: '레이저 스캐너 1', type: 'safety' },
+              { id: 'laser-z1', label: '감지영역 1 · 로봇 1', type: 'safety' },
+              { id: 'laser-z2', label: '감지영역 2 · 로봇 2, 로봇 3', type: 'safety' },
+              { id: 'laser-stop', label: '안전 정지 거리', type: 'safety' },
+            ],
+          },
+          {
+            id: 'light-group',
+            label: '라이트커튼',
+            type: 'safety',
+            children: [
+              { id: 'light-1', label: '라이트 커튼 1', type: 'safety' },
+              { id: 'light-z1', label: '감지영역', type: 'safety' },
+              { id: 'light-dist', label: '안전 설치 거리', type: 'safety' },
+            ],
+          },
+          {
+            id: 'mat-group',
+            label: '안전매트',
+            type: 'safety',
+            children: [
+              { id: 'mat-1', label: '안전매트 1', type: 'safety' },
+              { id: 'mat-z', label: '감지영역', type: 'safety' },
+              { id: 'mat-stop', label: '안전 정지 거리', type: 'safety' },
+            ],
+          },
+          {
+            id: 'lidar-group',
+            label: '라이다 센서',
+            type: 'safety',
+            children: [
+              { id: 'lidar-dev-1', label: '라이다 1', type: 'safety' },
+              { id: 'lidar-z1', label: '감지영역 1 · 로봇 1', type: 'safety' },
+            ],
+          },
+        ],
+      },
+      { id: 'facility-1', label: '설비', type: 'facility' },
+      { id: 'facility-2', label: '설비', type: 'facility' },
+    ],
+  },
+  {
+    id: 'unassigned-root',
+    label: '셀 미지정 그룹',
+    type: 'cell',
+    children: [
+      { id: 'unassigned-laser', label: '레이저 스캐너', type: 'safety' },
+      { id: 'unassigned-fac-1', label: '설비', type: 'facility' },
+      { id: 'unassigned-fac-2', label: '설비', type: 'facility' },
     ],
   },
 ];
@@ -172,6 +305,9 @@ const TREE_TYPE_ICON: Record<TreeNodeType, string> = {
   impact: '·',
   axis: '⚙',
   mobile: '▸',
+  motion: '⌁',
+  safety: '⚠',
+  facility: '🏭',
 };
 
 const LIBRARY_SECTIONS: LibrarySection[] = [
@@ -327,6 +463,7 @@ const HEADER_LEFT_ICON_INDEX = {
 } as const;
 const HEADER_ACTION_ICON_INDEX = {
   sceneInfo: getItemIconPreference('workspace-header:scene-info')?.iconIndex ?? 80,
+  plan: getItemIconPreference('workspace-header:plan')?.iconIndex ?? 186,
   comment: getItemIconPreference('workspace-header:comment')?.iconIndex ?? 59,
   share: getItemIconPreference('workspace-header:share')?.iconIndex ?? 43,
   mypage: getItemIconPreference('workspace-header:mypage')?.iconIndex ?? 61,
@@ -374,6 +511,8 @@ export function WorkspaceChrome({
   sceneInfoPanelHidden,
   onShowSceneInfoPanel,
   onOnboardingAppAction,
+  selectedTreeNodeId,
+  onTreeNodeSelect,
 }: {
   locale: 'ko' | 'en';
   rightPanelVisible: boolean;
@@ -385,9 +524,12 @@ export function WorkspaceChrome({
   onShowSceneInfoPanel?: () => void;
   /** 온보딩 Play 시 App 쪽 상태(객체·충돌·모션 등)만 조정 — 라이브러리/GNB/타임라인은 크롬 내부 처리 */
   onOnboardingAppAction?: (action: OnboardingOpenAppAction) => void;
+  /** 셀 트리 선택 — 프로퍼티 패널·Objects 메뉴와 동기화 */
+  selectedTreeNodeId?: string | null;
+  onTreeNodeSelect?: (node: { id: string; type: TreeNodeType; label: string }) => void;
 }) {
   const [leftMode, setLeftMode] = useState<LeftMode>('tree');
-  const [leftOpen, setLeftOpen] = useState(true);
+  const [leftOpen, setLeftOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState(320);
   const [bottomOpen, setBottomOpen] = useState(false);
   const [bottomTab, setBottomTab] = useState<BottomTab>('timeline');
@@ -405,19 +547,31 @@ export function WorkspaceChrome({
   const [internalUiPreviewMode, setInternalUiPreviewMode] = useState<'light' | 'dark'>('light');
   const [uiModeMenuOpen, setUiModeMenuOpen] = useState(false);
   const uiModeMenuRef = useRef<HTMLDivElement>(null);
+  const gridToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const layoutToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const scaleToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const rulerToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const viewToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const objectSnapToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const snapToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const [headerEditPopover, setHeaderEditPopover] = useState<HeaderEditToolPopover | null>(null);
+  const [workspaceGridMm, setWorkspaceGridMm] = useState(100);
+  const [workspaceCanvasBg, setWorkspaceCanvasBg] = useState<CanvasBackgroundId>('white');
+  const [uniformScaleByPivotActive, setUniformScaleByPivotActive] = useState(false);
+  const [rulerMeasureActive, setRulerMeasureActive] = useState(false);
+  const [snapMode, setSnapMode] = useState<SnapModeId>('vertex');
+  const [snapMoveMm, setSnapMoveMm] = useState(200);
+  const [snapRotateDeg, setSnapRotateDeg] = useState(10);
+  const resetSnapToDefaults = useCallback(() => {
+    setSnapMode('vertex');
+    setSnapMoveMm(200);
+    setSnapRotateDeg(10);
+  }, []);
   const [selectedRobotType, setSelectedRobotType] = useState('협동 로봇');
   const [selectedBrand, setSelectedBrand] = useState('Universal');
   const [selectedModel, setSelectedModel] = useState('UR10');
-  const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(() => {
-    const defaults = new Set<string>();
-    defaults.add('cell-robot-abc');
-    defaults.add('manip-main');
-    defaults.add('gripper');
-    defaults.add('robot-settings');
-    defaults.add('mobile-manip');
-    defaults.add('manip-plus-axis');
-    return defaults;
-  });
+  /** 기본: 모두 접힘 — 펼치기는 ▶ 토글로만 */
+  const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(() => new Set());
   const [processInfoModalOpen, setProcessInfoModalOpen] = useState(false);
   const [modalExamplesOpen, setModalExamplesOpen] = useState(false);
   const [onboardingGuideOpen, setOnboardingGuideOpen] = useState(false);
@@ -490,12 +644,17 @@ export function WorkspaceChrome({
   }, [uiModeMenuOpen]);
 
   const prevLeftModeRef = useRef<LeftMode>(leftMode);
-  /** Safety AI 선택 시 최대 너비, Safety AI 종료 시에만 최소로 복귀. 분석·트리 등은 사용자 조절 너비 유지 */
+  /** Safety AI = 최대 너비 / 이탈 시 최소. 그 외 모드 전환 시 너비 초기화(분석에서 키운 폭이 다른 탭에 이어지지 않게) */
   useEffect(() => {
     const prev = prevLeftModeRef.current;
     prevLeftModeRef.current = leftMode;
-    if (leftMode === 'safetyai') setLeftWidth(LEFT_PANEL_MAX_WIDTH);
-    else if (prev === 'safetyai') setLeftWidth(LEFT_PANEL_MIN_WIDTH);
+    if (leftMode === 'safetyai') {
+      setLeftWidth(LEFT_PANEL_MAX_WIDTH);
+    } else if (prev === 'safetyai') {
+      setLeftWidth(LEFT_PANEL_MIN_WIDTH);
+    } else if (prev !== leftMode) {
+      setLeftWidth(LEFT_PANEL_MIN_WIDTH);
+    }
   }, [leftMode]);
 
   const leftOffset = LEFT_GNB_WIDTH + (leftOpen ? leftWidth : 0) + 8;
@@ -554,16 +713,15 @@ export function WorkspaceChrome({
   }, [bottomOpen, bottomHeight]);
 
   const modeDefs = useMemo(() => ([
-    { id: 'library' as const, labelKo: '라이브러리', labelEn: 'Library', Icon: BookOpen },
-    { id: 'tree' as const, labelKo: '트리', labelEn: 'Tree', Icon: FolderTree },
-    { id: 'analysis' as const, labelKo: '분석', labelEn: 'Analysis', Icon: BarChart3 },
-    { id: 'riskassessment' as const, labelKo: '위험성평가', labelEn: 'Risk', Icon: ShieldAlert },
-    { id: 'safetyai' as const, labelKo: 'Safety AI', labelEn: 'Safety AI', Icon: Bot },
+    { id: 'library' as const, labelKo: '라이브러리', labelEn: 'Library' },
+    { id: 'tree' as const, labelKo: '트리', labelEn: 'Tree' },
+    { id: 'analysis' as const, labelKo: '분석', labelEn: 'Analysis' },
+    { id: 'riskassessment' as const, labelKo: '위험성평가', labelEn: 'Risk' },
+    { id: 'safetyai' as const, labelKo: 'Safety AI', labelEn: 'Safety AI' },
   ]), []);
 
   const modeLabel = modeDefs.find((m) => m.id === leftMode);
-  const modeIcon = modeLabel?.Icon ?? FolderTree;
-  const ModeIcon = modeIcon;
+  const headerGnbPref = getItemIconPreference(`workspace-gnb:${leftMode}`);
   const isRiskMode = leftMode === 'riskassessment';
   const primaryHeaderActionLabel = isRiskMode ? 'Report Issue' : 'Analysis';
 
@@ -679,6 +837,17 @@ export function WorkspaceChrome({
     const iconColor = node.type === 'impact'
       ? (isDarkPreview ? '#f59e0b' : '#737373')
       : leftUiTokens.treeIcon;
+    const isTreeSelected = selectedTreeNodeId != null && selectedTreeNodeId === node.id;
+    const rowBg = isTreeSelected
+      ? accentRgba(POINT_ORANGE, isDarkPreview ? 0.22 : 0.14)
+      : depth === 0
+        ? 'rgba(255,142,43,0.12)'
+        : 'transparent';
+    const rowBorder = isTreeSelected
+      ? `1px solid ${accentRgba(POINT_ORANGE, 0.5)}`
+      : depth === 0
+        ? `1px solid ${accentRgba(POINT_ORANGE, 0.45)}`
+        : '1px solid transparent';
 
     return (
       <div key={node.id} className="relative">
@@ -693,28 +862,44 @@ export function WorkspaceChrome({
           />
         )}
         <div
-          className="h-8 rounded-[8px] flex items-center gap-1.5 transition-colors duration-120"
+          role={onTreeNodeSelect ? 'button' : undefined}
+          tabIndex={onTreeNodeSelect ? 0 : undefined}
+          className={`h-8 rounded-[8px] flex items-center gap-1.5 transition-colors duration-120${onTreeNodeSelect ? ' cursor-pointer' : ''}`}
           style={{
             paddingLeft: rowPaddingLeft,
             paddingRight: 8,
-            background: depth === 0 ? 'rgba(255,142,43,0.12)' : 'transparent',
-            border: depth === 0 ? `1px solid ${accentRgba(POINT_ORANGE, 0.45)}` : '1px solid transparent',
+            background: rowBg,
+            border: rowBorder,
           }}
+          onClick={onTreeNodeSelect ? () => onTreeNodeSelect({ id: node.id, type: node.type, label: node.label }) : undefined}
+          onKeyDown={
+            onTreeNodeSelect
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onTreeNodeSelect({ id: node.id, type: node.type, label: node.label });
+                  }
+                }
+              : undefined
+          }
         >
           {hasChildren ? (
             <button
               type="button"
-              className="w-4 h-4 rounded-[4px] flex items-center justify-center text-[10px] leading-none"
+              className="w-4 h-4 rounded-[4px] flex items-center justify-center text-[10px] leading-none shrink-0"
               style={{ color: leftUiTokens.treeToggle }}
-              onClick={() => toggleTreeNode(node.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleTreeNode(node.id);
+              }}
               aria-label={isExpanded ? '하위 항목 접기' : '하위 항목 펼치기'}
             >
               {isExpanded ? '▼' : '▶'}
             </button>
           ) : (
-            <span className="w-4 h-4" aria-hidden />
+            <span className="w-4 h-4 shrink-0" aria-hidden />
           )}
-          <span className="text-[11px] leading-none" style={{ color: iconColor }}>
+          <span className="text-[11px] leading-none shrink-0" style={{ color: iconColor }}>
             {TREE_TYPE_ICON[node.type]}
           </span>
           <span
@@ -724,15 +909,15 @@ export function WorkspaceChrome({
           >
             {node.label}
           </span>
-          <div className="flex-1" />
+          <div className="flex-1 min-w-0" />
           {node.cri && (
-            <span className="text-[11px] font-semibold leading-none" style={{ color: '#16a34a' }}>
+            <span className="text-[11px] font-semibold leading-none shrink-0" style={{ color: '#16a34a' }}>
               CRI: {node.cri}
             </span>
           )}
           {node.processBadge && (
             <span
-              className="h-4 min-w-4 px-1 rounded-[4px] text-[10px] font-bold leading-[16px] text-center"
+              className="h-4 min-w-4 px-1 rounded-[4px] text-[10px] font-bold leading-[16px] text-center shrink-0"
               style={{ background: '#ff8e2b', color: '#fff' }}
               title={locale === 'en' ? 'Process' : '프로세스'}
             >
@@ -747,7 +932,18 @@ export function WorkspaceChrome({
         )}
       </div>
     );
-  }, [expandedTreeIds, isDarkPreview, leftUiTokens.treeGuide, leftUiTokens.treeIcon, leftUiTokens.treeText, leftUiTokens.treeToggle, locale, toggleTreeNode]);
+  }, [
+    expandedTreeIds,
+    isDarkPreview,
+    leftUiTokens.treeGuide,
+    leftUiTokens.treeIcon,
+    leftUiTokens.treeText,
+    leftUiTokens.treeToggle,
+    locale,
+    onTreeNodeSelect,
+    selectedTreeNodeId,
+    toggleTreeNode,
+  ]);
 
   const goToLibraryRoot = useCallback(() => {
     setLibraryStage('root');
@@ -799,44 +995,52 @@ export function WorkspaceChrome({
           }}
         />
         <div
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-2.5"
           {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.libraryDrawingUpload }}
         >
           <div className="flex items-center justify-between gap-2 px-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: leftUiTokens.libraryMuted }}>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: leftUiTokens.libraryMuted }}>
               {locale === 'en' ? 'Drawing' : '도면'}
             </span>
-            <span className="text-[9px] font-semibold" style={{ color: leftUiTokens.libraryMuted }}>
+            <span
+              className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{
+                color: isDarkPreview ? '#d4d4d8' : '#3f3f46',
+                background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)',
+              }}
+            >
               {locale === 'en' ? 'Always visible' : '항시 표시'}
             </span>
           </div>
           {libraryDrawing ? (
             <div
-              className="rounded-2xl border px-2.5 py-2"
+              className="rounded-2xl border px-3 py-3"
               style={{
-                borderColor: isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.1)',
-                background: isDarkPreview ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.95)',
+                borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.09)',
+                background: isDarkPreview
+                  ? 'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)'
+                  : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, #f8fafc 100%)',
                 boxShadow: isDarkPreview
-                  ? '0 4px 18px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)'
-                  : '0 4px 16px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,1)',
+                  ? '0 10px 24px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.09)'
+                  : '0 10px 24px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,1)',
               }}
             >
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-2.5">
                 <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                   style={{
-                    background: isDarkPreview ? 'rgba(56,189,248,0.15)' : 'rgba(14,165,233,0.12)',
-                    color: isDarkPreview ? '#7dd3fc' : '#0369a1',
+                    background: isDarkPreview ? 'rgba(255,142,43,0.18)' : 'rgba(255,142,43,0.14)',
+                    color: isDarkPreview ? '#fdba74' : '#c2410c',
                   }}
                   aria-hidden
                 >
-                  <FileText className="w-4 h-4" strokeWidth={2} />
+                  <FileText className="w-4.5 h-4.5" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-[11px] font-bold leading-[14px] truncate" style={{ color: leftUiTokens.libraryTitle }}>
+                  <p className="text-[12px] font-bold leading-[15px] truncate" style={{ color: leftUiTokens.libraryTitle }}>
                     {libraryDrawing.fileName}
                   </p>
-                  <p className="mt-0.5 text-[10px] leading-[14px]" style={{ color: leftUiTokens.libraryMuted }}>
+                  <p className="mt-1 text-[10px] leading-[14px]" style={{ color: leftUiTokens.libraryMuted }}>
                     {libraryDrawing.sizeLabel}
                     <span className="mx-1 opacity-50">·</span>
                     {drawingDate}
@@ -844,8 +1048,12 @@ export function WorkspaceChrome({
                 </div>
                 <button
                   type="button"
-                  className="mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[10px] font-bold transition-colors duration-150 hover:opacity-90"
-                  style={{ color: POINT_ORANGE, background: accentRgba(POINT_ORANGE, 0.12) }}
+                  className="mt-0.5 shrink-0 rounded-xl px-2.5 py-1.5 text-[10px] font-bold transition-all duration-150 hover:opacity-90"
+                  style={{
+                    color: isDarkPreview ? '#fed7aa' : '#9a3412',
+                    background: isDarkPreview ? 'rgba(255,142,43,0.22)' : accentRgba(POINT_ORANGE, 0.18),
+                    border: `1px solid ${isDarkPreview ? 'rgba(255,142,43,0.35)' : 'rgba(255,142,43,0.28)'}`,
+                  }}
                   onClick={openLibraryDrawingHelpModal}
                 >
                   {locale === 'en' ? 'Replace' : '교체'}
@@ -855,19 +1063,29 @@ export function WorkspaceChrome({
           ) : (
             <button
               type="button"
-              className="flex h-9 w-full items-center gap-2 rounded-xl border border-dashed px-2.5 text-left text-[11px] font-bold transition-all duration-200 hover:opacity-[0.97] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+              className="flex min-h-[52px] w-full items-center gap-2.5 rounded-2xl border px-3 text-left text-[11px] font-bold transition-all duration-200 hover:opacity-[0.98] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
               style={{
-                borderColor: isDarkPreview ? 'rgba(148,163,184,0.28)' : 'rgba(14,165,233,0.45)',
-                background: isDarkPreview ? 'rgba(255,255,255,0.04)' : 'rgba(240,249,255,0.9)',
+                borderColor: isDarkPreview ? 'rgba(255,255,255,0.18)' : 'rgba(15,23,42,0.12)',
+                background: isDarkPreview
+                  ? 'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)'
+                  : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, #f8fafc 100%)',
                 color: leftUiTokens.libraryBodyText,
                 boxShadow: isDarkPreview
-                  ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
-                  : 'inset 0 1px 0 rgba(255,255,255,1)',
+                  ? '0 8px 20px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.08)'
+                  : '0 8px 20px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,1)',
               }}
               onClick={openLibraryDrawingHelpModal}
               aria-label={locale === 'en' ? 'Upload drawing file' : '도면 파일 업로드'}
             >
-              <Upload className="w-3.5 h-3.5 shrink-0" style={{ color: POINT_ORANGE }} strokeWidth={2.25} aria-hidden />
+              <div
+                className="h-8 w-8 rounded-lg shrink-0 flex items-center justify-center"
+                style={{
+                  background: isDarkPreview ? 'rgba(255,142,43,0.2)' : 'rgba(255,142,43,0.14)',
+                  color: isDarkPreview ? '#fdba74' : '#c2410c',
+                }}
+              >
+                <Upload className="w-4 h-4" style={{ color: 'currentColor' }} strokeWidth={2.25} aria-hidden />
+              </div>
               <span className="min-w-0 flex-1 truncate">
                 {locale === 'en' ? 'Upload drawing…' : '도면 업로드…'}
               </span>
@@ -1734,8 +1952,9 @@ export function WorkspaceChrome({
       >
         <div className="h-full flex flex-col py-2.5">
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden sfd-scroll px-1.5 flex flex-col gap-2.5">
-            {modeDefs.map(({ id, labelKo, labelEn, Icon }) => {
+            {modeDefs.map(({ id, labelKo, labelEn }) => {
               const active = leftMode === id;
+              const gnbPref = getItemIconPreference(`workspace-gnb:${id}`);
               return (
                 <button
                   key={id}
@@ -1758,7 +1977,12 @@ export function WorkspaceChrome({
                     if (!leftOpen) setLeftOpen(true);
                   }}
                 >
-                  <Icon className="w-4.5 h-4.5" strokeWidth={2.1} />
+                  <SfdIconByIndex
+                    index={leftGnbIconIndex(id)}
+                    color={active ? POINT_ORANGE : sidePanelTokens.textPrimary}
+                    size={18}
+                    rotationDeg={gnbPref ? rotationDegForPreference(gnbPref) : 0}
+                  />
                   <CustomTooltip label={locale === 'en' ? labelEn : labelKo} placement="right" />
                 </button>
               );
@@ -1804,9 +2028,12 @@ export function WorkspaceChrome({
           <div className="h-full flex flex-col">
             {leftMode !== 'safetyai' && (
               <div className="px-3 py-2.5 border-b flex items-center gap-2" style={{ borderColor: sidePanelTokens.divider, background: sidePanelTokens.sectionHeaderBg }}>
-                {modeIcon === FolderTree
-                  ? <FolderTree className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />
-                  : <ModeIcon className="w-3.5 h-3.5" style={{ color: POINT_ORANGE }} />}
+                <SfdIconByIndex
+                  index={leftGnbIconIndex(leftMode)}
+                  color={POINT_ORANGE}
+                  size={14}
+                  rotationDeg={headerGnbPref ? rotationDegForPreference(headerGnbPref) : 0}
+                />
                 <span className="text-[12px] font-semibold" style={{ color: sidePanelTokens.textPrimary }}>
                   {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
                 </span>
@@ -1824,45 +2051,19 @@ export function WorkspaceChrome({
               {leftMode === 'library' ? (
                 <div className="flex min-h-0 flex-col gap-0">
                   <div
-                    className="sticky top-0 z-[4] -mx-1 mb-2 space-y-2 px-1 pb-2 pt-0"
+                    className="sticky top-0 z-[4] -mx-1 mb-3 space-y-3 px-2 pb-3 pt-1"
                     style={{
-                      background: sidePanelTokens.panelBg,
-                      borderBottom: `1px solid ${sidePanelTokens.divider}`,
-                      boxShadow: sidePanelTokens.panelShadow,
-                      backdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
-                      WebkitBackdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+                      background: isDarkPreview
+                        ? 'linear-gradient(180deg, rgba(20,22,28,0.9) 0%, rgba(20,22,28,0.74) 100%)'
+                        : 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.84) 100%)',
+                      borderBottom: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.08)'}`,
+                      boxShadow: isDarkPreview
+                        ? '0 14px 28px rgba(0,0,0,0.32), inset 0 -1px 0 rgba(255,255,255,0.04)'
+                        : '0 14px 28px rgba(15,23,42,0.1), inset 0 -1px 0 rgba(255,255,255,0.8)',
+                      backdropFilter: isDarkPreview ? 'blur(22px) saturate(145%)' : 'blur(18px) saturate(135%)',
+                      WebkitBackdropFilter: isDarkPreview ? 'blur(22px) saturate(145%)' : 'blur(18px) saturate(135%)',
                     }}
                   >
-                    <div
-                      className="group/libsearch flex h-11 items-center gap-2.5 rounded-2xl px-3.5 transition-all duration-200 focus-within:ring-2 focus-within:ring-orange-400/35"
-                      style={{
-                        border: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.1)'}`,
-                        background: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.88)',
-                        boxShadow: isDarkPreview
-                          ? 'inset 0 1px 0 rgba(255,255,255,0.05)'
-                          : '0 2px 10px rgba(15,23,42,0.04), inset 0 1px 0 rgba(255,255,255,1)',
-                      }}
-                    >
-                      <Search
-                        className="h-4 w-4 shrink-0 transition-transform duration-200 group-focus-within/libsearch:scale-105"
-                        style={{ color: sidePanelTokens.textSecondary }}
-                      />
-                      <input
-                        value={librarySearch}
-                        onChange={(e) => setLibrarySearch(e.target.value)}
-                        placeholder={
-                          libraryStage === 'brands'
-                            ? locale === 'en'
-                              ? 'Search manufacturers…'
-                              : '제조사 검색…'
-                            : locale === 'en'
-                              ? 'Search by keyword'
-                              : '검색어를 입력해 주세요.'
-                        }
-                        className={`bg-transparent outline-none w-full text-[12px] ${isDarkPreview ? 'placeholder:text-slate-500' : 'placeholder:text-zinc-500'}`}
-                        style={{ color: sidePanelTokens.textPrimary }}
-                      />
-                    </div>
                     {renderLibraryDrawingDock()}
                   </div>
                   {renderLibraryContent()}
@@ -2124,7 +2325,7 @@ export function WorkspaceChrome({
               }}
               aria-label={locale === 'en' ? 'Plan' : '플랜'}
             >
-              <Sparkles className="w-4 h-4 shrink-0" strokeWidth={2.4} style={{ color: '#7c2d12' }} />
+              <SfdIconByIndex index={HEADER_ACTION_ICON_INDEX.plan} color="#7c2d12" size={16} />
               <span className="leading-none tracking-tight">{locale === 'en' ? 'Plan' : '플랜'}</span>
               <CustomTooltip label={locale === 'en' ? 'Premium & billing' : '유료 플랜·결제 안내'} placement="bottom" />
             </button>
@@ -2192,12 +2393,30 @@ export function WorkspaceChrome({
             <div className="flex items-center gap-1.5">
             {headerViewButtons.map((label) => {
               const iconIndex = HEADER_VIEW_ICON_INDEX[label];
-              const isActive = label === 'view';
+              const popoverOpen = headerEditPopover === label;
+              const isActive = popoverOpen || (label === 'scale' && uniformScaleByPivotActive);
+              const anchorRef =
+                label === 'grid'
+                  ? gridToolAnchorRef
+                  : label === 'view'
+                    ? viewToolAnchorRef
+                    : label === 'layout'
+                      ? layoutToolAnchorRef
+                    : label === 'scale'
+                      ? scaleToolAnchorRef
+                      : label === 'ruler'
+                        ? rulerToolAnchorRef
+                        : label === 'object snap'
+                          ? objectSnapToolAnchorRef
+                          : label === 'snap'
+                            ? snapToolAnchorRef
+                            : undefined;
               return (
                 <button
                   key={label}
+                  ref={anchorRef}
                   type="button"
-                    className="group relative h-9 w-9 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
+                  className="group relative h-9 w-9 rounded-[8px] border transition-colors duration-150 inline-flex items-center justify-center"
                   style={{
                     borderColor: isActive ? accentRgba(POINT_ORANGE, 0.5) : 'rgba(255,255,255,0.2)',
                     color: isActive ? POINT_ORANGE : '#f3f4f6',
@@ -2207,6 +2426,15 @@ export function WorkspaceChrome({
                   }}
                   title={label}
                   aria-label={label}
+                  aria-expanded={isHeaderEditPopoverKey(label) ? popoverOpen : undefined}
+                  aria-haspopup={isHeaderEditPopoverKey(label) ? 'dialog' : undefined}
+                  onClick={() => {
+                    if (isHeaderEditPopoverKey(label)) {
+                      setHeaderEditPopover((cur) => (cur === label ? null : label));
+                      return;
+                    }
+                    setHeaderEditPopover(null);
+                  }}
                 >
                   <SfdIconByIndex index={iconIndex} color="currentColor" size={15} />
                 </button>
@@ -2325,6 +2553,63 @@ export function WorkspaceChrome({
           })}
         </div>
       )}
+      <ViewModeEditMenuPopover
+        open={headerEditPopover === 'view'}
+        anchorRef={viewToolAnchorRef}
+        locale={locale}
+        onClose={() => setHeaderEditPopover(null)}
+      />
+      <GridCanvasEditMenuPopover
+        open={headerEditPopover === 'grid'}
+        anchorRef={gridToolAnchorRef}
+        locale={locale}
+        gridMm={workspaceGridMm}
+        onGridMmChange={setWorkspaceGridMm}
+        canvasBg={workspaceCanvasBg}
+        onCanvasBgChange={setWorkspaceCanvasBg}
+        onClose={() => setHeaderEditPopover(null)}
+      />
+      <ScaleEditMenuPopover
+        open={headerEditPopover === 'scale'}
+        anchorRef={scaleToolAnchorRef}
+        locale={locale}
+        uniformScaleActive={uniformScaleByPivotActive}
+        onUniformScaleActiveChange={setUniformScaleByPivotActive}
+        onClose={() => setHeaderEditPopover(null)}
+      />
+      <LayoutAlignEditMenuPopover
+        open={headerEditPopover === 'layout'}
+        anchorRef={layoutToolAnchorRef}
+        locale={locale}
+        onClose={() => setHeaderEditPopover(null)}
+      />
+      <RulerEditMenuPopover
+        open={headerEditPopover === 'ruler'}
+        anchorRef={rulerToolAnchorRef}
+        locale={locale}
+        measureActive={rulerMeasureActive}
+        onMeasureActiveChange={setRulerMeasureActive}
+        onClose={() => setHeaderEditPopover(null)}
+      />
+      <ObjectSnapEditMenuPopover
+        open={headerEditPopover === 'object snap'}
+        anchorRef={objectSnapToolAnchorRef}
+        locale={locale}
+        mode={snapMode}
+        onModeChange={setSnapMode}
+        onClose={() => setHeaderEditPopover(null)}
+      />
+      <SnapSettingsEditMenuPopover
+        open={headerEditPopover === 'snap'}
+        anchorRef={snapToolAnchorRef}
+        locale={locale}
+        moveMm={snapMoveMm}
+        onMoveMmChange={setSnapMoveMm}
+        rotateDeg={snapRotateDeg}
+        onRotateDegChange={setSnapRotateDeg}
+        onReset={resetSnapToDefaults}
+        onClose={() => setHeaderEditPopover(null)}
+      />
       <SafetyDiagnosisCellPickerModal
         open={safetyDiagnosisCellPickerOpen}
         locale={locale}
