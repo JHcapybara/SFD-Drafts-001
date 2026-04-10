@@ -1,5 +1,5 @@
-import { type ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { accentRgba, POINT_ORANGE } from './pointColorSchemes';
 import { ANALYSIS_DANGER, ANALYSIS_SAFE } from './analysisPanelSemantics';
 
@@ -10,6 +10,7 @@ type PanelTokens = {
   inputBg: string;
   tabBarBg: string;
   sectionHeaderBg: string;
+  elevationSection?: string;
 };
 
 type Props = {
@@ -83,8 +84,11 @@ const COMPLETED_AT = '2026.01.01 15:35:32';
 
 export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewClick }: Props) {
   const S = strings(locale);
+  const [passOpen, setPassOpen] = useState(false);
+  const [failOpen, setFailOpen] = useState(false);
+  const cardLift = t.elevationSection ?? '0 2px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)';
   const surfaceMuted = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.05)';
-  const surfaceCard = isDark ? 'rgba(255,255,255,0.04)' : '#f4f4f5';
+  const surfaceCard = isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc';
 
   const badgePass = (
     <span
@@ -132,41 +136,83 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
     </div>
   );
 
+  const passHeaderBg = isDark ? 'rgba(34,197,94,0.08)' : ANALYSIS_SAFE.bg;
+  const failHeaderBg = isDark ? 'rgba(239,68,68,0.1)' : ANALYSIS_DANGER.bg;
+
   return (
     <div className="flex flex-col gap-4">
-      {/* PASS — 녹색 강조 */}
+      {/* PASS — 녹색 강조 (아코디언) */}
       <div
-        className="rounded-xl border overflow-hidden border-l-4"
-        style={{ borderColor: t.inputBorder, borderLeftColor: ANALYSIS_SAFE.border, background: t.inputBg }}
+        className="rounded-2xl overflow-hidden"
+        style={{
+          borderLeft: `5px solid ${ANALYSIS_SAFE.border}`,
+          background: isDark ? t.inputBg : '#ffffff',
+          boxShadow: cardLift,
+        }}
       >
-        <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: t.inputBorder, background: isDark ? 'rgba(34,197,94,0.08)' : ANALYSIS_SAFE.bg }}>
+        <button
+          type="button"
+          className="w-full flex items-center gap-3 px-4 py-3 text-left"
+          style={{
+            borderBottom: passOpen ? `1px solid ${t.inputBorder}` : undefined,
+            background: passHeaderBg,
+          }}
+          aria-expanded={passOpen}
+          onClick={() => setPassOpen((o) => !o)}
+        >
           {badgePass}
           <span className="flex-1 min-w-0 text-base font-bold truncate" style={{ color: t.textPrimary }}>
             {S.robotPrefix} {ROBOT_MODEL}
           </span>
-        </div>
-        <div className="px-4 py-4 space-y-3" style={{ background: surfaceCard }}>
-          {rowLine(S.analysisResult, badgePass)}
-          {rowLine(S.maxCri, <span className="tabular-nums text-lg font-bold">0.9</span>)}
-          {rowLine(S.analysisTime, <span className="tabular-nums font-semibold">{TIME_MAIN}</span>)}
-          <p className="text-xs text-right pt-1" style={{ color: t.textSecondary }}>
-            {S.completedAtLabel} {COMPLETED_AT}
-          </p>
-        </div>
+          <ChevronDown
+            className={`w-4 h-4 shrink-0 transition-transform duration-200 ${passOpen ? 'rotate-180' : ''}`}
+            style={{ color: t.textSecondary }}
+            aria-hidden
+          />
+        </button>
+        {passOpen ? (
+          <div className="px-4 py-4 space-y-3" style={{ background: surfaceCard }}>
+            {rowLine(S.analysisResult, badgePass)}
+            {rowLine(S.maxCri, <span className="tabular-nums text-lg font-bold">0.9</span>)}
+            {rowLine(S.analysisTime, <span className="tabular-nums font-semibold">{TIME_MAIN}</span>)}
+            <p className="text-xs text-right pt-1" style={{ color: t.textSecondary }}>
+              {S.completedAtLabel} {COMPLETED_AT}
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      {/* FAIL — 적색 강조 */}
+      {/* FAIL — 적색 강조 (아코디언) */}
       <div
-        className="rounded-xl border overflow-hidden border-l-4"
-        style={{ borderColor: t.inputBorder, borderLeftColor: ANALYSIS_DANGER.border, background: t.inputBg }}
+        className="rounded-2xl overflow-hidden"
+        style={{
+          borderLeft: `5px solid ${ANALYSIS_DANGER.border}`,
+          background: isDark ? t.inputBg : '#ffffff',
+          boxShadow: cardLift,
+        }}
       >
-        <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: t.inputBorder, background: isDark ? 'rgba(239,68,68,0.1)' : ANALYSIS_DANGER.bg }}>
+        <button
+          type="button"
+          className="w-full flex items-center gap-3 px-4 py-3 text-left"
+          style={{
+            borderBottom: failOpen ? `1px solid ${t.inputBorder}` : undefined,
+            background: failHeaderBg,
+          }}
+          aria-expanded={failOpen}
+          onClick={() => setFailOpen((o) => !o)}
+        >
           {badgeFail}
           <span className="flex-1 min-w-0 text-base font-bold truncate" style={{ color: t.textPrimary }}>
             {S.robotPrefix} {ROBOT_MODEL}
           </span>
-        </div>
-        <div className="px-4 py-4 space-y-4 border-t" style={{ borderColor: t.inputBorder, background: surfaceCard }}>
+          <ChevronDown
+            className={`w-4 h-4 shrink-0 transition-transform duration-200 ${failOpen ? 'rotate-180' : ''}`}
+            style={{ color: t.textSecondary }}
+            aria-hidden
+          />
+        </button>
+        {failOpen ? (
+          <div className="px-4 py-4 space-y-4 border-t" style={{ borderColor: t.inputBorder, background: surfaceCard }}>
           <div
             className="rounded-lg border px-3 py-2.5 flex items-center gap-2"
             style={{ borderColor: t.inputBorder, background: t.inputBg }}
@@ -308,6 +354,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
             </ul>
           </div>
         </div>
+        ) : null}
       </div>
     </div>
   );

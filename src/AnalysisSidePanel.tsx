@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, ChevronDown, ClipboardList, Cpu, ExternalLink, Shield } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ClipboardList, Cpu, ExternalLink, Info, LayoutDashboard, Shield } from 'lucide-react';
 import { accentRgba, POINT_ORANGE } from './pointColorSchemes';
 import { ANALYSIS_DANGER, ANALYSIS_SAFE, ANALYSIS_WARN } from './analysisPanelSemantics';
 import { ANALYSIS_FRAME_DARK, ANALYSIS_FRAME_LIGHT } from './analysisPanelFrameRef';
@@ -8,12 +8,27 @@ import { RobotPflAnalysisContent } from './RobotPflAnalysisContent';
 import { SensorAnalysisContent } from './SensorAnalysisContent';
 import { FenceAnalysisContent } from './FenceAnalysisContent';
 import { ResidualRiskContent } from './ResidualRiskContent';
+import {
+  AnalysisFigmaDraftChrome,
+  AnalysisFigmaDraftRegulations,
+  AnalysisFigmaDraftSummary,
+} from './AnalysisPanelFigmaDraft';
+import { AnalysisPanelSafetics698Wire } from './AnalysisPanelSafetics698Wire';
+import { AnalysisPanelSafeticsV2, SafeticsV2CellHeader } from './AnalysisPanelSafeticsV2';
+import { LIGHT_HAZARD_ROWS, LIGHT_REG_ROWS } from './analysisPanelSummaryRows';
 
 export type AnalysisEquipmentTab = 'robot' | 'sensor' | 'fence';
 
-/** UI 비교용: 참고안(와이어) vs 컴팩트 — 라이트·다크 공통으로 전환 */
-export type AnalysisPanelUiVersion = 'frameRef' | 'compactTiles';
+/** UI 비교용: 참고안(와이어) vs 컴팩트 vs 대시보드 vs Figma Draft — 라이트·다크 공통으로 전환 */
+export type AnalysisPanelUiVersion =
+  | 'frameRef'
+  | 'compactTiles'
+  | 'dashboard'
+  | 'figmaDraft'
+  | 'safetics698Wire'
+  | 'safeticsV2';
 
+/** 우측 프로퍼티 패널(`PropertyPanel` LIGHT/DARK)과 동일 계열 — 글래스·소프트 섀도 */
 type PanelTokens = {
   textPrimary: string;
   textSecondary: string;
@@ -21,12 +36,20 @@ type PanelTokens = {
   inputBg: string;
   tabBarBg: string;
   sectionHeaderBg: string;
+  panelBg: string;
+  panelBorder: string;
+  panelShadow: string;
+  elevationSection: string;
+  elevationRaised: string;
+  divider: string;
 };
 
 type Props = {
   locale: 'ko' | 'en';
   isDark: boolean;
   tokens: PanelTokens;
+  /** 좌측 크롬 헤더와 동기화 — 패널 레이아웃(참고안/컴팩트/대시보드) */
+  panelUiVersion: AnalysisPanelUiVersion;
   onOpenSensorCalculator: () => void;
   onHazardViewClick?: (itemId: string, category: 'collision' | 'pinch') => void;
   onRobotPflViewClick?: (id: string, kind: 'interval' | 'collab') => void;
@@ -96,6 +119,13 @@ function copy(locale: 'ko' | 'en') {
       panelVersionLabel: 'Panel layout (compare)',
       panelVersionFrameRef: 'Reference · Apr 2026 (HTML wireframe)',
       panelVersionCompact: 'Compact · tile snapshot',
+      panelVersionDashboard: 'Dashboard · KPI widgets',
+      dashKpiBlockDesign: 'Installation',
+      dashKpiBlockDesignSub: 'Robot & sensor / fence counts from your design.',
+      dashKpiBlockDiagnosis: 'Diagnosis (variable)',
+      dashKpiBlockDiagnosisSub: 'Hazard areas and residual / regulatory items — from 0 upward depending on properties and options.',
+      dashCardResidualRegulatory: 'Residual / regulatory',
+      extensionSlotPlaceholder: 'Reserved — new layout slot',
     };
   }
   return {
@@ -153,6 +183,37 @@ function copy(locale: 'ko' | 'en') {
     panelVersionLabel: '패널 레이아웃 (비교)',
     panelVersionFrameRef: '참고안 · 2026.04 (HTML 와이어)',
     panelVersionCompact: '컴팩트 · 타일 스냅샷',
+    panelVersionDashboard: '대시보드 · KPI 위젯',
+    dashKpiBlockDesign: '설치·구성',
+    dashKpiBlockDesignSub: '설계에 배치한 로봇·센서/펜스 개수입니다.',
+    dashKpiBlockDiagnosis: '진단·가변',
+    dashKpiBlockDiagnosisSub: '위험영역·잔존/안전규정 항목 — 속성·옵션에 따라 0부터 늘어날 수 있습니다.',
+    dashCardResidualRegulatory: '잔존·안전규정',
+    extensionSlotPlaceholder: '신규 구성용 슬롯',
+  };
+}
+
+/** `WorkspaceChrome` 좌측 패널 헤더 — 패널 레이아웃 셀렉트용 문구 */
+export function getAnalysisPanelLayoutChromeCopy(locale: 'ko' | 'en') {
+  if (locale === 'en') {
+    return {
+      label: 'Panel layout (compare)',
+      frameRef: 'Reference · Apr 2026 (HTML wireframe)',
+      compact: 'Compact · tile snapshot',
+      dashboard: 'Dashboard · KPI widgets',
+      figmaDraft: 'Figma Draft · flat list (node 698-990)',
+      safetics698Wire: 'Safetics wire · node 698-990 (new)',
+      safeticsV2: 'Safetics · table + tabs (v2)',
+    };
+  }
+  return {
+    label: '패널 레이아웃 (비교)',
+    frameRef: '참고안 · 2026.04 (HTML 와이어)',
+    compact: '컴팩트 · 타일 스냅샷',
+    dashboard: '대시보드 · KPI 위젯',
+    figmaDraft: 'Figma Draft · 플랫 리스트 (노드 698-990)',
+    safetics698Wire: 'Safetics 와이어 · 노드 698-990 (신규)',
+    safeticsV2: 'Safetics · 표 + 탭 통합 (v2)',
   };
 }
 
@@ -166,208 +227,6 @@ const SUMMARY_DOT_PATTERN: Record<'hazard' | 'robot' | 'sf' | 'regulatory', ('f'
   sf: ['w', 'w', 'p', 'p'],
   regulatory: ['f', 'w', 'p', 'p'],
 };
-
-type LightHazardRow = {
-  id: string;
-  tone: HazardRowTone;
-  nameKo: string;
-  nameEn: string;
-  subKo: string;
-  subEn: string;
-  bodyKo: string;
-  bodyEn: string;
-  refKo: string;
-  refEn: string;
-  showView3d: boolean;
-  primaryKo?: string;
-  primaryEn?: string;
-  secondaryKo?: string;
-  secondaryEn?: string;
-  primaryIsSuggest?: boolean;
-};
-
-const LIGHT_HAZARD_ROWS: LightHazardRow[] = [
-  {
-    id: 'hz1',
-    tone: 'fail',
-    nameKo: '충돌 위험가능성 영역',
-    nameEn: 'Collision risk zone',
-    subKo: '펜스 개구부 안전거리 미달 — 600mm / 기준 870mm',
-    subEn: 'Fence opening safety distance short — 600mm / required 870mm',
-    bodyKo:
-      'ISO 13857 Table 4 기준, 개구부 폭 600mm 시 최소 안전거리는 870mm입니다. 현재 라이트 커튼까지의 이격 거리가 기준에 미달합니다.',
-    bodyEn:
-      'Per ISO 13857 Table 4, a 600mm opening requires at least 870mm safety distance. The current clearance to the light curtain is below the requirement.',
-    refKo: '참조: ISO 13857:2019 Table 4',
-    refEn: 'Ref: ISO 13857:2019 Table 4',
-    showView3d: true,
-    primaryKo: '대책 추천',
-    primaryEn: 'Suggest countermeasure',
-    secondaryKo: '속성 수정',
-    secondaryEn: 'Edit properties',
-    primaryIsSuggest: true,
-  },
-  {
-    id: 'hz2',
-    tone: 'warn',
-    nameKo: '끼임 가능성 영역',
-    nameEn: 'Pinch / entrapment zone',
-    subKo: '컨베이어 하단부 간격 25mm 이하 감지',
-    subEn: '≤25mm gap detected under conveyor',
-    bodyKo:
-      '컨베이어 하단 구조물과 바닥 사이 간격이 25mm 이하로 감지되었습니다. 신체 끼임 가능성이 있어 가드 설치 또는 구조 변경이 권고됩니다.',
-    bodyEn:
-      'A ≤25mm gap was detected under the conveyor. Entrapment risk is present; guarding or structural change is recommended.',
-    refKo: '참조: ISO 13854:2017',
-    refEn: 'Ref: ISO 13854:2017',
-    showView3d: true,
-    primaryKo: '대책 추천',
-    primaryEn: 'Suggest countermeasure',
-    secondaryKo: '속성 수정',
-    secondaryEn: 'Edit properties',
-    primaryIsSuggest: true,
-  },
-  {
-    id: 'hz3',
-    tone: 'warn',
-    nameKo: '충돌과 끼임 동시 가능성 영역',
-    nameEn: 'Combined collision & pinch zone',
-    subKo: '로봇 운전영역 내 복합 위험요소 존재',
-    subEn: 'Multiple hazards present in robot operating space',
-    bodyKo:
-      '로봇 운전영역 내에 충돌과 끼임이 동시에 발생할 수 있는 구간이 확인되었습니다. 설비 재배치 또는 추가 방호 조치가 필요합니다.',
-    bodyEn:
-      'Areas where collision and pinch can occur together were found. Relocate equipment or add guarding.',
-    refKo: '참조: ISO 10218-2:2011 §5.4',
-    refEn: 'Ref: ISO 10218-2:2011 §5.4',
-    showView3d: true,
-    primaryKo: '대책 추천',
-    primaryEn: 'Suggest countermeasure',
-    secondaryKo: '속성 수정',
-    secondaryEn: 'Edit properties',
-    primaryIsSuggest: true,
-  },
-  {
-    id: 'hz4',
-    tone: 'pass',
-    nameKo: '개구부',
-    nameEn: 'Opening',
-    subKo: '상단 개구부 없음 — 기준 충족',
-    subEn: 'No top opening — requirement met',
-    bodyKo: '상단 개구부가 없으며, 현재 설치 기준을 충족합니다.',
-    bodyEn: 'No top opening; installation meets the applicable requirements.',
-    refKo: '참조: ISO 13857:2019',
-    refEn: 'Ref: ISO 13857:2019',
-    showView3d: false,
-    primaryKo: '상세 보기',
-    primaryEn: 'View details',
-  },
-  {
-    id: 'hz5',
-    tone: 'pass',
-    nameKo: '잔존 위험영역',
-    nameEn: 'Residual risk zone',
-    subKo: '방호 후 잔존 위험 — 허용 수준 이내',
-    subEn: 'After guarding — residual risk within acceptable limits',
-    bodyKo: '방호 조치 후 잔존 위험이 허용 수준 이내로 관리되고 있습니다.',
-    bodyEn: 'Residual risk after protective measures is within acceptable limits.',
-    refKo: '참조: ISO 12100:2010',
-    refEn: 'Ref: ISO 12100:2010',
-    showView3d: false,
-    primaryKo: '상세 보기',
-    primaryEn: 'View details',
-  },
-];
-
-type LightRegRow = {
-  id: string;
-  tone: HazardRowTone;
-  nameKo: string;
-  nameEn: string;
-  subKo: string;
-  subEn: string;
-  bodyKo: string;
-  bodyEn: string;
-  refKo: string;
-  refEn: string;
-  showView3d: boolean;
-  primaryKo?: string;
-  primaryEn?: string;
-  secondaryKo?: string;
-  secondaryEn?: string;
-  primaryIsSuggest?: boolean;
-  singleKo?: string;
-  singleEn?: string;
-};
-
-const LIGHT_REG_ROWS: LightRegRow[] = [
-  {
-    id: 'rg1',
-    tone: 'fail',
-    nameKo: '비상정지 버튼 위치 위반',
-    nameEn: 'E-stop placement violation',
-    subKo: 'E-STOP이 보호영역 내부에 위치',
-    subEn: 'E-stop located inside the protected zone',
-    bodyKo:
-      '비상정지 버튼이 보호영역 내부에 설치되어 있습니다. 비상 시 작업자가 위험에 노출될 수 있으므로 보호영역 외부로 재배치가 필요합니다.',
-    bodyEn:
-      'The e-stop is inside the protected zone. Relocate it outside so operators are not exposed during emergencies.',
-    refKo: '참조: ISO 10218-2:2011 §5.7.1',
-    refEn: 'Ref: ISO 10218-2:2011 §5.7.1',
-    showView3d: true,
-    primaryKo: '대책 추천',
-    primaryEn: 'Suggest countermeasure',
-    secondaryKo: '속성 수정',
-    secondaryEn: 'Edit properties',
-    primaryIsSuggest: true,
-  },
-  {
-    id: 'rg2',
-    tone: 'warn',
-    nameKo: '산업안전보건 표지 미확인',
-    nameEn: 'Safety signage not verified',
-    subKo: '출입문 표지 부착 여부 확인 필요',
-    subEn: 'Verify signage on access doors',
-    bodyKo:
-      '출입문에 산업안전보건 표지 부착 여부를 확인해주세요. 안전보건규칙 제37조에 따라 부착이 의무입니다.',
-    bodyEn: 'Verify industrial safety signage on doors. Attachment is mandatory under applicable rules.',
-    refKo: '참조: 산업안전보건규칙 제37조',
-    refEn: 'Ref: Industrial safety and health rules (Art. 37)',
-    showView3d: false,
-    singleKo: '확인 완료 처리',
-    singleEn: 'Mark done',
-  },
-  {
-    id: 'rg3',
-    tone: 'pass',
-    nameKo: '로봇 설치 신고',
-    nameEn: 'Robot installation notification',
-    subKo: '유해·위험 기계 설치 신고 대상 확인',
-    subEn: 'Hazardous machinery notification applicability checked',
-    bodyKo: '유해·위험 기계 설치 신고 대상 여부가 확인되었습니다.',
-    bodyEn: 'Notification requirements for hazardous machinery were checked.',
-    refKo: '참조: 산업안전보건법 제44조',
-    refEn: 'Ref: OSH Act (Art. 44)',
-    showView3d: false,
-    primaryKo: '상세 보기',
-    primaryEn: 'View details',
-  },
-  {
-    id: 'rg4',
-    tone: 'pass',
-    nameKo: '안전검사 주기',
-    nameEn: 'Safety inspection cycle',
-    subKo: '정기검사 주기 내 운용 중',
-    subEn: 'Operating within periodic inspection cycle',
-    bodyKo: '현재 설비는 정기 안전검사 주기 내에서 운용 중입니다.',
-    bodyEn: 'The equipment is operated within the periodic safety inspection cycle.',
-    refKo: '참조: 산업안전보건법 제93조',
-    refEn: 'Ref: OSH Act (Art. 93)',
-    showView3d: false,
-    primaryKo: '상세 보기',
-    primaryEn: 'View details',
-  },
-];
 
 type CardTone = 'danger' | 'warn' | 'safe' | 'brand';
 
@@ -427,6 +286,7 @@ export function AnalysisSidePanel({
   locale,
   isDark,
   tokens: t,
+  panelUiVersion,
   onOpenSensorCalculator,
   onHazardViewClick,
   onRobotPflViewClick,
@@ -435,15 +295,20 @@ export function AnalysisSidePanel({
   onResidualLocationView,
 }: Props) {
   const L = copy(locale);
-  const [panelUiVersion, setPanelUiVersion] = useState<AnalysisPanelUiVersion>('frameRef');
   const [processTab, setProcessTab] = useState<ProcessTab>('summary');
   const [equipmentTab, setEquipmentTab] = useState<AnalysisEquipmentTab>('robot');
   const [lightHazardOpenId, setLightHazardOpenId] = useState<string | null>('hz1');
   const [lightRegOpenId, setLightRegOpenId] = useState<string | null>(null);
   const [lightEmbedEquipTab, setLightEmbedEquipTab] = useState<AnalysisEquipmentTab>('robot');
+  /** 대시보드: 분석 결과를 볼 셀 선택(와이어용) */
+  const [dashboardCellId, setDashboardCellId] = useState('cell1');
 
   const FL = ANALYSIS_FRAME_LIGHT;
   const useFrameRefChrome = panelUiVersion === 'frameRef';
+  const isDashboardLayout = panelUiVersion === 'dashboard';
+  const isFigmaDraftLayout = panelUiVersion === 'figmaDraft';
+  const isSafetics698Wire = panelUiVersion === 'safetics698Wire';
+  const isSafeticsV2 = panelUiVersion === 'safeticsV2';
   const FT: AnalysisFrameTokens = isDark ? ANALYSIS_FRAME_DARK : ANALYSIS_FRAME_LIGHT;
 
   const summaryCards = [
@@ -451,6 +316,16 @@ export function AnalysisSidePanel({
     { key: 'robot' as const, label: L.cardRobot, count: SUMMARY.robot },
     { key: 'sf' as const, label: L.cardSensorFence, count: SUMMARY.sensorFence },
     { key: 'regulatory' as const, label: L.cardRegulatory, count: SUMMARY.regulatory },
+  ];
+
+  /** 대시보드: 설계에 고정되는 설치 개수 vs 진단으로 가변인 항목 */
+  const dashboardKpiDesignInstall = [
+    { key: 'robot' as const, label: L.cardRobot, count: SUMMARY.robot },
+    { key: 'sf' as const, label: L.cardSensorFence, count: SUMMARY.sensorFence },
+  ];
+  const dashboardKpiDiagnosisVariable = [
+    { key: 'hazard' as const, label: L.cardHazard, count: SUMMARY.hazard },
+    { key: 'regulatory' as const, label: L.dashCardResidualRegulatory, count: SUMMARY.regulatory },
   ];
 
   const equipmentTabs: { id: AnalysisEquipmentTab; label: string }[] = [
@@ -471,8 +346,19 @@ export function AnalysisSidePanel({
     { id: 'residual', label: L.tabResidual, short: L.step3Short },
   ];
 
-  const canvasBg = useFrameRefChrome ? FT.bgCanvas : isDark ? 'rgba(0,0,0,0.12)' : FL.bgCanvas;
-  const hairline = t.inputBorder;
+  const canvasBgGradient = isDashboardLayout || isFigmaDraftLayout || isSafetics698Wire || isSafeticsV2
+    ? isDark
+      ? 'linear-gradient(165deg, #151a22 0%, #0f1218 55%, #0c0e12 100%)'
+      : 'linear-gradient(180deg, #e2e8f0 0%, #eef2f7 45%, #e8edf2 100%)'
+    : useFrameRefChrome
+      ? FT.bgCanvas
+      : isDark
+        ? 'rgba(0,0,0,0.12)'
+        : FL.bgCanvas;
+  /** safeticsV2: 스크롤 영역 단색(라이트 흰색 / 다크 차분한 단색) */
+  const canvasBg =
+    isSafeticsV2 && !isDark ? '#ffffff' : isSafeticsV2 && isDark ? '#161618' : canvasBgGradient;
+  const hairline = t.divider;
   const versionUsesFrameTokens = useFrameRefChrome;
 
   const toggleLightHazard = (id: string) => {
@@ -482,7 +368,8 @@ export function AnalysisSidePanel({
     setLightRegOpenId((cur) => (cur === id ? null : id));
   };
 
-  const equipmentUseUnderlineTabs = useFrameRefChrome;
+  const equipmentUseUnderlineTabs =
+    useFrameRefChrome || isDashboardLayout || isFigmaDraftLayout || isSafetics698Wire || isSafeticsV2;
 
   const placeholderBox = (
     <div
@@ -498,62 +385,30 @@ export function AnalysisSidePanel({
 
   return (
     <div
-      className="h-full flex flex-col rounded-xl overflow-hidden min-h-0 min-w-0 border"
+      className="h-full flex flex-col rounded-[18px] overflow-hidden min-h-0 min-w-0"
       style={{
-        borderColor: t.inputBorder,
-        background: t.tabBarBg,
-        boxShadow: isDark ? '0 8px 28px rgba(0,0,0,0.28)' : '0 2px 16px rgba(15,23,42,0.06)',
+        border: `1px solid ${t.panelBorder}`,
+        background: t.panelBg,
+        boxShadow: t.panelShadow,
+        backdropFilter: isDark ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: isDark ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
       }}
     >
+      {/* 상단: 컴팩트=SafetyDesigner·오렌지 탭 / 참고안=셀렉트·요약 그리드·밑줄 단계 탭 (라이트·다크) — 패널 레이아웃은 WorkspaceChrome 헤더 */}
       <div
-        className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b"
+        className="shrink-0 border-b"
         style={{
           borderColor: hairline,
-          background: versionUsesFrameTokens ? FT.bgSecondary : isDark ? 'rgba(255,255,255,0.04)' : FL.bgSecondary,
+          background: isDashboardLayout || isFigmaDraftLayout || isSafetics698Wire || isSafeticsV2
+            ? isDark
+              ? 'rgba(255,255,255,0.05)'
+              : 'rgba(255,255,255,0.78)'
+            : useFrameRefChrome
+              ? FT.bgPanel
+              : undefined,
         }}
       >
-        <label
-          htmlFor="analysis-panel-ui-version"
-          className="text-[10px] font-semibold shrink-0 max-w-[40%]"
-          style={{ color: versionUsesFrameTokens ? FT.textSecondary : isDark ? t.textSecondary : FL.textSecondary }}
-        >
-          {L.panelVersionLabel}
-        </label>
-        <div className="relative flex-1 min-w-0">
-          <select
-            id="analysis-panel-ui-version"
-            value={panelUiVersion}
-            onChange={(e) => setPanelUiVersion(e.target.value as AnalysisPanelUiVersion)}
-            className="w-full text-[11px] font-medium py-1 pl-2 pr-8 rounded-md border appearance-none cursor-pointer"
-            style={
-              versionUsesFrameTokens
-                ? {
-                    borderColor: FT.border,
-                    background: FT.bgPanel,
-                    color: FT.textPrimary,
-                  }
-                : {
-                    borderColor: isDark ? t.inputBorder : FL.border,
-                    background: isDark ? t.inputBg : FL.bgPanel,
-                    color: isDark ? t.textPrimary : FL.textPrimary,
-                  }
-            }
-            aria-label={L.panelVersionLabel}
-          >
-            <option value="frameRef">{L.panelVersionFrameRef}</option>
-            <option value="compactTiles">{L.panelVersionCompact}</option>
-          </select>
-          <ChevronDown
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
-            style={{ color: versionUsesFrameTokens ? FT.textTertiary : isDark ? t.textSecondary : FL.textTertiary }}
-            aria-hidden
-          />
-        </div>
-      </div>
-
-      {/* 상단: 컴팩트=SafetyDesigner·오렌지 탭 / 참고안=셀렉트·요약 그리드·밑줄 단계 탭 (라이트·다크) */}
-      <div className="shrink-0 border-b" style={{ borderColor: hairline, background: useFrameRefChrome ? FT.bgPanel : undefined }}>
-        {!useFrameRefChrome ? (
+        {panelUiVersion === 'compactTiles' ? (
           <div className="px-3 pt-2 pb-2">
             <div className="flex items-start gap-2 min-w-0">
               <div className="min-w-0 flex-1">
@@ -629,6 +484,277 @@ export function AnalysisSidePanel({
                 })}
               </div>
             </div>
+          </div>
+        ) : panelUiVersion === 'dashboard' ? (
+          <div className="px-3 pt-2 pb-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                style={{
+                  background: isDark
+                    ? 'linear-gradient(160deg, rgba(255,142,43,0.2), rgba(255,142,43,0.06))'
+                    : 'linear-gradient(160deg, rgba(255,142,43,0.22), rgba(255,142,43,0.07))',
+                  boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.06)' : 'inset 0 1px 0 rgba(255,255,255,0.65)',
+                }}
+                aria-hidden
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" style={{ color: POINT_ORANGE }} strokeWidth={2.2} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-semibold uppercase tracking-wider leading-none" style={{ color: FT.textTertiary }}>
+                  SafetyDesigner
+                </p>
+                <h2 className="text-lg font-bold leading-snug mt-0.5 tracking-tight" style={{ color: FT.textPrimary }}>
+                  {L.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="shrink-0 rounded-md p-1 transition-colors"
+                style={{ color: FT.textTertiary }}
+                title={L.flowLead}
+                aria-label={L.flowLead}
+              >
+                <Info className="h-4 w-4" strokeWidth={2} aria-hidden />
+              </button>
+              <div className="flex min-w-0 shrink-0 items-center gap-1.5 max-w-[min(58%,240px)]">
+                <label htmlFor="dashboard-cell-select" className="sr-only">
+                  {L.cellFilter}
+                </label>
+                <div className="relative min-w-0 flex-1">
+                  <select
+                    id="dashboard-cell-select"
+                    value={dashboardCellId}
+                    onChange={(e) => setDashboardCellId(e.target.value)}
+                    className="w-full min-w-0 cursor-pointer appearance-none rounded-xl py-1 pl-2 pr-7 text-[11px] font-medium"
+                    style={{
+                      background: isDark ? FT.bgSecondary : '#ffffff',
+                      color: FT.textPrimary,
+                      boxShadow: `${t.elevationRaised}, inset 0 0 0 1px ${FT.borderSubtle}`,
+                    }}
+                  >
+                    <option value="cell1">{L.cellValue}</option>
+                  </select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2"
+                    style={{ color: FT.textTertiary }}
+                    aria-hidden
+                  />
+                </div>
+                <span
+                  className="inline max-w-[4.5rem] shrink-0 truncate rounded px-1 py-0.5 text-[8px] font-semibold sm:max-w-[5.5rem] sm:px-1.5 sm:text-[9px]"
+                  style={{
+                    background: isDark ? 'rgba(251,191,36,0.12)' : 'rgba(251,191,36,0.16)',
+                    color: '#d97706',
+                  }}
+                  title={L.conditionsChanged}
+                >
+                  {L.conditionsChanged}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-2 min-w-0 space-y-2">
+              <div
+                className="rounded-xl px-2 py-1.5"
+                style={{
+                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.72)',
+                  boxShadow: t.elevationRaised,
+                  border: isDark ? 'none' : '1px solid rgba(255,255,255,0.85)',
+                }}
+              >
+                <div className="mb-1 flex min-w-0 items-center gap-0.5">
+                  <span className="text-[10px] font-bold leading-none" style={{ color: FT.textPrimary }}>
+                    {L.dashKpiBlockDesign}
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-0.5"
+                    style={{ color: FT.textTertiary }}
+                    title={L.dashKpiBlockDesignSub}
+                    aria-label={L.dashKpiBlockDesignSub}
+                  >
+                    <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
+                  </button>
+                </div>
+                <div className="grid min-w-0 grid-cols-2 gap-1.5">
+                  {dashboardKpiDesignInstall.map((c) => {
+                    const tone = summaryTone(c.key);
+                    const st = toneStyle(tone, isDark);
+                    return (
+                      <div
+                        key={c.key}
+                        className="flex min-h-0 min-w-0 items-center justify-between gap-2 rounded-lg px-2 py-1"
+                        style={{
+                          borderLeft: `3px solid ${st.stripe}`,
+                          background: isDark ? st.background : '#ffffff',
+                          boxShadow: isDark ? undefined : '0 1px 2px rgba(15,23,42,0.06)',
+                        }}
+                      >
+                        <span
+                          className="min-w-0 truncate text-[9px] font-medium leading-none"
+                          style={{ color: FT.textSecondary }}
+                          title={c.label}
+                        >
+                          {c.label}
+                        </span>
+                        <span className="shrink-0 text-sm font-bold tabular-nums leading-none" style={{ color: FT.textPrimary }}>
+                          {c.count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div
+                className="rounded-xl px-2 py-1.5"
+                style={{
+                  background: isDark ? 'rgba(255,142,43,0.07)' : 'rgba(255,142,43,0.08)',
+                  boxShadow: t.elevationRaised,
+                  border: isDark ? '1px solid rgba(255,142,43,0.12)' : '1px solid rgba(255,142,43,0.14)',
+                }}
+              >
+                <div className="mb-1 flex min-w-0 items-center gap-0.5">
+                  <span className="text-[10px] font-bold leading-none" style={{ color: FT.textPrimary }}>
+                    {L.dashKpiBlockDiagnosis}
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded p-0.5"
+                    style={{ color: FT.textTertiary }}
+                    title={L.dashKpiBlockDiagnosisSub}
+                    aria-label={L.dashKpiBlockDiagnosisSub}
+                  >
+                    <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
+                  </button>
+                </div>
+                <div className="grid min-w-0 grid-cols-2 gap-1.5">
+                  {dashboardKpiDiagnosisVariable.map((c) => {
+                    const tone = summaryTone(c.key);
+                    const st = toneStyle(tone, isDark);
+                    return (
+                      <div
+                        key={c.key}
+                        className="flex min-h-0 min-w-0 items-center justify-between gap-2 rounded-lg px-2 py-1"
+                        style={{
+                          borderLeft: `3px solid ${st.stripe}`,
+                          background: isDark ? st.background : '#ffffff',
+                          boxShadow: isDark ? undefined : '0 1px 2px rgba(15,23,42,0.06)',
+                        }}
+                      >
+                        <span
+                          className="min-w-0 truncate text-[9px] font-medium leading-none"
+                          style={{ color: FT.textSecondary }}
+                          title={c.label}
+                        >
+                          {c.label}
+                        </span>
+                        <span className="shrink-0 text-sm font-bold tabular-nums leading-none" style={{ color: FT.textPrimary }}>
+                          {c.count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="mt-2 min-h-[48px] rounded-xl border border-dashed px-2 py-2 flex flex-col items-center justify-center text-center"
+              style={{
+                borderColor: hairline,
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)',
+              }}
+              data-analysis-extension-slot
+              aria-label={L.extensionSlotPlaceholder}
+            >
+              <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: FT.textTertiary }}>
+                {locale === 'en' ? 'Extension' : '확장'}
+              </span>
+              <span className="text-[10px] mt-0.5 leading-snug" style={{ color: t.textSecondary }}>
+                {L.extensionSlotPlaceholder}
+              </span>
+            </div>
+
+            <div
+              className="mt-2 flex gap-0.5 rounded-2xl p-0.5"
+              style={{
+                background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.92)',
+                boxShadow: t.elevationRaised,
+              }}
+              role="tablist"
+              aria-label={locale === 'en' ? 'Diagnosis steps' : '진단 단계'}
+            >
+              {processOrder.map((step, idx) => {
+                const active = processTab === step.id;
+                const Icon = stepIcons[idx];
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className="flex min-h-[28px] flex-1 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-0.5 transition-all"
+                    style={{
+                      color: active ? '#fff' : FT.textSecondary,
+                      background: active ? POINT_ORANGE : 'transparent',
+                      boxShadow: active ? '0 4px 14px rgba(255,142,43,0.45)' : undefined,
+                    }}
+                    onClick={() => setProcessTab(step.id)}
+                    title={step.label}
+                  >
+                    <Icon className="h-3 w-3 shrink-0" strokeWidth={2.2} />
+                    <span className="max-w-full truncate text-[9px] font-bold leading-none">{step.short}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : panelUiVersion === 'figmaDraft' ? (
+          <AnalysisFigmaDraftChrome
+            locale={locale}
+            isDark={isDark}
+            t={t}
+            title={L.title}
+            cellFilter={L.cellFilter}
+            cellValue={L.cellValue}
+            conditionsChanged={L.conditionsChanged}
+            metrics={summaryCards.map((c) => ({ label: c.label, value: c.count }))}
+            processOrder={processOrder}
+            processTab={processTab}
+            onProcessTab={setProcessTab}
+            stepIcons={stepIcons}
+            cellId={dashboardCellId}
+            onCellId={setDashboardCellId}
+          />
+        ) : panelUiVersion === 'safeticsV2' ? (
+          <div
+            className="shrink-0 border-b px-3 pt-2.5 pb-2.5"
+            style={{
+              borderColor: hairline,
+              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.78)',
+            }}
+          >
+            <SafeticsV2CellHeader locale={locale} isDark={isDark} tokens={t} />
+            <p className="mt-2 text-[16px] leading-snug" style={{ color: t.textSecondary }}>
+              {locale === 'en' ? 'Choose a cell to align results.' : '결과를 맞출 로봇 셀을 선택하세요.'}
+            </p>
+          </div>
+        ) : panelUiVersion === 'safetics698Wire' ? (
+          <div
+            className="shrink-0 border-b px-3 pt-2.5 pb-2.5"
+            style={{
+              borderColor: hairline,
+              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.78)',
+            }}
+          >
+            <p className="text-[15px] font-semibold leading-tight" style={{ color: t.textPrimary }}>
+              {L.title}
+            </p>
+            <p className="mt-1 text-[14px] leading-snug" style={{ color: t.textSecondary }}>
+              {locale === 'en' ? 'Analysis results and recommended actions for this cell.' : '이 셀에 대한 분석 결과와 조치 안내입니다.'}
+            </p>
           </div>
         ) : (
           <div className="px-3 pt-2 pb-1.5">
@@ -730,9 +856,31 @@ export function AnalysisSidePanel({
 
       {/* 본문 */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto sfd-scroll px-3 py-2.5 flex flex-col min-w-0"
+        className={`flex-1 min-h-0 overflow-y-auto sfd-scroll flex flex-col min-w-0 ${
+          isSafeticsV2
+            ? 'px-2 py-1'
+            : isDashboardLayout || isFigmaDraftLayout || isSafetics698Wire
+              ? 'px-3 py-1'
+              : 'px-3 py-2.5'
+        }`}
         style={{ background: canvasBg }}
       >
+        {panelUiVersion === 'safeticsV2' ? (
+          <AnalysisPanelSafeticsV2
+            locale={locale}
+            isDark={isDark}
+            tokens={t}
+            onHazardViewClick={onHazardViewClick}
+          />
+        ) : panelUiVersion === 'safetics698Wire' ? (
+          <AnalysisPanelSafetics698Wire
+            locale={locale}
+            isDark={isDark}
+            tokens={t}
+            onHazardViewClick={onHazardViewClick}
+          />
+        ) : (
+          <>
         {processTab === 'summary' && isDark && panelUiVersion === 'compactTiles' && (
           <div className="flex flex-col gap-5 min-w-0">
             <div
@@ -995,16 +1143,114 @@ export function AnalysisSidePanel({
           </div>
         )}
 
-        {processTab === 'summary' && panelUiVersion === 'frameRef' && (
-          <div className="flex flex-col gap-3.5 min-w-0 pb-1">
-            <p className="text-[11px] leading-relaxed" style={{ color: FT.textSecondary }}>
-              {L.snapshotCaption}
-            </p>
+        {processTab === 'summary' && panelUiVersion === 'figmaDraft' && (
+          <div className="flex min-w-0 flex-col gap-3 pb-0.5">
+            <AnalysisFigmaDraftSummary
+              locale={locale}
+              t={t}
+              FT={FT}
+              hairline={hairline}
+              rows={LIGHT_HAZARD_ROWS}
+              openId={lightHazardOpenId}
+              onToggle={toggleLightHazard}
+              onHazardViewClick={onHazardViewClick}
+              viewInScene={L.viewInScene}
+              snapshotCaption={L.snapshotCaption}
+              frameHazardZone={L.frameHazardZone}
+              unitCount={L.unitCount}
+              hazardTotal={SUMMARY.hazard}
+            />
+            <section className="min-w-0 border-t pt-3" style={{ borderColor: hairline }}>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold" style={{ color: t.textPrimary }}>
+                  {L.frameEquipmentAnalysis}
+                </span>
+                <span className="text-[10px] tabular-nums" style={{ color: t.textSecondary }}>
+                  {L.unitCount(EQUIPMENT_FRAME_TOTAL)}
+                </span>
+              </div>
+              <div className="flex border-b mb-2" style={{ borderColor: FT.borderSubtle }} role="tablist" aria-label={L.tabEquipment}>
+                {equipmentTabsFrame.map((tab) => {
+                  const active = lightEmbedEquipTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      className="flex-1 min-w-0 px-2 py-1.5 text-[11px] font-medium transition-colors"
+                      style={{
+                        color: active ? FT.textPrimary : FT.textSecondary,
+                        borderBottom: active ? `2px solid ${POINT_ORANGE}` : '2px solid transparent',
+                        marginBottom: -1,
+                      }}
+                      onClick={() => setLightEmbedEquipTab(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="min-h-0 min-w-0">
+                {lightEmbedEquipTab === 'robot' && (
+                  <RobotPflAnalysisContent locale={locale} isDark={isDark} tokens={t} onPflViewClick={onRobotPflViewClick} />
+                )}
+                {lightEmbedEquipTab === 'sensor' && (
+                  <SensorAnalysisContent
+                    locale={locale}
+                    isDark={isDark}
+                    tokens={t}
+                    onOpenSensorCalculator={onOpenSensorCalculator}
+                    onSensorCalcDetailViewClick={onSensorCalcDetailViewClick}
+                  />
+                )}
+                {lightEmbedEquipTab === 'fence' && (
+                  <FenceAnalysisContent locale={locale} isDark={isDark} tokens={t} onFenceProposalClick={onFenceProposalClick} />
+                )}
+              </div>
+            </section>
+            <AnalysisFigmaDraftRegulations
+              locale={locale}
+              t={t}
+              FT={FT}
+              hairline={hairline}
+              rows={LIGHT_REG_ROWS}
+              openId={lightRegOpenId}
+              onToggle={toggleLightReg}
+              onHazardViewClick={onHazardViewClick}
+              viewInScene={L.viewInScene}
+              frameRegulations={L.frameRegulations}
+              unitCount={L.unitCount}
+              regTotal={SUMMARY.regulatory}
+            />
+          </div>
+        )}
+
+        {processTab === 'summary' && (panelUiVersion === 'frameRef' || panelUiVersion === 'dashboard') && (
+          <div className={`flex min-w-0 flex-col ${isDashboardLayout ? 'gap-4 pb-0.5' : 'gap-3.5 pb-1'}`}>
+            {!isDashboardLayout ? (
+              <p className="text-[11px] leading-relaxed" style={{ color: FT.textSecondary }}>
+                {L.snapshotCaption}
+              </p>
+            ) : null}
 
             <section>
-              <div className="flex items-center justify-between gap-2 mb-1.5 pt-0.5">
-                <span className="text-[11px] font-medium" style={{ color: FT.textPrimary }}>
-                  {L.frameHazardZone}
+              <div className="mb-1.5 flex items-center justify-between gap-2 pt-0.5">
+                <span className="flex min-w-0 items-center gap-1">
+                  <span className="text-[11px] font-medium" style={{ color: FT.textPrimary }}>
+                    {L.frameHazardZone}
+                  </span>
+                  {isDashboardLayout ? (
+                    <button
+                      type="button"
+                      className="shrink-0 rounded p-0.5 transition-colors hover:opacity-90"
+                      style={{ color: FT.textTertiary }}
+                      title={L.snapshotCaption}
+                      aria-label={L.snapshotCaption}
+                    >
+                      <Info className="h-3 w-3" strokeWidth={2.2} aria-hidden />
+                    </button>
+                  ) : null}
                 </span>
                 <span
                   className="text-[10px] tabular-nums px-1.5 py-0.5 rounded-full shrink-0"
@@ -1029,15 +1275,27 @@ export function AnalysisSidePanel({
                   const secondary =
                     row.secondaryKo && (locale === 'en' ? row.secondaryEn! : row.secondaryKo);
                   return (
-                    <div key={row.id} className="mb-1">
+                    <div
+                      key={row.id}
+                      className="rounded-2xl overflow-hidden mb-3 last:mb-0"
+                      style={{
+                        boxShadow: t.elevationSection,
+                        border: isDark
+                          ? open
+                            ? '1px solid rgba(56,189,248,0.22)'
+                            : 'none'
+                          : `1px solid ${open ? 'rgba(24,95,165,0.22)' : 'rgba(15,23,42,0.07)'}`,
+                      }}
+                    >
                       <div
-                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md border text-left transition-colors hover:opacity-95 cursor-pointer"
+                        className="w-full flex items-center gap-2 px-2.5 py-2 text-left transition-colors hover:opacity-95 cursor-pointer"
                         style={{
-                          borderColor: open ? FT.borderInfo : FT.border,
                           background: open ? FT.bgInfoRow : FT.bgPanel,
+                          borderBottom: open ? `1px solid ${FT.borderSubtle}` : undefined,
                         }}
                         role="button"
                         tabIndex={0}
+                        aria-expanded={open}
                         onClick={() => toggleLightHazard(row.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
@@ -1084,12 +1342,14 @@ export function AnalysisSidePanel({
                             {L.viewInScene}
                           </button>
                         )}
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                          style={{ color: FT.textTertiary }}
+                          aria-hidden
+                        />
                       </div>
                       {open && (
-                        <div
-                          className="mt-0.5 rounded-md border px-3 py-2.5 mb-0.5"
-                          style={{ borderColor: FT.border, background: FT.expandBoxBg }}
-                        >
+                        <div className="px-3 py-2.5" style={{ background: FT.expandBoxBg }}>
                           <p className="text-[11px] leading-relaxed" style={{ color: FT.textSecondary }}>
                             {body}
                           </p>
@@ -1129,7 +1389,9 @@ export function AnalysisSidePanel({
               </div>
             </section>
 
-            <div className="h-px my-1" style={{ background: FT.borderSubtle }} aria-hidden />
+            {!isDashboardLayout ? (
+              <div className="h-px my-1" style={{ background: FT.borderSubtle }} aria-hidden />
+            ) : null}
 
             <section>
               <div className="flex items-center justify-between gap-2 mb-2">
@@ -1194,7 +1456,9 @@ export function AnalysisSidePanel({
               </div>
             </section>
 
-            <div className="h-px my-1" style={{ background: FT.borderSubtle }} aria-hidden />
+            {!isDashboardLayout ? (
+              <div className="h-px my-1" style={{ background: FT.borderSubtle }} aria-hidden />
+            ) : null}
 
             <section>
               <div className="flex items-center justify-between gap-2 mb-1.5 pt-0.5">
@@ -1435,6 +1699,8 @@ export function AnalysisSidePanel({
             presentation="flow"
             accent="brand"
           />
+        )}
+          </>
         )}
       </div>
     </div>

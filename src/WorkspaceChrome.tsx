@@ -37,7 +37,11 @@ import { SafetyDiagnosisCellPickerModal, type SafetyDiagnosisCellItem } from './
 import { SafetyDiagnosisModal } from './SafetyDiagnosisModal';
 import { SensorSafetyDistanceCalculatorModal } from './SensorSafetyDistanceCalculatorModal';
 import { CriLegend } from './CriLegend';
-import { AnalysisSidePanel } from './AnalysisSidePanel';
+import {
+  AnalysisSidePanel,
+  type AnalysisPanelUiVersion,
+  getAnalysisPanelLayoutChromeCopy,
+} from './AnalysisSidePanel';
 import {
   GridCanvasEditMenuPopover,
   LayoutAlignEditMenuPopover,
@@ -579,11 +583,13 @@ export function WorkspaceChrome({
   const [safetyDiagnosisModalOpen, setSafetyDiagnosisModalOpen] = useState(false);
   const [safetyDiagnosisPickedCell, setSafetyDiagnosisPickedCell] = useState<SafetyDiagnosisCellItem | null>(null);
   const [sensorSafetyCalculatorOpen, setSensorSafetyCalculatorOpen] = useState(false);
+  const [analysisPanelUiVersion, setAnalysisPanelUiVersion] = useState<AnalysisPanelUiVersion>('frameRef');
   const analysisHeaderActionRef = useRef<HTMLButtonElement>(null);
   const [savedProcessInfo, setSavedProcessInfo] = useState<ProcessInfoSnapshot | null>(null);
   const uiPreviewMode = controlledUiPreviewMode ?? internalUiPreviewMode;
   const isDarkPreview = uiPreviewMode === 'dark';
   const sidePanelTokens = isDarkPreview ? PROPERTY_DARK_TOKENS : PROPERTY_LIGHT_TOKENS;
+  const analysisLayoutChrome = useMemo(() => getAnalysisPanelLayoutChromeCopy(locale), [locale]);
 
   const chromeEdgeToggleSurface = useMemo(
     () => ({
@@ -644,7 +650,7 @@ export function WorkspaceChrome({
   }, [uiModeMenuOpen]);
 
   const prevLeftModeRef = useRef<LeftMode>(leftMode);
-  /** Safety AI = 최대 너비 / 이탈 시 최소. 그 외 모드 전환 시 너비 초기화(분석에서 키운 폭이 다른 탭에 이어지지 않게) */
+  /** Safety AI·분석·위험성 = 최대 너비 기본 / 이탈 시 최소. 그 외 모드 전환 시 최소(다른 탭에 폭이 이어지지 않게) */
   useEffect(() => {
     const prev = prevLeftModeRef.current;
     prevLeftModeRef.current = leftMode;
@@ -652,6 +658,8 @@ export function WorkspaceChrome({
       setLeftWidth(LEFT_PANEL_MAX_WIDTH);
     } else if (prev === 'safetyai') {
       setLeftWidth(LEFT_PANEL_MIN_WIDTH);
+    } else if (leftMode === 'analysis' || leftMode === 'riskassessment') {
+      setLeftWidth(LEFT_PANEL_MAX_WIDTH);
     } else if (prev !== leftMode) {
       setLeftWidth(LEFT_PANEL_MIN_WIDTH);
     }
@@ -715,7 +723,7 @@ export function WorkspaceChrome({
   const modeDefs = useMemo(() => ([
     { id: 'library' as const, labelKo: '라이브러리', labelEn: 'Library' },
     { id: 'tree' as const, labelKo: '트리', labelEn: 'Tree' },
-    { id: 'analysis' as const, labelKo: '분석', labelEn: 'Analysis' },
+    { id: 'analysis' as const, labelKo: '셀 안전 진단(분석 결과)', labelEn: 'Cell safety diagnosis (analysis)' },
     { id: 'riskassessment' as const, labelKo: '위험성평가', labelEn: 'Risk' },
     { id: 'safetyai' as const, labelKo: 'Safety AI', labelEn: 'Safety AI' },
   ]), []);
@@ -1887,23 +1895,37 @@ export function WorkspaceChrome({
       <AnalysisSidePanel
         locale={locale}
         isDark={isDarkPreview}
+        panelUiVersion={analysisPanelUiVersion}
         tokens={{
-          textPrimary: sidePanelTokens.textPrimary,
-          textSecondary: sidePanelTokens.textSecondary,
+          textPrimary: isDarkPreview ? sidePanelTokens.textPrimary : '#0f172a',
+          textSecondary: isDarkPreview ? sidePanelTokens.textSecondary : '#475569',
           inputBorder: sidePanelTokens.inputBorder,
           inputBg: sidePanelTokens.inputBg,
           tabBarBg: sidePanelTokens.tabBarBg,
           sectionHeaderBg: sidePanelTokens.sectionHeaderBg,
+          panelBg: sidePanelTokens.panelBg,
+          panelBorder: sidePanelTokens.panelBorder,
+          panelShadow: sidePanelTokens.panelShadow,
+          elevationSection: sidePanelTokens.elevationSection,
+          elevationRaised: sidePanelTokens.elevationRaised,
+          divider: sidePanelTokens.divider,
         }}
         onOpenSensorCalculator={() => setSensorSafetyCalculatorOpen(true)}
         onSensorCalcDetailViewClick={() => setSensorSafetyCalculatorOpen(true)}
       />
     ),
     [
+      analysisPanelUiVersion,
       isDarkPreview,
       locale,
+      sidePanelTokens.divider,
+      sidePanelTokens.elevationRaised,
+      sidePanelTokens.elevationSection,
       sidePanelTokens.inputBg,
       sidePanelTokens.inputBorder,
+      sidePanelTokens.panelBg,
+      sidePanelTokens.panelBorder,
+      sidePanelTokens.panelShadow,
       sidePanelTokens.sectionHeaderBg,
       sidePanelTokens.tabBarBg,
       sidePanelTokens.textPrimary,
@@ -2027,16 +2049,60 @@ export function WorkspaceChrome({
         >
           <div className="h-full flex flex-col">
             {leftMode !== 'safetyai' && (
-              <div className="px-3 py-2.5 border-b flex items-center gap-2" style={{ borderColor: sidePanelTokens.divider, background: sidePanelTokens.sectionHeaderBg }}>
-                <SfdIconByIndex
-                  index={leftGnbIconIndex(leftMode)}
-                  color={POINT_ORANGE}
-                  size={14}
-                  rotationDeg={headerGnbPref ? rotationDegForPreference(headerGnbPref) : 0}
-                />
-                <span className="text-[12px] font-semibold" style={{ color: sidePanelTokens.textPrimary }}>
-                  {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
-                </span>
+              <div
+                className="px-3 py-2.5 border-b flex items-center justify-between gap-2 min-w-0"
+                style={{ borderColor: sidePanelTokens.divider, background: sidePanelTokens.sectionHeaderBg }}
+              >
+                <div className="flex items-center gap-2 min-w-0 shrink">
+                  <SfdIconByIndex
+                    index={leftGnbIconIndex(leftMode)}
+                    color={POINT_ORANGE}
+                    size={14}
+                    rotationDeg={headerGnbPref ? rotationDegForPreference(headerGnbPref) : 0}
+                  />
+                  <span className="text-[12px] font-semibold truncate" style={{ color: sidePanelTokens.textPrimary }}>
+                    {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
+                  </span>
+                </div>
+                {(leftMode === 'analysis' || leftMode === 'riskassessment') && (
+                  <div className="flex items-center gap-1.5 shrink-0 max-w-[min(72%,320px)]">
+                    <label htmlFor="ws-analysis-panel-layout" className="sr-only">
+                      {analysisLayoutChrome.label}
+                    </label>
+                    <span
+                      className="hidden sm:inline text-[10px] font-semibold whitespace-nowrap"
+                      style={{ color: sidePanelTokens.textSecondary }}
+                    >
+                      {analysisLayoutChrome.label}
+                    </span>
+                    <div className="relative min-w-[10rem] flex-1 max-w-[220px]">
+                      <select
+                        id="ws-analysis-panel-layout"
+                        value={analysisPanelUiVersion}
+                        onChange={(e) => setAnalysisPanelUiVersion(e.target.value as AnalysisPanelUiVersion)}
+                        className="w-full min-w-0 text-[11px] font-medium py-1 pl-2 pr-8 rounded-md border appearance-none cursor-pointer"
+                        style={{
+                          borderColor: sidePanelTokens.inputBorder,
+                          background: sidePanelTokens.inputBg,
+                          color: sidePanelTokens.textPrimary,
+                        }}
+                        aria-label={analysisLayoutChrome.label}
+                      >
+                        <option value="frameRef">{analysisLayoutChrome.frameRef}</option>
+                        <option value="compactTiles">{analysisLayoutChrome.compact}</option>
+                        <option value="dashboard">{analysisLayoutChrome.dashboard}</option>
+                        <option value="figmaDraft">{analysisLayoutChrome.figmaDraft}</option>
+                        <option value="safetics698Wire">{analysisLayoutChrome.safetics698Wire}</option>
+                        <option value="safeticsV2">{analysisLayoutChrome.safeticsV2}</option>
+                      </select>
+                      <ChevronDown
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+                        style={{ color: sidePanelTokens.textSecondary }}
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div
