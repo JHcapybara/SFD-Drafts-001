@@ -22,6 +22,9 @@ import { WORKSPACE_CONTENT_TOP_PX } from './chromeLayout';
 import { SceneInfoPanel } from './SceneInfoPanel';
 import { POINT_ORANGE } from './pointColorSchemes';
 import type { OnboardingOpenAppAction } from './onboardingAppActions';
+import { SimpleSurveyFab, SimpleSurveyModal } from './SimpleSurveyModal';
+import { ToastMessageFab, TopToastBar } from './WorkspaceTopToast';
+import { FloatingUiFab } from './FloatingWorkspaceUi';
 // 헤더 메타는 menuData의 OBJECTS_MODAL_CONTEXT (상위 로봇 1대). 씬별로 바꾸려면 CategoryMenu에 workspaceContext={...} 전달
 
 // Objects 모달 너비 + 간격
@@ -43,7 +46,8 @@ export default function App() {
   const [showLight, setShowLight] = useState(false);
   const [uiThemeMode, setUiThemeMode] = useState<'light' | 'dark'>('light');
   const [sceneInfoOpen, setSceneInfoOpen] = useState(false);
-
+  const [simpleSurveyOpen, setSimpleSurveyOpen] = useState(false);
+  const [topToastOpen, setTopToastOpen] = useState(false);
   // 선택된 오브젝트 상태 (PropertyPanel 탭 구성에 사용)
   const [selectedObjectId, setSelectedObjectId] = useState('manipulator');
   /** 셀 트리 포커스(프로퍼티 패널과 동기화) */
@@ -521,6 +525,17 @@ export default function App() {
       {/* 배경 이미지 */}
       <img src="/bg-viewport.png" alt="viewport background"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+
+      <SimpleSurveyFab locale={locale} theme={uiThemeMode} onOpen={() => setSimpleSurveyOpen(true)} />
+      <ToastMessageFab locale={locale} theme={uiThemeMode} onOpen={() => setTopToastOpen(true)} />
+      <FloatingUiFab locale={locale} theme={uiThemeMode} />
+      <TopToastBar open={topToastOpen} locale={locale} theme={uiThemeMode} onClose={() => setTopToastOpen(false)} />
+      <SimpleSurveyModal
+        open={simpleSurveyOpen}
+        locale={locale}
+        theme={uiThemeMode}
+        onClose={() => setSimpleSurveyOpen(false)}
+      />
 
       <WorkspaceChrome
         locale={locale}

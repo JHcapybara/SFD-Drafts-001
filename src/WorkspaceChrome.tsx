@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import {
   GripVertical,
   ChevronUp,
@@ -88,6 +89,32 @@ const LEFT_GNB_ICON_FALLBACK: Record<LeftMode, number> = {
 function leftGnbIconIndex(mode: LeftMode): number {
   const p = getItemIconPreference(`workspace-gnb:${mode}`);
   return p?.iconIndex ?? LEFT_GNB_ICON_FALLBACK[mode];
+}
+
+/** 좌측 GNB · Safety AI — 분석(주황) 모드와 구분되는 인디고 계열 */
+function leftGnbSafetyAiButtonStyle(
+  active: boolean,
+  isDark: boolean,
+  elevationRaised: string,
+): CSSProperties {
+  if (isDark) {
+    return {
+      background: active ? 'rgba(129, 140, 248, 0.22)' : 'rgba(99, 102, 241, 0.14)',
+      color: active ? '#e0e7ff' : '#c7d2fe',
+      borderColor: active ? 'rgba(192, 198, 252, 0.52)' : 'rgba(165, 180, 252, 0.4)',
+      boxShadow: active
+        ? `0 0 0 1px rgba(165,180,252,0.38) inset, 0 0 20px rgba(99,102,241,0.28), ${elevationRaised}`
+        : `0 0 0 1px rgba(129,140,248,0.22) inset, ${elevationRaised}`,
+    };
+  }
+  return {
+    background: active ? 'rgba(79, 70, 229, 0.15)' : 'rgba(99, 102, 241, 0.09)',
+    color: active ? '#4338ca' : '#4f46e5',
+    borderColor: active ? 'rgba(67, 56, 202, 0.45)' : 'rgba(99, 102, 241, 0.38)',
+    boxShadow: active
+      ? `0 0 0 1px rgba(79,70,229,0.3) inset, 0 2px 12px rgba(79,70,229,0.18), ${elevationRaised}`
+      : `0 0 0 1px rgba(99,102,241,0.15) inset, ${elevationRaised}`,
+  };
 }
 
 type BottomTab = 'timeline' | 'analysis';
@@ -481,14 +508,21 @@ function CustomTooltip({
   label: string;
   placement?: 'bottom' | 'right' | 'top';
 }) {
-  const placementClass = placement === 'right'
-    ? 'left-[calc(100%+8px)] top-1/2 -translate-y-1/2'
-    : placement === 'top'
-      ? 'left-1/2 bottom-[calc(100%+8px)] -translate-x-1/2'
-      : 'left-1/2 top-[calc(100%+8px)] -translate-x-1/2';
+  const positionClass =
+    placement === 'right'
+      ? 'left-[calc(100%+8px)] top-1/2'
+      : placement === 'top'
+        ? 'left-1/2 bottom-[calc(100%+8px)]'
+        : 'left-1/2 top-[calc(100%+8px)]';
+  const motionClass =
+    placement === 'right'
+      ? '-translate-y-1/2 -translate-x-1 opacity-0 transition-all duration-150 group-hover:translate-x-0 group-hover:opacity-100 group-hover:-translate-y-1/2'
+      : placement === 'top'
+        ? '-translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:-translate-x-1/2 group-hover:translate-y-0 group-hover:opacity-100'
+        : '-translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:-translate-x-1/2 group-hover:translate-y-0 group-hover:opacity-100';
   return (
     <span
-      className={`pointer-events-none absolute ${placementClass} rounded-[8px] border px-2.5 py-1.5 text-[11px] font-semibold leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0`}
+      className={`pointer-events-none absolute z-[32] ${positionClass} ${motionClass} rounded-[8px] border px-2.5 py-1.5 text-[11px] font-semibold leading-none whitespace-nowrap`}
       style={{
         borderColor: 'rgba(15,23,42,0.14)',
         color: '#0f172a',
@@ -499,6 +533,199 @@ function CustomTooltip({
     >
       {label}
     </span>
+  );
+}
+
+/** 좌측 GNB: 스크롤 영역 `overflow-x-hidden` 때문에 absolute 툴팁이 잘리므로 body 포털 + 높은 z로 패널 위에 표시 */
+function LeftGnbModeIconButton({
+  modeId,
+  active,
+  leftPanelOpen,
+  labelKo,
+  labelEn,
+  locale,
+  onActivate,
+  sidePanelTokens,
+  onboardingProps,
+  isDark,
+}: {
+  modeId: LeftMode;
+  /** 현재 선택된 모드인지 (로직상) */
+  active: boolean;
+  /** 좌측 영역 패널이 열려 있을 때만 선택 상태를 시각적으로 표시 */
+  leftPanelOpen: boolean;
+  labelKo: string;
+  labelEn: string;
+  locale: 'ko' | 'en';
+  onActivate: () => void;
+  sidePanelTokens: {
+    inputBg: string;
+    textPrimary: string;
+    inputBorder: string;
+    elevationRaised: string;
+  };
+  onboardingProps?: Record<string, string>;
+  isDark: boolean;
+}) {
+  const looksActive = active && leftPanelOpen;
+  const [tipOpen, setTipOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [tipPos, setTipPos] = useState({ top: 0, left: 0 });
+
+  const updateTipPosition = useCallback(() => {
+    const el = btnRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setTipPos({ top: r.top + r.height / 2, left: r.right + 8 });
+  }, []);
+
+  useEffect(() => {
+    if (!tipOpen) return;
+    updateTipPosition();
+    const onReposition = () => updateTipPosition();
+    window.addEventListener('scroll', onReposition, true);
+    window.addEventListener('resize', onReposition);
+    return () => {
+      window.removeEventListener('scroll', onReposition, true);
+      window.removeEventListener('resize', onReposition);
+    };
+  }, [tipOpen, updateTipPosition]);
+
+  const label = locale === 'en' ? labelEn : labelKo;
+  const gnbPref = getItemIconPreference(`workspace-gnb:${modeId}`);
+  const isSafetyAi = modeId === 'safetyai';
+  const safetyAiSurface = isSafetyAi ? leftGnbSafetyAiButtonStyle(looksActive, isDark, sidePanelTokens.elevationRaised) : null;
+
+  const surfaceStyle: CSSProperties =
+    safetyAiSurface ?? {
+      background: looksActive ? accentRgba(POINT_ORANGE, 0.14) : sidePanelTokens.inputBg,
+      color: looksActive ? POINT_ORANGE : sidePanelTokens.textPrimary,
+      borderColor: looksActive ? accentRgba(POINT_ORANGE, 0.42) : sidePanelTokens.inputBorder,
+      boxShadow: looksActive
+        ? `0 0 0 1px ${accentRgba(POINT_ORANGE, 0.32)} inset, ${sidePanelTokens.elevationRaised}`
+        : sidePanelTokens.elevationRaised,
+    };
+
+  const hoverAuraVars = (
+    isSafetyAi
+      ? isDark
+        ? {
+            '--left-gnb-orbit-a': '#e9d5ff',
+            '--left-gnb-orbit-b': '#818cf8',
+            '--left-gnb-orbit-c': '#c4b5fd',
+            '--left-gnb-ring': 'rgba(165, 180, 252, 0.62)',
+            '--left-gnb-inset-glow': 'rgba(255, 255, 255, 0.2)',
+            '--left-gnb-glow': 'rgba(224, 231, 255, 0.95)',
+          }
+        : {
+            '--left-gnb-orbit-a': '#c4b5fd',
+            '--left-gnb-orbit-b': '#6366f1',
+            '--left-gnb-orbit-c': '#a5b4fc',
+            '--left-gnb-ring': 'rgba(99, 102, 241, 0.48)',
+            '--left-gnb-inset-glow': 'rgba(255, 255, 255, 0.38)',
+            '--left-gnb-glow': 'rgba(79, 70, 229, 0.88)',
+          }
+      : {
+          '--left-gnb-orbit-a': '#fdba74',
+          '--left-gnb-orbit-b': '#f97316',
+          '--left-gnb-orbit-c': '#fde68a',
+          '--left-gnb-ring': 'rgba(251, 146, 60, 0.55)',
+          '--left-gnb-inset-glow': 'rgba(255, 255, 255, 0.28)',
+          '--left-gnb-glow': 'rgba(255, 140, 43, 0.95)',
+        }
+  ) as CSSProperties;
+
+  const fillWaveBg = isSafetyAi
+    ? isDark
+      ? 'linear-gradient(to top, rgba(165,180,252,0.42), rgba(99,102,241,0.14), transparent)'
+      : 'linear-gradient(to top, rgba(99,102,241,0.34), rgba(165,180,252,0.12), transparent)'
+    : `linear-gradient(to top, ${accentRgba(POINT_ORANGE, 0.4)}, ${accentRgba(POINT_ORANGE, 0.1)}, transparent)`;
+
+  const tooltipEl =
+    tipOpen &&
+    createPortal(
+      <span
+        role="tooltip"
+        className="pointer-events-none fixed rounded-[8px] border px-2.5 py-1.5 text-[11px] font-semibold leading-none whitespace-nowrap"
+        style={{
+          top: tipPos.top,
+          left: tipPos.left,
+          transform: 'translateY(-50%)',
+          zIndex: 100,
+          borderColor: 'rgba(15,23,42,0.14)',
+          color: '#0f172a',
+          background: 'rgba(255,255,255,0.98)',
+          boxShadow: '0 8px 18px rgba(15,23,42,0.16)',
+        }}
+      >
+        {label}
+      </span>,
+      document.body,
+    );
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        {...(onboardingProps ?? {})}
+        className={`left-gnb-mode-btn relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-[12px] border box-border outline-none transition-all duration-200 ease-out ${
+          looksActive ? '-translate-y-px' : 'translate-y-0'
+        } hover:duration-300 hover:scale-[1.08] hover:-translate-y-0.5 focus-visible:scale-[1.08] focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-slate-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
+        style={{
+          ...surfaceStyle,
+          ...hoverAuraVars,
+        }}
+        onClick={onActivate}
+        onMouseEnter={() => {
+          updateTipPosition();
+          setTipOpen(true);
+        }}
+        onMouseLeave={() => setTipOpen(false)}
+        onFocus={() => {
+          updateTipPosition();
+          setTipOpen(true);
+        }}
+        onBlur={() => setTipOpen(false)}
+      >
+        <span
+          className="left-gnb-orbit-wrap pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-[12px]"
+          aria-hidden
+        >
+          <span className="left-gnb-orbit-spin h-[175%] w-[175%] shrink-0 rounded-full opacity-[0.92]" />
+        </span>
+        <span
+          className="left-gnb-fill-wave pointer-events-none absolute inset-0 z-[1] rounded-[12px]"
+          style={{ background: fillWaveBg }}
+          aria-hidden
+        />
+        <span className="left-gnb-pulse-halo pointer-events-none absolute inset-0 z-[2]" aria-hidden />
+        <span className="pointer-events-none absolute inset-0 z-[3] overflow-hidden rounded-[12px]" aria-hidden>
+          <span className="left-gnb-shimmer-bar absolute inset-y-0 left-0 w-[72%] bg-gradient-to-r from-transparent via-white/75 to-transparent dark:via-white/40" />
+        </span>
+        <span className="left-gnb-icon-slot relative z-[4] flex items-center justify-center">
+          <SfdIconByIndex
+            index={leftGnbIconIndex(modeId)}
+            color={
+              isSafetyAi
+                ? looksActive
+                  ? isDark
+                    ? '#e0e7ff'
+                    : '#4338ca'
+                  : isDark
+                    ? '#c7d2fe'
+                    : '#4f46e5'
+                : looksActive
+                  ? POINT_ORANGE
+                  : sidePanelTokens.textPrimary
+            }
+            size={18}
+            rotationDeg={gnbPref ? rotationDegForPreference(gnbPref) : 0}
+          />
+        </span>
+      </button>
+      {tooltipEl}
+    </>
   );
 }
 
@@ -1976,37 +2203,30 @@ export function WorkspaceChrome({
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden sfd-scroll px-1.5 flex flex-col gap-2.5">
             {modeDefs.map(({ id, labelKo, labelEn }) => {
               const active = leftMode === id;
-              const gnbPref = getItemIconPreference(`workspace-gnb:${id}`);
               return (
-                <button
+                <LeftGnbModeIconButton
                   key={id}
-                  type="button"
-                  {...(id === 'library' ? { [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.leftGnbLibrary } : {})}
-                  className="group relative w-full aspect-square shrink-0 rounded-[12px] flex items-center justify-center transition-all duration-150 border box-border"
-                  style={{
-                    background: active
-                      ? accentRgba(POINT_ORANGE, 0.14)
-                      : sidePanelTokens.inputBg,
-                    color: active ? POINT_ORANGE : sidePanelTokens.textPrimary,
-                    borderColor: active ? accentRgba(POINT_ORANGE, 0.42) : sidePanelTokens.inputBorder,
-                    boxShadow: active
-                      ? `0 0 0 1px ${accentRgba(POINT_ORANGE, 0.32)} inset, ${sidePanelTokens.elevationRaised}`
-                      : sidePanelTokens.elevationRaised,
-                    transform: active ? 'translateY(-1px)' : 'translateY(0)',
-                  }}
-                  onClick={() => {
+                  modeId={id}
+                  active={active}
+                  leftPanelOpen={leftOpen}
+                  labelKo={labelKo}
+                  labelEn={labelEn}
+                  locale={locale}
+                  onActivate={() => {
                     setLeftMode(id);
                     if (!leftOpen) setLeftOpen(true);
                   }}
-                >
-                  <SfdIconByIndex
-                    index={leftGnbIconIndex(id)}
-                    color={active ? POINT_ORANGE : sidePanelTokens.textPrimary}
-                    size={18}
-                    rotationDeg={gnbPref ? rotationDegForPreference(gnbPref) : 0}
-                  />
-                  <CustomTooltip label={locale === 'en' ? labelEn : labelKo} placement="right" />
-                </button>
+                  sidePanelTokens={{
+                    inputBg: sidePanelTokens.inputBg,
+                    textPrimary: sidePanelTokens.textPrimary,
+                    inputBorder: sidePanelTokens.inputBorder,
+                    elevationRaised: sidePanelTokens.elevationRaised,
+                  }}
+                  onboardingProps={
+                    id === 'library' ? { [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.leftGnbLibrary } : undefined
+                  }
+                  isDark={isDarkPreview}
+                />
               );
             })}
           </div>
