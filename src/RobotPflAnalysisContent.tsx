@@ -92,7 +92,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
 
   const badgePass = (
     <span
-      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
+      className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-bold tracking-wide"
       style={{
         background: ANALYSIS_SAFE.bgStrong,
         color: ANALYSIS_SAFE.textStrong,
@@ -104,7 +104,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
   );
   const badgeFail = (
     <span
-      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
+      className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-bold tracking-wide"
       style={{
         background: ANALYSIS_DANGER.bgStrong,
         color: ANALYSIS_DANGER.textStrong,
@@ -116,7 +116,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
   );
   const badgePfl = (
     <span
-      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold"
+      className="inline-flex items-center px-2 py-1 rounded-full text-[12px] font-bold"
       style={{
         background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)',
         color: t.textPrimary,
@@ -128,9 +128,9 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
   );
 
   const rowLine = (label: string, value: ReactNode) => (
-    <div className="flex items-start justify-between gap-3 text-sm">
+    <div className="flex items-start justify-between gap-3 text-[12px] leading-snug">
       <span style={{ color: t.textSecondary }}>{label}</span>
-      <div className="text-right font-semibold min-w-0" style={{ color: t.textPrimary }}>
+      <div className="text-right font-semibold min-w-0 text-[12px]" style={{ color: t.textPrimary }}>
         {value}
       </div>
     </div>
@@ -161,7 +161,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
           onClick={() => setPassOpen((o) => !o)}
         >
           {badgePass}
-          <span className="flex-1 min-w-0 text-base font-bold truncate" style={{ color: t.textPrimary }}>
+          <span className="flex-1 min-w-0 text-[14px] font-bold truncate" style={{ color: t.textPrimary }}>
             {S.robotPrefix} {ROBOT_MODEL}
           </span>
           <ChevronDown
@@ -173,9 +173,9 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
         {passOpen ? (
           <div className="px-4 py-4 space-y-3" style={{ background: surfaceCard }}>
             {rowLine(S.analysisResult, badgePass)}
-            {rowLine(S.maxCri, <span className="tabular-nums text-lg font-bold">0.9</span>)}
+            {rowLine(S.maxCri, <span className="tabular-nums text-[14px] font-bold">0.9</span>)}
             {rowLine(S.analysisTime, <span className="tabular-nums font-semibold">{TIME_MAIN}</span>)}
-            <p className="text-xs text-right pt-1" style={{ color: t.textSecondary }}>
+            <p className="text-[12px] text-right pt-1" style={{ color: t.textSecondary }}>
               {S.completedAtLabel} {COMPLETED_AT}
             </p>
           </div>
@@ -202,7 +202,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
           onClick={() => setFailOpen((o) => !o)}
         >
           {badgeFail}
-          <span className="flex-1 min-w-0 text-base font-bold truncate" style={{ color: t.textPrimary }}>
+          <span className="flex-1 min-w-0 text-[14px] font-bold truncate" style={{ color: t.textPrimary }}>
             {S.robotPrefix} {ROBOT_MODEL}
           </span>
           <ChevronDown
@@ -217,7 +217,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
             className="rounded-lg border px-3 py-2.5 flex items-center gap-2"
             style={{ borderColor: t.inputBorder, background: t.inputBg }}
           >
-            <span className="flex-1 text-sm font-semibold" style={{ color: t.textPrimary }}>
+            <span className="flex-1 text-[12px] font-semibold" style={{ color: t.textPrimary }}>
               {S.robotPrefix} {ROBOT_MODEL}
             </span>
             {badgePfl}
@@ -226,20 +226,20 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
           <div className="space-y-2">
             {rowLine(S.analysisResult, badgeFail)}
             {rowLine(S.analysisTime, <span className="tabular-nums font-semibold">{TIME_MAIN}</span>)}
-            <p className="text-xs text-right" style={{ color: t.textSecondary }}>
+            <p className="text-[12px] text-right" style={{ color: t.textSecondary }}>
               {S.completedAtLabel} {COMPLETED_AT}
             </p>
           </div>
 
           <div>
-            <p className="text-sm font-bold mb-2" style={{ color: ANALYSIS_DANGER.textStrong }}>
+            <p className="text-[12px] font-bold mb-2" style={{ color: ANALYSIS_DANGER.textStrong }}>
               {S.conditionChangeTitle}
             </p>
             <ul className="flex flex-col gap-2">
               {S.conditionItems.map((line, idx) => (
                 <li
                   key={idx}
-                  className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors"
+                  className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-[12px] transition-colors"
                   style={{
                     borderColor: t.inputBorder,
                     background: surfaceMuted,
@@ -261,12 +261,12 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
           </div>
 
           <div>
-            <p className="text-sm font-bold mb-2" style={{ color: t.textPrimary }}>
+            <p className="text-[12px] font-bold mb-2" style={{ color: t.textPrimary }}>
               {S.criByIntervalTitle}
             </p>
-            <p className="text-sm mb-2" style={{ color: t.textSecondary }}>
+            <p className="text-[12px] mb-2" style={{ color: t.textSecondary }}>
               {S.overallMaxCri}{' '}
-              <span className="font-bold tabular-nums text-lg" style={{ color: t.textPrimary }}>
+              <span className="font-bold tabular-nums text-[14px]" style={{ color: t.textPrimary }}>
                 0.9
               </span>
             </p>
@@ -281,12 +281,12 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
                   style={{ borderColor: t.inputBorder, background: t.inputBg }}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold" style={{ color: t.textPrimary }}>
+                    <span className="text-[12px] font-semibold" style={{ color: t.textPrimary }}>
                       {S.intervalName(it.n)}
                     </span>
                     {badgePass}
                   </div>
-                  <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center justify-between text-[12px]">
                     <span className="tabular-nums" style={{ color: t.textSecondary }}>
                       {TIME_INTERVAL}
                     </span>
@@ -297,7 +297,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
                   <div className="flex justify-end">
                     <button
                       type="button"
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg border"
+                      className="text-[12px] font-bold px-3 py-1.5 rounded-lg border"
                       style={{
                         borderColor: accentRgba(POINT_ORANGE, 0.45),
                         color: POINT_ORANGE,
@@ -314,7 +314,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
           </div>
 
           <div>
-            <p className="text-sm font-bold mb-2" style={{ color: t.textPrimary }}>
+            <p className="text-[12px] font-bold mb-2" style={{ color: t.textPrimary }}>
               {S.collabCriTitle}
             </p>
             <ul className="flex flex-col gap-2">
@@ -325,7 +325,7 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
                   style={{ borderColor: t.inputBorder, background: surfaceMuted }}
                 >
                   <div
-                    className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-xs"
+                    className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-[12px]"
                     style={{
                       background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.08)',
                       color: t.textSecondary,
@@ -334,12 +334,12 @@ export function RobotPflAnalysisContent({ locale, isDark, tokens: t, onPflViewCl
                   >
                     ●
                   </div>
-                  <span className="flex-1 min-w-0 text-sm font-medium leading-snug" style={{ color: t.textPrimary }}>
+                  <span className="flex-1 min-w-0 text-[12px] font-medium leading-snug" style={{ color: t.textPrimary }}>
                     {row.label}
                   </span>
                   <button
                     type="button"
-                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg border"
+                    className="shrink-0 text-[12px] font-bold px-3 py-1.5 rounded-lg border"
                     style={{
                       borderColor: accentRgba(POINT_ORANGE, 0.45),
                       color: POINT_ORANGE,

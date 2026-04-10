@@ -67,7 +67,7 @@ export function AnalysisFigmaDraftChrome({
   return (
     <div className="shrink-0 space-y-2 border-b px-3 py-2" style={{ borderColor: hairline, background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)' }}>
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <h2 className="min-w-0 text-[15px] font-bold leading-tight tracking-tight" style={{ color: t.textPrimary }}>
+        <h2 className="min-w-0 text-[14px] font-bold leading-tight tracking-tight" style={{ color: t.textPrimary }}>
           {title}
         </h2>
         <div className="flex min-w-0 shrink-0 items-center gap-1.5">
@@ -78,7 +78,7 @@ export function AnalysisFigmaDraftChrome({
             id="figma-draft-cell"
             value={cellId}
             onChange={(e) => onCellId(e.target.value)}
-            className="max-w-[14rem] min-w-[10rem] cursor-pointer appearance-none rounded-md py-1 pl-2 pr-7 text-[11px] font-medium"
+            className="max-w-[14rem] min-w-[10rem] cursor-pointer appearance-none rounded-md py-1 pl-2 pr-7 text-[12px] font-medium"
             style={{
               border: `1px solid ${t.inputBorder}`,
               background: t.inputBg,
@@ -90,7 +90,7 @@ export function AnalysisFigmaDraftChrome({
           </select>
           <ChevronDown className="pointer-events-none relative -ml-6 h-3 w-3" style={{ color: FT.textTertiary }} aria-hidden />
           <span
-            className="hidden max-w-[5rem] truncate rounded px-1 py-0.5 text-[8px] font-semibold sm:inline"
+            className="hidden max-w-[6rem] truncate rounded px-1 py-0.5 text-[12px] font-semibold sm:inline"
             style={{ background: 'rgba(251,191,36,0.14)', color: '#d97706' }}
             title={conditionsChanged}
           >
@@ -102,10 +102,10 @@ export function AnalysisFigmaDraftChrome({
       <div className="grid grid-cols-4 gap-px overflow-hidden rounded-lg" style={{ background: hairline }}>
         {metrics.map((m) => (
           <div key={m.label} className="px-1.5 py-1.5 text-center" style={{ background: isDark ? FT.bgSecondary : t.inputBg }}>
-            <div className="truncate text-[9px] font-medium leading-tight" style={{ color: t.textSecondary }} title={m.label}>
+            <div className="truncate text-[12px] font-medium leading-tight" style={{ color: t.textSecondary }} title={m.label}>
               {m.label}
             </div>
-            <div className="mt-0.5 text-sm font-bold tabular-nums leading-none" style={{ color: t.textPrimary }}>
+            <div className="mt-0.5 text-[14px] font-bold tabular-nums leading-none" style={{ color: t.textPrimary }}>
               {m.value}
             </div>
           </div>
@@ -122,7 +122,7 @@ export function AnalysisFigmaDraftChrome({
               type="button"
               role="tab"
               aria-selected={active}
-              className="min-h-[30px] flex-1 border-b-2 px-1 py-1 text-[10px] font-semibold transition-colors"
+              className="min-h-[30px] flex-1 border-b-2 px-1 py-1 text-[14px] font-semibold transition-colors"
               style={{
                 color: active ? POINT_ORANGE : t.textSecondary,
                 borderBottomColor: active ? POINT_ORANGE : 'transparent',
@@ -175,16 +175,16 @@ export function AnalysisFigmaDraftSummary({
 }: SummaryProps) {
   return (
     <div className="flex min-w-0 flex-col gap-3 pb-1">
-      <p className="text-[11px] leading-relaxed" style={{ color: FT.textSecondary }}>
+      <p className="text-[12px] leading-relaxed" style={{ color: FT.textSecondary }}>
         {snapshotCaption}
       </p>
 
       <div>
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-semibold" style={{ color: t.textPrimary }}>
+          <span className="text-[12px] font-semibold" style={{ color: t.textPrimary }}>
             {frameHazardZone}
           </span>
-          <span className="text-[10px] tabular-nums" style={{ color: t.textSecondary }}>
+          <span className="text-[12px] tabular-nums" style={{ color: t.textSecondary }}>
             {unitCount(hazardTotal)}
           </span>
         </div>
@@ -207,12 +207,12 @@ export function AnalysisFigmaDraftSummary({
                   aria-expanded={open}
                   onClick={() => onToggle(row.id)}
                 >
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] font-medium" style={{ background: b.bg, color: b.fg }}>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium leading-none" style={{ background: b.bg, color: b.fg }}>
                     {b.label}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-medium leading-snug">{name}</span>
-                    <span className="mt-0.5 block text-[10px] leading-snug" style={{ color: t.textSecondary }}>
+                    <span className="block text-[12px] font-medium leading-snug">{name}</span>
+                    <span className="mt-0.5 block text-[12px] leading-snug" style={{ color: t.textSecondary }}>
                       {sub}
                     </span>
                   </span>
@@ -224,7 +224,7 @@ export function AnalysisFigmaDraftSummary({
                     >
                       <button
                         type="button"
-                        className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium"
+                        className="shrink-0 rounded border px-1.5 py-0.5 text-[12px] font-medium"
                         style={{ borderColor: FT.viewBtnBorder, color: FT.viewBtnText, background: FT.bgPanel }}
                         onClick={() => onHazardViewClick?.('c1', row.tone === 'warn' && row.id === 'hz2' ? 'pinch' : 'collision')}
                       >
@@ -236,8 +236,8 @@ export function AnalysisFigmaDraftSummary({
                 </button>
                 {open ? (
                   <div className="pb-2 pl-6 pr-1" style={{ color: FT.textSecondary }}>
-                    <p className="text-[11px] leading-relaxed">{body}</p>
-                    <p className="mt-1 text-[10px]" style={{ color: FT.textTertiary }}>
+                    <p className="text-[12px] leading-relaxed">{body}</p>
+                    <p className="mt-1 text-[12px]" style={{ color: FT.textTertiary }}>
                       {refLine}
                     </p>
                     {(primary || secondary) && (
@@ -245,7 +245,7 @@ export function AnalysisFigmaDraftSummary({
                         {primary ? (
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-medium"
+                            className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[12px] font-medium"
                             style={{
                               borderColor: row.primaryIsSuggest ? FT.viewBtnBorder : FT.border,
                               background: row.primaryIsSuggest ? FT.bgInfoTint : FT.bgPanel,
@@ -259,7 +259,7 @@ export function AnalysisFigmaDraftSummary({
                         {secondary ? (
                           <button
                             type="button"
-                            className="rounded border px-2 py-1 text-[10px] font-medium"
+                            className="rounded border px-2 py-1 text-[12px] font-medium"
                             style={{ borderColor: FT.border, background: FT.bgPanel, color: FT.textPrimary }}
                           >
                             {secondary}
@@ -310,10 +310,10 @@ export function AnalysisFigmaDraftRegulations({
   return (
     <div className="mt-4 flex min-w-0 flex-col gap-2 border-t pt-3" style={{ borderColor: hairline }}>
       <div className="mb-0.5 flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold" style={{ color: t.textPrimary }}>
+        <span className="text-[12px] font-semibold" style={{ color: t.textPrimary }}>
           {frameRegulations}
         </span>
-        <span className="text-[10px] tabular-nums" style={{ color: t.textSecondary }}>
+        <span className="text-[12px] tabular-nums" style={{ color: t.textSecondary }}>
           {unitCount(regTotal)}
         </span>
       </div>
@@ -337,12 +337,12 @@ export function AnalysisFigmaDraftRegulations({
                 aria-expanded={open}
                 onClick={() => onToggle(row.id)}
               >
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] font-medium" style={{ background: b.bg, color: b.fg }}>
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium leading-none" style={{ background: b.bg, color: b.fg }}>
                   {b.label}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs font-medium leading-snug">{name}</span>
-                  <span className="mt-0.5 block text-[10px] leading-snug" style={{ color: t.textSecondary }}>
+                  <span className="block text-[12px] font-medium leading-snug">{name}</span>
+                  <span className="mt-0.5 block text-[12px] leading-snug" style={{ color: t.textSecondary }}>
                     {sub}
                   </span>
                 </span>
@@ -350,7 +350,7 @@ export function AnalysisFigmaDraftRegulations({
                   <span role="presentation" onClick={(e) => e.stopPropagation()} className="contents">
                     <button
                       type="button"
-                      className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium"
+                      className="shrink-0 rounded border px-1.5 py-0.5 text-[12px] font-medium"
                       style={{ borderColor: FT.viewBtnBorder, color: FT.viewBtnText, background: FT.bgPanel }}
                       onClick={() => onHazardViewClick?.('c1', 'collision')}
                     >
@@ -362,15 +362,15 @@ export function AnalysisFigmaDraftRegulations({
               </button>
               {open ? (
                 <div className="pb-2 pl-6 pr-1" style={{ color: FT.textSecondary }}>
-                  <p className="text-[11px] leading-relaxed">{body}</p>
-                  <p className="mt-1 text-[10px]" style={{ color: FT.textTertiary }}>
+                  <p className="text-[12px] leading-relaxed">{body}</p>
+                  <p className="mt-1 text-[12px]" style={{ color: FT.textTertiary }}>
                     {refLine}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {single ? (
                       <button
                         type="button"
-                        className="rounded border px-2 py-1 text-[10px] font-medium"
+                        className="rounded border px-2 py-1 text-[12px] font-medium"
                         style={{ borderColor: FT.border, background: FT.bgPanel, color: FT.textPrimary }}
                       >
                         {single}
@@ -379,7 +379,7 @@ export function AnalysisFigmaDraftRegulations({
                     {primary ? (
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-medium"
+                        className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[12px] font-medium"
                         style={{
                           borderColor: row.primaryIsSuggest ? FT.viewBtnBorder : FT.border,
                           background: row.primaryIsSuggest ? FT.bgInfoTint : FT.bgPanel,
@@ -393,7 +393,7 @@ export function AnalysisFigmaDraftRegulations({
                     {secondary ? (
                       <button
                         type="button"
-                        className="rounded border px-2 py-1 text-[10px] font-medium"
+                        className="rounded border px-2 py-1 text-[12px] font-medium"
                         style={{ borderColor: FT.border, background: FT.bgPanel, color: FT.textPrimary }}
                       >
                         {secondary}

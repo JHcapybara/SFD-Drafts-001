@@ -416,7 +416,7 @@ export function AnalysisSidePanel({
                   <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: POINT_ORANGE }}>
                     SafetyDesigner
                   </span>
-                  <h2 className="text-base font-bold leading-tight tracking-tight" style={{ color: t.textPrimary }}>
+                  <h2 className="text-[14px] font-bold leading-tight tracking-tight" style={{ color: t.textPrimary }}>
                     {L.title}
                   </h2>
                 </div>
@@ -504,7 +504,7 @@ export function AnalysisSidePanel({
                 <p className="text-[9px] font-semibold uppercase tracking-wider leading-none" style={{ color: FT.textTertiary }}>
                   SafetyDesigner
                 </p>
-                <h2 className="text-lg font-bold leading-snug mt-0.5 tracking-tight" style={{ color: FT.textPrimary }}>
+                <h2 className="text-[14px] font-bold leading-snug mt-0.5 tracking-tight" style={{ color: FT.textPrimary }}>
                   {L.title}
                 </h2>
               </div>
@@ -737,7 +737,7 @@ export function AnalysisSidePanel({
             }}
           >
             <SafeticsV2CellHeader locale={locale} isDark={isDark} tokens={t} />
-            <p className="mt-2 text-[16px] leading-snug" style={{ color: t.textSecondary }}>
+            <p className="mt-2 text-[12px] leading-snug" style={{ color: t.textSecondary }}>
               {locale === 'en' ? 'Choose a cell to align results.' : '결과를 맞출 로봇 셀을 선택하세요.'}
             </p>
           </div>
@@ -749,21 +749,21 @@ export function AnalysisSidePanel({
               background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.78)',
             }}
           >
-            <p className="text-[15px] font-semibold leading-tight" style={{ color: t.textPrimary }}>
+            <p className="text-[14px] font-semibold leading-tight" style={{ color: t.textPrimary }}>
               {L.title}
             </p>
-            <p className="mt-1 text-[14px] leading-snug" style={{ color: t.textSecondary }}>
+            <p className="mt-1 text-[12px] leading-snug" style={{ color: t.textSecondary }}>
               {locale === 'en' ? 'Analysis results and recommended actions for this cell.' : '이 셀에 대한 분석 결과와 조치 안내입니다.'}
             </p>
           </div>
         ) : (
           <div className="px-3 pt-2 pb-1.5">
-            <p className="text-[13px] font-medium leading-tight" style={{ color: FT.textPrimary }}>
+            <p className="text-[14px] font-medium leading-tight" style={{ color: FT.textPrimary }}>
               {L.title}
             </p>
             <div className="relative mt-1.5 mb-2">
               <select
-                className="w-full text-xs py-1 pl-2 pr-8 rounded-md border appearance-none cursor-pointer"
+                className="w-full text-[12px] py-1 pl-2 pr-8 rounded-md border appearance-none cursor-pointer"
                 style={{
                   borderColor: FT.border,
                   background: FT.bgSecondary,
@@ -1162,10 +1162,10 @@ export function AnalysisSidePanel({
             />
             <section className="min-w-0 border-t pt-3" style={{ borderColor: hairline }}>
               <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold" style={{ color: t.textPrimary }}>
+                <span className="text-[12px] font-semibold" style={{ color: t.textPrimary }}>
                   {L.frameEquipmentAnalysis}
                 </span>
-                <span className="text-[10px] tabular-nums" style={{ color: t.textSecondary }}>
+                <span className="text-[12px] tabular-nums" style={{ color: t.textSecondary }}>
                   {L.unitCount(EQUIPMENT_FRAME_TOTAL)}
                 </span>
               </div>
@@ -1178,7 +1178,7 @@ export function AnalysisSidePanel({
                       type="button"
                       role="tab"
                       aria-selected={active}
-                      className="flex-1 min-w-0 px-2 py-1.5 text-[11px] font-medium transition-colors"
+                      className="flex-1 min-w-0 px-2 py-1.5 text-[12px] font-medium transition-colors"
                       style={{
                         color: active ? FT.textPrimary : FT.textSecondary,
                         borderBottom: active ? `2px solid ${POINT_ORANGE}` : '2px solid transparent',

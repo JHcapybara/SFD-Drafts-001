@@ -123,11 +123,11 @@ export function SafeticsV2CellHeader({
   return (
     <div className="min-w-0">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[16px] font-semibold" style={{ color: t.textPrimary }}>
+        <span className="text-[14px] font-semibold" style={{ color: t.textPrimary }}>
           {L.cellHeading}
         </span>
         <span
-          className="rounded-full px-2.5 py-1 text-[16px] font-medium"
+          className="rounded-full px-2.5 py-1 text-[12px] font-medium"
           style={{
             background: accentRgba(POINT_ORANGE, isDark ? 0.14 : 0.1),
             color: POINT_ORANGE,
@@ -145,7 +145,7 @@ export function SafeticsV2CellHeader({
           id="safetics-v2-cell-select"
           value={cellId}
           onChange={(e) => setCellId(e.target.value)}
-          className="w-full cursor-pointer appearance-none rounded-[10px] border py-2 pl-3 pr-10 text-[16px] font-medium leading-snug"
+          className="w-full cursor-pointer appearance-none rounded-[10px] border py-2 pl-3 pr-10 text-[12px] font-medium leading-snug"
           style={{
             ...selectShell,
             borderWidth: 1,
@@ -196,8 +196,8 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
     { id: 'residual', label: L.tabResidual },
   ];
 
-  const accTitleClass = 'text-[16px] font-semibold leading-snug';
-  const accBadgeClass = 'text-[14px] font-medium leading-none';
+  const accTitleClass = 'text-[12px] font-semibold leading-snug';
+  const accBadgeClass = 'text-[12px] font-medium leading-none';
 
   const theadBg = isDark
     ? `linear-gradient(180deg, ${accentRgba(POINT_ORANGE, 0.16)} 0%, ${accentRgba(POINT_ORANGE, 0.08)} 100%)`
@@ -209,11 +209,11 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
       {/* 요약: 표 + 분석 일시 (막대 없음) */}
       <div className="min-w-0 border-b pb-3 pt-4" style={{ borderColor: t.divider }}>
         <div className="mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-          <h3 className="min-w-0 shrink text-[18px] font-bold leading-snug tracking-tight" style={{ color: t.textPrimary }}>
+          <h3 className="min-w-0 shrink text-[14px] font-semibold leading-snug tracking-tight" style={{ color: t.textPrimary }}>
             {L.summaryHeading}
           </h3>
           <div
-            className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[16px] leading-snug sm:justify-end"
+            className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] leading-snug sm:justify-end"
             style={{ color: t.textSecondary }}
           >
             <span className="font-semibold">{L.analysisTime}</span>
@@ -230,14 +230,14 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
             background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa',
           }}
         >
-          <table className="w-full table-fixed border-collapse text-[16px]">
+          <table className="w-full table-fixed border-collapse text-[12px]">
             <thead>
               <tr style={{ background: theadBg }}>
                 {metrics.map((row) => (
                   <th
                     key={`h-${row.key}`}
                     scope="col"
-                    className="border-b border-r px-1.5 py-2.5 text-center text-[16px] font-semibold leading-snug last:border-r-0"
+                    className="border-b border-r px-1.5 py-2.5 text-center text-[12px] font-semibold leading-snug last:border-r-0"
                     style={{ borderColor: t.divider, color: t.textPrimary }}
                   >
                     <span className="line-clamp-3 break-words">{row.label}</span>
@@ -251,7 +251,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                   <td
                     key={`v-${row.key}`}
                     className="border-r px-1 py-2.5 text-center align-middle tabular-nums font-bold tracking-tight last:border-r-0"
-                    style={{ fontSize: 22, borderColor: t.divider, color: t.textPrimary }}
+                    style={{ fontSize: 14, borderColor: t.divider, color: t.textPrimary }}
                   >
                     {row.display}
                   </td>
@@ -273,7 +273,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className="min-h-[48px] min-w-0 flex-1 px-1.5 py-2 text-center text-[16px] font-bold leading-tight"
+                className="min-h-[44px] min-w-0 flex-1 px-1.5 py-2 text-center text-[14px] font-semibold leading-tight"
                 style={{
                   color: active ? t.textPrimary : t.textSecondary,
                   borderBottom: active ? `3px solid ${POINT_ORANGE}` : '3px solid transparent',
@@ -320,13 +320,13 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                         >
                           <div className="flex min-w-0 items-center gap-2">
                             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: POINT_ORANGE }} aria-hidden />
-                            <span className="min-w-0 text-[14px] leading-snug" style={{ color: t.textPrimary }}>
+                            <span className="min-w-0 text-[12px] leading-snug" style={{ color: t.textPrimary }}>
                               {L.listLine}
                             </span>
                           </div>
                           <button
                             type="button"
-                            className="shrink-0 rounded-lg px-2.5 py-1.5 text-[14px] font-semibold transition-opacity hover:opacity-90"
+                            className="shrink-0 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-opacity hover:opacity-90"
                             style={{
                               color: '#fff',
                               background: `linear-gradient(135deg, ${accentRgba(POINT_ORANGE, 1)} 0%, #ff6b00 100%)`,
@@ -340,7 +340,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                       ))}
                     </ul>
                     <div
-                      className="mt-2 rounded-[10px] border-l-[3px] px-3 py-2 text-[14px] leading-relaxed"
+                      className="mt-2 rounded-[10px] border-l-[3px] px-3 py-2 text-[12px] leading-relaxed"
                       style={{
                         borderLeftColor: POINT_ORANGE,
                         background: t.sectionHeaderBg,
@@ -362,7 +362,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                     titleClassName={accTitleClass}
                     badgeClassName={accBadgeClass}
                   >
-                    <p className="text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+                    <p className="text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
                       {L.pinchNote}
                     </p>
                   </SafeticsAccordion>
@@ -398,7 +398,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                       type="button"
                       role="tab"
                       aria-selected={active}
-                      className="min-h-[38px] min-w-0 flex-1 rounded-[8px] px-2 py-1.5 text-center text-[14px] font-semibold leading-tight transition-[color,background,box-shadow] duration-150"
+                      className="min-h-[38px] min-w-0 flex-1 rounded-[8px] px-2 py-1.5 text-center text-[12px] font-semibold leading-tight transition-[color,background,box-shadow] duration-150"
                       style={{
                         color: active ? t.textPrimary : t.textSecondary,
                         background: active
@@ -436,7 +436,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                         >
                           <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <span
-                              className="rounded-full border px-2.5 py-1 text-[16px] font-semibold"
+                              className="rounded-full border px-2.5 py-1 text-[12px] font-semibold"
                               style={{
                                 borderColor: row.status === 'fail' ? POINT_ORANGE : t.inputBorder,
                                 color: row.status === 'fail' ? POINT_ORANGE : t.textPrimary,
@@ -446,11 +446,11 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                             >
                               {row.status === 'fail' ? L.fail : L.pass}
                             </span>
-                            <span className="min-w-0 text-[16px] font-medium leading-snug" style={{ color: t.textPrimary }}>
+                            <span className="min-w-0 text-[12px] font-medium leading-snug" style={{ color: t.textPrimary }}>
                               {L.robotLine}
                             </span>
                             <span
-                              className="rounded-full border px-2 py-0.5 text-[14px] font-semibold"
+                              className="rounded-full border px-2 py-0.5 text-[12px] font-semibold"
                               style={{ borderColor: t.inputBorder, color: t.textSecondary }}
                             >
                               {L.pfl}
@@ -464,7 +464,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                           />
                         </button>
                         {openRobotRow === row.id ? (
-                          <div className="border-t px-3 py-2.5 text-[14px] leading-relaxed" style={{ borderColor: t.divider, color: t.textSecondary }}>
+                          <div className="border-t px-3 py-2.5 text-[12px] leading-relaxed" style={{ borderColor: t.divider, color: t.textSecondary }}>
                             {row.detail}
                           </div>
                         ) : null}
@@ -473,14 +473,14 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                   </div>
                 )}
                 {equipTab === 'sensor' && (
-                  <p className="text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+                  <p className="text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
                     {locale === 'en'
                       ? 'Sensor evaluation is summarized here; link detailed checks from the main sensor workflow when connected.'
                       : '센서 평가 요약 영역입니다. 메인 센서 분석 흐름과 연결되면 상세 점검으로 이동할 수 있습니다.'}
                   </p>
                 )}
                 {equipTab === 'fence' && (
-                  <p className="text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+                  <p className="text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
                     {locale === 'en'
                       ? 'Fence height and opening checks appear in this slot for the selected cell.'
                       : '선택한 셀의 펜스 높이·개구 점검 요약이 이 슬롯에 표시됩니다.'}
@@ -511,7 +511,7 @@ export function AnalysisPanelSafeticsV2({ locale, isDark, tokens: t, onHazardVie
                   titleClassName={accTitleClass}
                   badgeClassName={accBadgeClass}
                 >
-                  <p className="text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+                  <p className="text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
                     {L.residualBody}
                   </p>
                 </SafeticsAccordion>

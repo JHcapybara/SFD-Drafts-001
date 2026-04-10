@@ -121,8 +121,8 @@ export function SafeticsAccordion({
   children,
   id,
   isDark: dark,
-  titleClassName = 'text-[14px] font-semibold leading-snug',
-  badgeClassName = 'text-[14px] font-medium leading-none',
+  titleClassName = 'text-[12px] font-semibold leading-snug',
+  badgeClassName = 'text-[12px] font-medium leading-none',
   contentClassName,
 }: {
   title: string;
@@ -222,7 +222,7 @@ export function AnalysisPanelSafetics698Wire({
             {L.cellLabel}
           </span>
           <span
-            className="rounded-full px-2.5 py-1 text-[14px] font-medium"
+            className="rounded-full px-2.5 py-1 text-[12px] font-medium"
             style={{
               background: accentRgba(POINT_ORANGE, isDark ? 0.14 : 0.1),
               color: POINT_ORANGE,
@@ -240,7 +240,7 @@ export function AnalysisPanelSafetics698Wire({
             id="safetics-cell-select"
             value={cellId}
             onChange={(e) => setCellId(e.target.value)}
-            className="w-full cursor-pointer appearance-none rounded-[10px] border py-2.5 pl-3 pr-10 text-[14px] font-medium leading-snug"
+            className="w-full cursor-pointer appearance-none rounded-[10px] border py-2.5 pl-3 pr-10 text-[12px] font-medium leading-snug"
             style={{
               ...selectShell,
               borderWidth: 1,
@@ -257,7 +257,7 @@ export function AnalysisPanelSafetics698Wire({
             strokeWidth={2}
           />
         </div>
-        <p className="mt-2 text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+        <p className="mt-2 text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
           {L.cellSelectHint}
         </p>
       </section>
@@ -267,7 +267,7 @@ export function AnalysisPanelSafetics698Wire({
         className="rounded-[10px] border p-3"
         style={{ borderColor: t.inputBorder, boxShadow: t.elevationSection, background: t.panelBg }}
       >
-        <h3 className="text-[15px] font-semibold leading-snug" style={{ color: t.textPrimary }}>
+        <h3 className="text-[14px] font-semibold leading-snug" style={{ color: t.textPrimary }}>
           {L.summaryHeading}
         </h3>
         <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
@@ -278,15 +278,15 @@ export function AnalysisPanelSafetics698Wire({
               style={{ borderColor: t.divider, background: t.tabBarBg }}
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="min-w-0 flex-1 text-[14px] leading-snug" style={{ color: t.textSecondary }}>
+                <span className="min-w-0 flex-1 text-[12px] leading-snug" style={{ color: t.textSecondary }}>
                   {m.label}
                 </span>
                 <span
                   className="shrink-0 tabular-nums tracking-tight"
-                  style={{ fontSize: 22, fontWeight: 700, color: t.textPrimary }}
+                  style={{ fontSize: 14, fontWeight: 700, color: t.textPrimary }}
                 >
                   {m.value}
-                  {m.suffix ? <span className="text-[14px] font-semibold">{m.suffix}</span> : null}
+                  {m.suffix ? <span className="text-[12px] font-semibold">{m.suffix}</span> : null}
                 </span>
               </div>
               <div
@@ -306,7 +306,7 @@ export function AnalysisPanelSafetics698Wire({
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+        <p className="mt-3 text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
           {L.chartCaption}
         </p>
       </section>
@@ -335,13 +335,13 @@ export function AnalysisPanelSafetics698Wire({
                       style={{ background: POINT_ORANGE }}
                       aria-hidden
                     />
-                    <span className="min-w-0 text-[14px] leading-snug" style={{ color: t.textPrimary }}>
+                    <span className="min-w-0 text-[12px] leading-snug" style={{ color: t.textPrimary }}>
                       {L.listLine}
                     </span>
                   </div>
                   <button
                     type="button"
-                    className="shrink-0 rounded-lg px-2.5 py-1.5 text-[14px] font-semibold transition-opacity hover:opacity-90"
+                    className="shrink-0 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-opacity hover:opacity-90"
                     style={{
                       color: '#fff',
                       background: `linear-gradient(135deg, ${accentRgba(POINT_ORANGE, 1)} 0%, #ff6b00 100%)`,
@@ -355,7 +355,7 @@ export function AnalysisPanelSafetics698Wire({
               ))}
             </ul>
             <div
-              className="mt-3 rounded-[10px] border-l-[3px] px-3 py-2.5 text-[14px] leading-relaxed"
+              className="mt-3 rounded-[10px] border-l-[3px] px-3 py-2.5 text-[12px] leading-relaxed"
               style={{
                 borderLeftColor: POINT_ORANGE,
                 background: t.sectionHeaderBg,
@@ -370,7 +370,7 @@ export function AnalysisPanelSafetics698Wire({
           </SafeticsAccordion>
 
           <SafeticsAccordion id="acc-pinch" title={L.pinchRow} badge={L.riskTag} tokens={t} isDark={isDark}>
-            <p className="text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+            <p className="text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
               {L.pinchNote}
             </p>
           </SafeticsAccordion>
@@ -383,7 +383,7 @@ export function AnalysisPanelSafetics698Wire({
         style={{ borderColor: t.inputBorder, boxShadow: t.elevationSection, background: t.panelBg }}
       >
         <div className="border-b px-3 py-3" style={{ borderColor: t.divider, background: t.sectionHeaderBg }}>
-          <h3 className="text-[15px] font-semibold leading-snug" style={{ color: t.textPrimary }}>
+          <h3 className="text-[14px] font-semibold leading-snug" style={{ color: t.textPrimary }}>
             {L.equipmentHeading}
           </h3>
         </div>
@@ -402,7 +402,7 @@ export function AnalysisPanelSafetics698Wire({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className="min-h-[48px] flex-1 px-2 py-2 text-[14px] font-medium leading-snug"
+                className="min-h-[48px] flex-1 px-2 py-2 text-[12px] font-medium leading-snug"
                 style={{
                   color: active ? t.textPrimary : t.textSecondary,
                   borderBottom: active ? `3px solid ${POINT_ORANGE}` : '3px solid transparent',
@@ -438,7 +438,7 @@ export function AnalysisPanelSafetics698Wire({
                   >
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <span
-                        className="rounded-full border px-2.5 py-1 text-[14px] font-semibold"
+                        className="rounded-full border px-2.5 py-1 text-[12px] font-semibold"
                         style={{
                           borderColor: row.status === 'fail' ? POINT_ORANGE : t.inputBorder,
                           color: row.status === 'fail' ? POINT_ORANGE : t.textPrimary,
@@ -448,11 +448,11 @@ export function AnalysisPanelSafetics698Wire({
                       >
                         {row.status === 'fail' ? L.fail : L.pass}
                       </span>
-                      <span className="min-w-0 text-[14px] leading-snug" style={{ color: t.textPrimary }}>
+                      <span className="min-w-0 text-[12px] leading-snug" style={{ color: t.textPrimary }}>
                         {L.robotLine}
                       </span>
                       <span
-                        className="rounded-full border px-2 py-0.5 text-[14px] font-medium"
+                        className="rounded-full border px-2 py-0.5 text-[12px] font-medium"
                         style={{ borderColor: t.inputBorder, color: t.textSecondary }}
                       >
                         {L.pfl}
@@ -466,7 +466,7 @@ export function AnalysisPanelSafetics698Wire({
                     />
                   </button>
                   {openRobotRow === row.id ? (
-                    <div className="border-t px-3 py-3 text-[14px] leading-relaxed" style={{ borderColor: t.divider, color: t.textSecondary }}>
+                    <div className="border-t px-3 py-3 text-[12px] leading-relaxed" style={{ borderColor: t.divider, color: t.textSecondary }}>
                       {row.detail}
                     </div>
                   ) : null}
@@ -475,14 +475,14 @@ export function AnalysisPanelSafetics698Wire({
             </div>
           )}
           {equipTab === 'sensor' && (
-            <p className="py-2 text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+            <p className="py-2 text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
               {locale === 'en'
                 ? 'Sensor evaluation is summarized here; link detailed checks from the main sensor workflow when connected.'
                 : '센서 평가 요약 영역입니다. 메인 센서 분석 흐름과 연결되면 상세 점검으로 이동할 수 있습니다.'}
             </p>
           )}
           {equipTab === 'fence' && (
-            <p className="py-2 text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+            <p className="py-2 text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
               {locale === 'en'
                 ? 'Fence height and opening checks appear in this slot for the selected cell.'
                 : '선택한 셀의 펜스 높이·개구 점검 요약이 이 슬롯에 표시됩니다.'}
@@ -495,7 +495,7 @@ export function AnalysisPanelSafetics698Wire({
       <SafeticsAccordion id="acc-residual" title={L.residualTitle(10)} defaultOpen tokens={t} isDark={isDark}>
         {[0, 1].map((i) => (
           <SafeticsAccordion key={i} id={`acc-res-${i}`} title={L.residualItem} badge={L.riskTag} tokens={t} isDark={isDark}>
-            <p className="text-[14px] leading-relaxed" style={{ color: t.textSecondary }}>
+            <p className="text-[12px] leading-relaxed" style={{ color: t.textSecondary }}>
               {L.residualBody}
             </p>
           </SafeticsAccordion>

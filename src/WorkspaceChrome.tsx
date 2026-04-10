@@ -2060,7 +2060,7 @@ export function WorkspaceChrome({
                     size={14}
                     rotationDeg={headerGnbPref ? rotationDegForPreference(headerGnbPref) : 0}
                   />
-                  <span className="text-[12px] font-semibold truncate" style={{ color: sidePanelTokens.textPrimary }}>
+                  <span className="text-[14px] font-semibold truncate" style={{ color: sidePanelTokens.textPrimary }}>
                     {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
                   </span>
                 </div>
