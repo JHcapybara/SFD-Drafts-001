@@ -50,6 +50,7 @@ import {
   RulerEditMenuPopover,
   SnapSettingsEditMenuPopover,
   ObjectSnapEditMenuPopover,
+  RotatePivotEditMenuPopover,
   ViewModeEditMenuPopover,
   type CanvasBackgroundId,
   type HeaderEditToolPopover,
@@ -60,6 +61,7 @@ import type { CellTreeNodeType } from './treePropertyBridge';
 const HEADER_EDIT_POPOVER_KEYS: HeaderEditToolPopover[] = [
   'grid',
   'view',
+  'rotate',
   'layout',
   'scale',
   'ruler',
@@ -606,8 +608,11 @@ function LeftGnbModeIconButton({
         : sidePanelTokens.elevationRaised,
     };
 
+  /** Safety AI만 오빗·쉬머 등 FX (일반 4버튼은 quiet) */
+  const showFx = isSafetyAi;
+
   const hoverAuraVars = (
-    isSafetyAi
+    showFx
       ? isDark
         ? {
             '--left-gnb-orbit-a': '#e9d5ff',
@@ -625,21 +630,12 @@ function LeftGnbModeIconButton({
             '--left-gnb-inset-glow': 'rgba(255, 255, 255, 0.38)',
             '--left-gnb-glow': 'rgba(79, 70, 229, 0.88)',
           }
-      : {
-          '--left-gnb-orbit-a': '#fdba74',
-          '--left-gnb-orbit-b': '#f97316',
-          '--left-gnb-orbit-c': '#fde68a',
-          '--left-gnb-ring': 'rgba(251, 146, 60, 0.55)',
-          '--left-gnb-inset-glow': 'rgba(255, 255, 255, 0.28)',
-          '--left-gnb-glow': 'rgba(255, 140, 43, 0.95)',
-        }
+      : {}
   ) as CSSProperties;
 
-  const fillWaveBg = isSafetyAi
-    ? isDark
-      ? 'linear-gradient(to top, rgba(165,180,252,0.42), rgba(99,102,241,0.14), transparent)'
-      : 'linear-gradient(to top, rgba(99,102,241,0.34), rgba(165,180,252,0.12), transparent)'
-    : `linear-gradient(to top, ${accentRgba(POINT_ORANGE, 0.4)}, ${accentRgba(POINT_ORANGE, 0.1)}, transparent)`;
+  const fillWaveBg = isDark
+    ? 'linear-gradient(to top, rgba(165,180,252,0.42), rgba(99,102,241,0.14), transparent)'
+    : 'linear-gradient(to top, rgba(99,102,241,0.34), rgba(165,180,252,0.12), transparent)';
 
   const tooltipEl =
     tipOpen &&
@@ -669,12 +665,18 @@ function LeftGnbModeIconButton({
         ref={btnRef}
         type="button"
         {...(onboardingProps ?? {})}
-        className={`left-gnb-mode-btn relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-[12px] border box-border outline-none transition-all duration-200 ease-out ${
-          looksActive ? '-translate-y-px' : 'translate-y-0'
-        } hover:duration-300 hover:scale-[1.08] hover:-translate-y-0.5 focus-visible:scale-[1.08] focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-slate-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
+        className={
+          showFx
+            ? `left-gnb-mode-btn--fx relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-[12px] border box-border outline-none transition-all duration-200 ease-out ${
+                looksActive ? '-translate-y-px' : 'translate-y-0'
+              } hover:duration-300 hover:scale-[1.08] hover:-translate-y-0.5 focus-visible:scale-[1.08] focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-slate-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`
+            : `left-gnb-mode-btn-quiet relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-[12px] border box-border outline-none ${
+                looksActive ? '-translate-y-px' : 'translate-y-0'
+              } focus-visible:ring-2 focus-visible:ring-slate-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`
+        }
         style={{
           ...surfaceStyle,
-          ...hoverAuraVars,
+          ...(showFx ? hoverAuraVars : {}),
         }}
         onClick={onActivate}
         onMouseEnter={() => {
@@ -688,22 +690,26 @@ function LeftGnbModeIconButton({
         }}
         onBlur={() => setTipOpen(false)}
       >
-        <span
-          className="left-gnb-orbit-wrap pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-[12px]"
-          aria-hidden
-        >
-          <span className="left-gnb-orbit-spin h-[175%] w-[175%] shrink-0 rounded-full opacity-[0.92]" />
-        </span>
-        <span
-          className="left-gnb-fill-wave pointer-events-none absolute inset-0 z-[1] rounded-[12px]"
-          style={{ background: fillWaveBg }}
-          aria-hidden
-        />
-        <span className="left-gnb-pulse-halo pointer-events-none absolute inset-0 z-[2]" aria-hidden />
-        <span className="pointer-events-none absolute inset-0 z-[3] overflow-hidden rounded-[12px]" aria-hidden>
-          <span className="left-gnb-shimmer-bar absolute inset-y-0 left-0 w-[72%] bg-gradient-to-r from-transparent via-white/75 to-transparent dark:via-white/40" />
-        </span>
-        <span className="left-gnb-icon-slot relative z-[4] flex items-center justify-center">
+        {showFx ? (
+          <>
+            <span
+              className="left-gnb-orbit-wrap pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-[12px]"
+              aria-hidden
+            >
+              <span className="left-gnb-orbit-spin h-[175%] w-[175%] shrink-0 rounded-full opacity-[0.92]" />
+            </span>
+            <span
+              className="left-gnb-fill-wave pointer-events-none absolute inset-0 z-[1] rounded-[12px]"
+              style={{ background: fillWaveBg }}
+              aria-hidden
+            />
+            <span className="left-gnb-pulse-halo pointer-events-none absolute inset-0 z-[2]" aria-hidden />
+            <span className="pointer-events-none absolute inset-0 z-[3] overflow-hidden rounded-[12px]" aria-hidden>
+              <span className="left-gnb-shimmer-bar absolute inset-y-0 left-0 w-[72%] bg-gradient-to-r from-transparent via-white/75 to-transparent dark:via-white/40" />
+            </span>
+          </>
+        ) : null}
+        <span className={`relative z-[4] flex items-center justify-center ${showFx ? 'left-gnb-icon-slot' : ''}`}>
           <SfdIconByIndex
             index={leftGnbIconIndex(modeId)}
             color={
@@ -781,6 +787,7 @@ export function WorkspaceChrome({
   const gridToolAnchorRef = useRef<HTMLButtonElement>(null);
   const layoutToolAnchorRef = useRef<HTMLButtonElement>(null);
   const scaleToolAnchorRef = useRef<HTMLButtonElement>(null);
+  const rotateToolAnchorRef = useRef<HTMLButtonElement>(null);
   const rulerToolAnchorRef = useRef<HTMLButtonElement>(null);
   const viewToolAnchorRef = useRef<HTMLButtonElement>(null);
   const objectSnapToolAnchorRef = useRef<HTMLButtonElement>(null);
@@ -789,6 +796,7 @@ export function WorkspaceChrome({
   const [workspaceGridMm, setWorkspaceGridMm] = useState(100);
   const [workspaceCanvasBg, setWorkspaceCanvasBg] = useState<CanvasBackgroundId>('white');
   const [uniformScaleByPivotActive, setUniformScaleByPivotActive] = useState(false);
+  const [rotationPivotEditActive, setRotationPivotEditActive] = useState(false);
   const [rulerMeasureActive, setRulerMeasureActive] = useState(false);
   const [snapMode, setSnapMode] = useState<SnapModeId>('vertex');
   const [snapMoveMm, setSnapMoveMm] = useState(200);
@@ -2680,13 +2688,18 @@ export function WorkspaceChrome({
             {headerViewButtons.map((label) => {
               const iconIndex = HEADER_VIEW_ICON_INDEX[label];
               const popoverOpen = headerEditPopover === label;
-              const isActive = popoverOpen || (label === 'scale' && uniformScaleByPivotActive);
+              const isActive =
+                popoverOpen ||
+                (label === 'scale' && uniformScaleByPivotActive) ||
+                (label === 'rotate' && rotationPivotEditActive);
               const anchorRef =
                 label === 'grid'
                   ? gridToolAnchorRef
                   : label === 'view'
                     ? viewToolAnchorRef
-                    : label === 'layout'
+                  : label === 'rotate'
+                    ? rotateToolAnchorRef
+                  : label === 'layout'
                       ? layoutToolAnchorRef
                     : label === 'scale'
                       ? scaleToolAnchorRef
@@ -2861,6 +2874,14 @@ export function WorkspaceChrome({
         locale={locale}
         uniformScaleActive={uniformScaleByPivotActive}
         onUniformScaleActiveChange={setUniformScaleByPivotActive}
+        onClose={() => setHeaderEditPopover(null)}
+      />
+      <RotatePivotEditMenuPopover
+        open={headerEditPopover === 'rotate'}
+        anchorRef={rotateToolAnchorRef}
+        locale={locale}
+        pivotEditActive={rotationPivotEditActive}
+        onPivotEditActiveChange={setRotationPivotEditActive}
         onClose={() => setHeaderEditPopover(null)}
       />
       <LayoutAlignEditMenuPopover

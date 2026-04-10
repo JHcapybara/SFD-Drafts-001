@@ -109,15 +109,31 @@ input[type='range'].joint-slider[data-readonly='true']::-moz-range-thumb {
   border-color: rgba(0, 0, 0, 0.14);
 }
 
-/* 좌측 GNB 모드 아이콘 버튼 — 호버 시 과장된 피드백(오빗·쉬머·아이콘 회전 등) */
-.left-gnb-mode-btn .left-gnb-orbit-wrap {
+/* 좌측 GNB — 일반 모드: 조용한 버튼(호버·선택만) */
+.left-gnb-mode-btn-quiet {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+.left-gnb-mode-btn-quiet:hover {
+  filter: brightness(1.04);
+}
+.left-gnb-mode-btn-quiet:active {
+  filter: brightness(0.98);
+}
+
+/* 좌측 GNB — Safety AI 전용: 배경(콘닉) 회전·쉬머 등, 아이콘은 회전 없음 */
+.left-gnb-mode-btn--fx .left-gnb-orbit-wrap {
   opacity: 0;
   transition: opacity 0.22s ease;
 }
-.left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-orbit-wrap {
+.left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-orbit-wrap {
   opacity: 1;
 }
-.left-gnb-mode-btn .left-gnb-orbit-spin {
+.left-gnb-mode-btn--fx .left-gnb-orbit-spin {
   background: conic-gradient(
     from 0deg,
     var(--left-gnb-orbit-a, #fb923c),
@@ -133,12 +149,12 @@ input[type='range'].joint-slider[data-readonly='true']::-moz-range-thumb {
     transform: rotate(360deg);
   }
 }
-.left-gnb-mode-btn .left-gnb-pulse-halo {
+.left-gnb-mode-btn--fx .left-gnb-pulse-halo {
   opacity: 0;
   border-radius: 12px;
   animation: sfd-left-gnb-pulse-halo 1.05s ease-in-out infinite;
 }
-.left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-pulse-halo {
+.left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-pulse-halo {
   opacity: 1;
 }
 @keyframes sfd-left-gnb-pulse-halo {
@@ -156,10 +172,10 @@ input[type='range'].joint-slider[data-readonly='true']::-moz-range-thumb {
     transform: scale(1.04);
   }
 }
-.left-gnb-mode-btn .left-gnb-shimmer-bar {
+.left-gnb-mode-btn--fx .left-gnb-shimmer-bar {
   opacity: 0;
 }
-.left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-shimmer-bar {
+.left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-shimmer-bar {
   opacity: 0.7;
   animation: sfd-left-gnb-shimmer-slide 0.95s ease-in-out infinite;
 }
@@ -171,14 +187,14 @@ input[type='range'].joint-slider[data-readonly='true']::-moz-range-thumb {
     transform: translateX(240%) skewX(-20deg);
   }
 }
-.left-gnb-mode-btn .left-gnb-fill-wave {
+.left-gnb-mode-btn--fx .left-gnb-fill-wave {
   opacity: 0;
   transform: translateY(100%) scaleY(0.3);
   transition:
     opacity 0.2s ease,
     transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
-.left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-fill-wave {
+.left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-fill-wave {
   opacity: 0.55;
   transform: translateY(0) scaleY(1);
   animation: sfd-left-gnb-fill-breathe 1.15s ease-in-out infinite 0.35s;
@@ -194,50 +210,38 @@ input[type='range'].joint-slider[data-readonly='true']::-moz-range-thumb {
     transform: translateY(0) scaleY(1.05);
   }
 }
-.left-gnb-mode-btn .left-gnb-icon-slot {
+.left-gnb-mode-btn--fx .left-gnb-icon-slot {
   transition: filter 0.2s ease;
 }
-.left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-icon-slot {
-  animation: sfd-left-gnb-icon-spin-pop 0.62s linear infinite;
-  filter: drop-shadow(0 0 8px var(--left-gnb-glow, rgba(251, 146, 60, 0.9)));
-}
-@keyframes sfd-left-gnb-icon-spin-pop {
-  from {
-    transform: rotate(0deg) scale(1);
-  }
-  to {
-    transform: rotate(360deg) scale(1.12);
-  }
+.left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-icon-slot {
+  filter: drop-shadow(0 0 7px var(--left-gnb-glow, rgba(251, 146, 60, 0.9)));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .left-gnb-mode-btn .left-gnb-orbit-spin,
-  .left-gnb-mode-btn .left-gnb-pulse-halo,
-  .left-gnb-mode-btn .left-gnb-shimmer-bar,
-  .left-gnb-mode-btn:hover .left-gnb-fill-wave,
-  .left-gnb-mode-btn .left-gnb-icon-slot {
+  .left-gnb-mode-btn--fx .left-gnb-orbit-spin,
+  .left-gnb-mode-btn--fx .left-gnb-pulse-halo,
+  .left-gnb-mode-btn--fx .left-gnb-shimmer-bar,
+  .left-gnb-mode-btn--fx:hover .left-gnb-fill-wave,
+  .left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-fill-wave {
     animation: none !important;
   }
-  .left-gnb-mode-btn .left-gnb-orbit-wrap {
+  .left-gnb-mode-btn--fx .left-gnb-orbit-wrap {
     opacity: 0 !important;
   }
-  .left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-orbit-wrap {
+  .left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-orbit-wrap {
     opacity: 0.22 !important;
   }
-  .left-gnb-mode-btn .left-gnb-shimmer-bar {
+  .left-gnb-mode-btn--fx .left-gnb-shimmer-bar {
     opacity: 0 !important;
   }
-  .left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-shimmer-bar {
+  .left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-shimmer-bar {
     opacity: 0.25 !important;
   }
-  .left-gnb-mode-btn .left-gnb-fill-wave {
+  .left-gnb-mode-btn--fx .left-gnb-fill-wave {
     transform: none !important;
     opacity: 0.12 !important;
   }
-  .left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-fill-wave {
-    animation: none !important;
-  }
-  .left-gnb-mode-btn:is(:hover, :focus-visible) .left-gnb-pulse-halo {
+  .left-gnb-mode-btn--fx:is(:hover, :focus-visible) .left-gnb-pulse-halo {
     opacity: 0.35 !important;
     box-shadow: none !important;
     transform: none !important;

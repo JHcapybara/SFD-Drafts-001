@@ -33,6 +33,7 @@ export type HeaderEditToolPopover =
   | 'grid'
   | 'layout'
   | 'scale'
+  | 'rotate'
   | 'ruler'
   | 'object snap'
   | 'snap'
@@ -648,6 +649,45 @@ export function ScaleEditMenuPopover({
         {locale === 'en'
           ? 'When enabled, the pivot controller scales object X/Y/Z together by the same ratio.'
           : '활성화하면 객체 피봇 컨트롤러에서 X/Y/Z가 동일 비율로 함께 스케일됩니다.'}
+      </p>
+    </EditMenuPopoverFrame>
+  );
+}
+
+type RotatePivotEditMenuPopoverProps = {
+  open: boolean;
+  anchorRef: RefObject<HTMLElement | null>;
+  locale: Locale;
+  pivotEditActive: boolean;
+  onPivotEditActiveChange: (v: boolean) => void;
+  onClose: () => void;
+};
+
+/** 헤더 rotate 툴 — 회전점(피봇) 설정 안내·토글 (스케일 팝오버와 동일 프레임) */
+export function RotatePivotEditMenuPopover({
+  open,
+  anchorRef,
+  locale,
+  pivotEditActive,
+  onPivotEditActiveChange,
+  onClose,
+}: RotatePivotEditMenuPopoverProps) {
+  const aria = locale === 'en' ? 'Rotation pivot settings' : '회전점 설정';
+  return (
+    <EditMenuPopoverFrame open={open} anchorRef={anchorRef} onClose={onClose} width={250} ariaLabel={aria}>
+      <EditMenuSectionLabel>{locale === 'en' ? 'Object transform' : '객체 변형'}</EditMenuSectionLabel>
+      <div className="flex flex-col gap-px pb-0.5 px-0.5">
+        <EditMenuSelectRow
+          selected={pivotEditActive}
+          onClick={() => onPivotEditActiveChange(!pivotEditActive)}
+          label={locale === 'en' ? 'Custom rotation pivot mode' : '회전점(피봇) 편집 모드'}
+          shortcut="R"
+        />
+      </div>
+      <p className="px-2.5 pb-1.5 text-[10px] leading-snug" style={{ color: TEXT_MUTED }}>
+        {locale === 'en'
+          ? 'When enabled, you can place or move the pivot that object rotations use — e.g. drag the pivot gizmo in the viewport.'
+          : '활성화하면 뷰포트에서 회전 기준점(피봇)을 배치·이동할 수 있습니다. 피봇 컨트롤러로 회전 중심을 바꿉니다.'}
       </p>
     </EditMenuPopoverFrame>
   );
