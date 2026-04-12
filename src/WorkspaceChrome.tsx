@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
   GripVertical,
@@ -11,9 +11,6 @@ import {
   FileText,
   Settings,
   GripHorizontal,
-  Play,
-  Square,
-  Repeat,
   X,
   Sun,
   Moon,
@@ -38,6 +35,7 @@ import { SafetyDiagnosisCellPickerModal, type SafetyDiagnosisCellItem } from './
 import { SafetyDiagnosisModal } from './SafetyDiagnosisModal';
 import { SensorSafetyDistanceCalculatorModal } from './SensorSafetyDistanceCalculatorModal';
 import { CriLegend } from './CriLegend';
+import { BottomDockAnalysisResultsPanel } from './BottomDockAnalysisResultsPanel';
 import {
   AnalysisSidePanel,
   type AnalysisPanelUiVersion,
@@ -164,11 +162,15 @@ const LEFT_PANEL_MIN_WIDTH = 320;
 /** 좌측 영역(라이브러리 등) 공통 상한. Safety AI는 선택 시 이 값으로 맞춤 */
 const LEFT_PANEL_MAX_WIDTH = 560;
 const BOTTOM_GAP = 8;
-const BOTTOM_HEIGHT_EXPANDED = 220;
+/** 타임라인 탭 — 하단 돌크 기본 높이 (차트·분석보다 낮게) */
+const BOTTOM_HEIGHT_DEFAULT_TIMELINE = 260;
+/** 분석 탭 — 그래프 영역을 넓게 */
+const BOTTOM_HEIGHT_DEFAULT_ANALYSIS = 380;
 const BOTTOM_HEIGHT_COLLAPSED = 74;
 const BOTTOM_COLLAPSED_WIDTH = 460;
-const BOTTOM_HEIGHT_MIN = 140;
-const BOTTOM_HEIGHT_MAX = 360;
+const BOTTOM_HEIGHT_MIN = 200;
+/** Dock-Out 시 하단 패널이 좌우로 살짝 띄워지는 여백(px) */
+const BOTTOM_DOCK_FLOAT_MARGIN = 12;
 const TREE_INDENT_PX = 16;
 
 const TREE_DATA: TreeNodeItem[] = [
@@ -538,6 +540,92 @@ function CustomTooltip({
   );
 }
 
+/** 하단 돌크(`overflow-hidden`) 내부 버튼용: `body` 포털 + 트리거 **위**에 표시해 커서와 겹침을 줄임 */
+function DockPortalTooltip({
+  label,
+  isDark,
+  children,
+}: {
+  label: string;
+  isDark: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const updatePos = useCallback(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPos({ top: r.top, left: r.left + r.width / 2 });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePos();
+    const onMove = () => updatePos();
+    window.addEventListener('scroll', onMove, true);
+    window.addEventListener('resize', onMove);
+    return () => {
+      window.removeEventListener('scroll', onMove, true);
+      window.removeEventListener('resize', onMove);
+    };
+  }, [open, updatePos]);
+
+  const surface = isDark
+    ? {
+        borderColor: 'rgba(255,255,255,0.14)',
+        color: '#f3f4f6',
+        background: 'rgba(24,25,30,0.96)',
+        boxShadow: '0 6px 14px rgba(0,0,0,0.45)',
+      }
+    : {
+        borderColor: 'rgba(15,23,42,0.14)',
+        color: '#0f172a',
+        background: 'rgba(255,255,255,0.98)',
+        boxShadow: '0 8px 18px rgba(15,23,42,0.16)',
+      };
+
+  return (
+    <>
+      <span
+        ref={wrapRef}
+        className="inline-flex max-w-full"
+        onMouseEnter={() => {
+          updatePos();
+          setOpen(true);
+        }}
+        onMouseLeave={() => setOpen(false)}
+        onFocusCapture={() => {
+          updatePos();
+          setOpen(true);
+        }}
+        onBlurCapture={() => setOpen(false)}
+      >
+        {children}
+      </span>
+      {open &&
+        createPortal(
+          <span
+            role="tooltip"
+            className="pointer-events-none fixed rounded-[8px] border px-2.5 py-1.5 text-[11px] font-semibold leading-none whitespace-nowrap"
+            style={{
+              top: pos.top,
+              left: pos.left,
+              transform: 'translate(-50%, calc(-100% - 8px))',
+              zIndex: 100,
+              ...surface,
+            }}
+          >
+            {label}
+          </span>,
+          document.body,
+        )}
+    </>
+  );
+}
+
 /** 좌측 GNB: 스크롤 영역 `overflow-x-hidden` 때문에 absolute 툴팁이 잘리므로 body 포털 + 높은 z로 패널 위에 표시 */
 function LeftGnbModeIconButton({
   modeId,
@@ -769,10 +857,24 @@ export function WorkspaceChrome({
   const [leftOpen, setLeftOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState(320);
   const [bottomOpen, setBottomOpen] = useState(false);
+  /** true면 하단 패널을 도크에서 띄워 뷰포트에 떠 있게 표시 */
+  const [bottomDockOut, setBottomDockOut] = useState(false);
   const [bottomTab, setBottomTab] = useState<BottomTab>('timeline');
-  const [bottomHeight, setBottomHeight] = useState(BOTTOM_HEIGHT_EXPANDED);
+  /** 탭마다 리사이즈 높이를 따로 기억 (기본값만 탭별로 다름) */
+  const [bottomHeightsByTab, setBottomHeightsByTab] = useState<Record<BottomTab, number>>(() => ({
+    timeline: BOTTOM_HEIGHT_DEFAULT_TIMELINE,
+    analysis: BOTTOM_HEIGHT_DEFAULT_ANALYSIS,
+  }));
+  const bottomHeight = bottomHeightsByTab[bottomTab];
+  const [viewportSize, setViewportSize] = useState(() =>
+    typeof window !== 'undefined' ? { h: window.innerHeight, w: window.innerWidth } : { h: 900, w: 1200 },
+  );
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
   const [playbackMenuOpen, setPlaybackMenuOpen] = useState(false);
+  /** 공정 모션 타임라인 반복재생(끝나면 처음부터 다시). UI 토글; 실제 루프는 뷰어 연동 시 소비 */
+  const [timelineRepeatPlayback, setTimelineRepeatPlayback] = useState(false);
+  /** 타임라인 모션 재생 중(일시정지 아이콘 표시). 뷰어 연동 시 동기화 */
+  const [timelineMotionPlaying, setTimelineMotionPlaying] = useState(false);
   const [timelineView, setTimelineView] = useState<'overview' | 'detail'>('overview');
   const [timelineCollapsedTree] = useState(false);
   const [selectedTimelineTarget, setSelectedTimelineTarget] = useState<TimelineTarget>('cobot2');
@@ -780,6 +882,8 @@ export function WorkspaceChrome({
   const [libraryStage, setLibraryStage] = useState<LibraryStage>('root');
   const [libraryDrawing, setLibraryDrawing] = useState<LibraryDrawingInfo | null>(null);
   const [libraryDrawingModalOpen, setLibraryDrawingModalOpen] = useState(false);
+  /** 라이브러리 패널 헤더「도면 업로드」→ 패널 내 서브 오버레이 */
+  const [libraryDrawingSubModalOpen, setLibraryDrawingSubModalOpen] = useState(false);
   const libraryDrawingInputRef = useRef<HTMLInputElement>(null);
   const [internalUiPreviewMode, setInternalUiPreviewMode] = useState<'light' | 'dark'>('light');
   const [uiModeMenuOpen, setUiModeMenuOpen] = useState(false);
@@ -826,15 +930,50 @@ export function WorkspaceChrome({
   const sidePanelTokens = isDarkPreview ? PROPERTY_DARK_TOKENS : PROPERTY_LIGHT_TOKENS;
   const analysisLayoutChrome = useMemo(() => getAnalysisPanelLayoutChromeCopy(locale), [locale]);
 
-  const chromeEdgeToggleSurface = useMemo(
-    () => ({
-      borderColor: sidePanelTokens.inputBorder,
-      background: sidePanelTokens.inputBg,
-      color: sidePanelTokens.textPrimary,
-      boxShadow: sidePanelTokens.elevationRaised,
-    }),
-    [sidePanelTokens.elevationRaised, sidePanelTokens.inputBg, sidePanelTokens.inputBorder, sidePanelTokens.textPrimary],
+  /** 상단 리사이즈 시: 헤더 하단(`WORKSPACE_CONTENT_TOP_PX`)까지 — 그 아래 여백은 `BOTTOM_GAP` */
+  const bottomPanelMaxHeight = useMemo(
+    () => Math.max(BOTTOM_HEIGHT_MIN, viewportSize.h - WORKSPACE_CONTENT_TOP_PX - BOTTOM_GAP),
+    [viewportSize.h],
   );
+
+  useEffect(() => {
+    const onResize = () => setViewportSize({ h: window.innerHeight, w: window.innerWidth });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    setBottomHeightsByTab((prev) => ({
+      timeline: Math.min(prev.timeline, bottomPanelMaxHeight),
+      analysis: Math.min(prev.analysis, bottomPanelMaxHeight),
+    }));
+  }, [bottomPanelMaxHeight]);
+
+  useEffect(() => {
+    if (!bottomOpen) setBottomDockOut(false);
+  }, [bottomOpen]);
+
+  /** 좌측 패널 엣지 토글·접힌 타임라인 펼치기 등 플로팅 칩 — 라이트/다크 명시 분기 */
+  const chromeEdgeToggleSurface = useMemo((): CSSProperties => {
+    if (isDarkPreview) {
+      return {
+        borderColor: 'rgba(255,255,255,0.16)',
+        background: 'rgba(28,30,38,0.88)',
+        color: sidePanelTokens.textPrimary,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset',
+        backdropFilter: 'blur(14px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(14px) saturate(150%)',
+      };
+    }
+    return {
+      borderColor: 'rgba(15,23,42,0.12)',
+      background: 'rgba(255,255,255,0.94)',
+      color: sidePanelTokens.textPrimary,
+      boxShadow: '0 2px 12px rgba(15,23,42,0.1), 0 0 0 0.5px rgba(255,255,255,0.95) inset',
+      backdropFilter: 'blur(16px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+    };
+  }, [isDarkPreview, sidePanelTokens.textPrimary]);
 
   const handleOnboardingOpenRelated = useCallback(
     (action: OnboardingOpenAppAction) => {
@@ -907,7 +1046,7 @@ export function WorkspaceChrome({
     startX: number;
     startWidth: number;
   } | null>(null);
-  const bottomResizingRef = useRef<{ startY: number; startH: number } | null>(null);
+  const bottomResizingRef = useRef<{ startY: number; startH: number; tab: BottomTab } | null>(null);
 
   const leftPanelResizable =
     leftMode === 'safetyai' || leftMode === 'analysis' || leftMode === 'riskassessment';
@@ -939,12 +1078,14 @@ export function WorkspaceChrome({
   const onBottomResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!bottomOpen) return;
     e.preventDefault();
-    bottomResizingRef.current = { startY: e.clientY, startH: bottomHeight };
+    bottomResizingRef.current = { startY: e.clientY, startH: bottomHeight, tab: bottomTab };
     const onMove = (ev: PointerEvent) => {
       const r = bottomResizingRef.current;
       if (!r) return;
       const dy = r.startY - ev.clientY;
-      setBottomHeight(clamp(r.startH + dy, BOTTOM_HEIGHT_MIN, BOTTOM_HEIGHT_MAX));
+      const next = clamp(r.startH + dy, BOTTOM_HEIGHT_MIN, bottomPanelMaxHeight);
+      const t = r.tab;
+      setBottomHeightsByTab((prev) => ({ ...prev, [t]: next }));
     };
     const onUp = () => {
       bottomResizingRef.current = null;
@@ -953,7 +1094,7 @@ export function WorkspaceChrome({
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-  }, [bottomOpen, bottomHeight]);
+  }, [bottomOpen, bottomHeight, bottomPanelMaxHeight, bottomTab]);
 
   const modeDefs = useMemo(() => ([
     { id: 'library' as const, labelKo: '라이브러리', labelEn: 'Library' },
@@ -1042,7 +1183,6 @@ export function WorkspaceChrome({
       transportBackdrop: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
       transportBorder: sidePanelTokens.panelBorder,
       transportText: isDarkPreview ? '#e5e7eb' : '#374151',
-      transportIconBorder: isDarkPreview ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.22)',
       transportRateBtnBorder: isDarkPreview ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.16)',
       transportRateBtnBg: isDarkPreview ? 'rgba(40,41,48,0.9)' : 'rgba(255,255,255,0.78)',
       playbackMenuBorder: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.14)',
@@ -1198,7 +1338,14 @@ export function WorkspaceChrome({
     libraryDrawingInputRef.current?.click();
   }, []);
 
-  const openLibraryDrawingHelpModal = useCallback(() => setLibraryDrawingModalOpen(true), []);
+  const openLibraryDrawingHelpModalFromDock = useCallback(() => {
+    setLibraryDrawingSubModalOpen(false);
+    setLibraryDrawingModalOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (leftMode !== 'library') setLibraryDrawingSubModalOpen(false);
+  }, [leftMode]);
 
   useEffect(() => {
     if (!libraryDrawingModalOpen) return;
@@ -1209,6 +1356,19 @@ export function WorkspaceChrome({
     return () => window.removeEventListener('keydown', onKey);
   }, [libraryDrawingModalOpen]);
 
+  useEffect(() => {
+    if (!libraryDrawingSubModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setLibraryDrawingSubModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [libraryDrawingSubModalOpen]);
+
+  /** 서브 모달 본문: 참고 도면(그리드·헤더 스트립용). 패널 토큰 기준 단순 면 처리 */
   const renderLibraryDrawingDock = useCallback(() => {
     const drawingDate =
       libraryDrawing &&
@@ -1216,6 +1376,9 @@ export function WorkspaceChrome({
         dateStyle: 'medium',
         timeStyle: 'short',
       });
+
+    const surfaceBorder = sidePanelTokens.inputBorder;
+    const surfaceBg = sidePanelTokens.inputBg;
 
     return (
       <>
@@ -1232,58 +1395,58 @@ export function WorkspaceChrome({
                 sizeLabel: formatDrawingFileSize(f.size),
                 updatedAtMs: Date.now(),
               });
-              setLibraryDrawingModalOpen(false);
             }
             e.target.value = '';
           }}
         />
         <div
-          className="flex flex-col gap-2.5"
+          className="flex flex-col gap-3"
           {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.libraryDrawingUpload }}
         >
-          <div className="flex items-center justify-between gap-2 px-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: leftUiTokens.libraryMuted }}>
-              {locale === 'en' ? 'Drawing' : '도면'}
+          <p className="text-[11px] leading-[16px]" style={{ color: sidePanelTokens.textSecondary }}>
+            {locale === 'en'
+              ? 'Shown on the workspace floor and header strip. Not a library asset.'
+              : '작업 영역 바닥·상단 스트립에 표시됩니다. 라이브러리 트리 자산과는 별개입니다.'}
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: sidePanelTokens.textSecondary }}>
+              {locale === 'en' ? 'Status' : '상태'}
             </span>
             <span
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              className="text-[10px] font-medium px-2 py-0.5 rounded-md border"
               style={{
-                color: isDarkPreview ? '#d4d4d8' : '#3f3f46',
-                background: isDarkPreview ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)',
+                color: sidePanelTokens.textSecondary,
+                borderColor: surfaceBorder,
+                background: isDarkPreview ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)',
               }}
             >
-              {locale === 'en' ? 'Always visible' : '항시 표시'}
+              {locale === 'en' ? 'Always on canvas' : '캔버스 항시 표시'}
             </span>
           </div>
           {libraryDrawing ? (
             <div
-              className="rounded-2xl border px-3 py-3"
+              className="rounded-xl border px-3 py-2.5"
               style={{
-                borderColor: isDarkPreview ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.09)',
-                background: isDarkPreview
-                  ? 'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)'
-                  : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, #f8fafc 100%)',
-                boxShadow: isDarkPreview
-                  ? '0 10px 24px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.09)'
-                  : '0 10px 24px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,1)',
+                borderColor: surfaceBorder,
+                background: surfaceBg,
               }}
             >
               <div className="flex items-start gap-2.5">
                 <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
                   style={{
-                    background: isDarkPreview ? 'rgba(255,142,43,0.18)' : 'rgba(255,142,43,0.14)',
-                    color: isDarkPreview ? '#fdba74' : '#c2410c',
+                    background: accentRgba(POINT_ORANGE, isDarkPreview ? 0.2 : 0.14),
+                    color: POINT_ORANGE,
                   }}
                   aria-hidden
                 >
-                  <FileText className="w-4.5 h-4.5" strokeWidth={2} />
+                  <FileText className="w-4 h-4" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-[12px] font-bold leading-[15px] truncate" style={{ color: leftUiTokens.libraryTitle }}>
+                  <p className="text-[12px] font-semibold leading-snug truncate" style={{ color: sidePanelTokens.textPrimary }}>
                     {libraryDrawing.fileName}
                   </p>
-                  <p className="mt-1 text-[10px] leading-[14px]" style={{ color: leftUiTokens.libraryMuted }}>
+                  <p className="mt-0.5 text-[10px] leading-[14px]" style={{ color: sidePanelTokens.textSecondary }}>
                     {libraryDrawing.sizeLabel}
                     <span className="mx-1 opacity-50">·</span>
                     {drawingDate}
@@ -1291,13 +1454,13 @@ export function WorkspaceChrome({
                 </div>
                 <button
                   type="button"
-                  className="mt-0.5 shrink-0 rounded-xl px-2.5 py-1.5 text-[10px] font-bold transition-all duration-150 hover:opacity-90"
+                  className="mt-0.5 shrink-0 rounded-lg px-2 py-1 text-[10px] font-semibold transition-opacity hover:opacity-90"
                   style={{
-                    color: isDarkPreview ? '#fed7aa' : '#9a3412',
-                    background: isDarkPreview ? 'rgba(255,142,43,0.22)' : accentRgba(POINT_ORANGE, 0.18),
-                    border: `1px solid ${isDarkPreview ? 'rgba(255,142,43,0.35)' : 'rgba(255,142,43,0.28)'}`,
+                    color: POINT_ORANGE,
+                    border: `1px solid ${accentRgba(POINT_ORANGE, 0.4)}`,
+                    background: accentRgba(POINT_ORANGE, 0.12),
                   }}
-                  onClick={openLibraryDrawingHelpModal}
+                  onClick={openLibraryDrawingPicker}
                 >
                   {locale === 'en' ? 'Replace' : '교체'}
                 </button>
@@ -1306,45 +1469,50 @@ export function WorkspaceChrome({
           ) : (
             <button
               type="button"
-              className="flex min-h-[52px] w-full items-center gap-2.5 rounded-2xl border px-3 text-left text-[11px] font-bold transition-all duration-200 hover:opacity-[0.98] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+              className="flex min-h-[48px] w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-[12px] font-semibold transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
               style={{
-                borderColor: isDarkPreview ? 'rgba(255,255,255,0.18)' : 'rgba(15,23,42,0.12)',
-                background: isDarkPreview
-                  ? 'linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)'
-                  : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, #f8fafc 100%)',
-                color: leftUiTokens.libraryBodyText,
-                boxShadow: isDarkPreview
-                  ? '0 8px 20px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.08)'
-                  : '0 8px 20px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,1)',
+                borderColor: surfaceBorder,
+                background: surfaceBg,
+                color: sidePanelTokens.textPrimary,
               }}
-              onClick={openLibraryDrawingHelpModal}
-              aria-label={locale === 'en' ? 'Upload drawing file' : '도면 파일 업로드'}
+              onClick={openLibraryDrawingPicker}
+              aria-label={locale === 'en' ? 'Choose drawing file' : '도면 파일 선택'}
             >
               <div
                 className="h-8 w-8 rounded-lg shrink-0 flex items-center justify-center"
                 style={{
-                  background: isDarkPreview ? 'rgba(255,142,43,0.2)' : 'rgba(255,142,43,0.14)',
-                  color: isDarkPreview ? '#fdba74' : '#c2410c',
+                  background: accentRgba(POINT_ORANGE, isDarkPreview ? 0.2 : 0.14),
+                  color: POINT_ORANGE,
                 }}
               >
-                <Upload className="w-4 h-4" style={{ color: 'currentColor' }} strokeWidth={2.25} aria-hidden />
+                <Upload className="w-4 h-4" strokeWidth={2.25} aria-hidden />
               </div>
-              <span className="min-w-0 flex-1 truncate">
-                {locale === 'en' ? 'Upload drawing…' : '도면 업로드…'}
+              <span className="min-w-0 flex-1">
+                {locale === 'en' ? 'Choose file…' : '파일 선택…'}
               </span>
             </button>
           )}
+          <button
+            type="button"
+            className="text-left text-[11px] font-medium underline-offset-2 hover:underline"
+            style={{ color: sidePanelTokens.textSecondary }}
+            onClick={openLibraryDrawingHelpModalFromDock}
+          >
+            {locale === 'en' ? 'Formats & details' : '지원 형식·상세 안내'}
+          </button>
         </div>
       </>
     );
   }, [
     isDarkPreview,
-    leftUiTokens.libraryBodyText,
-    leftUiTokens.libraryMuted,
-    leftUiTokens.libraryTitle,
     libraryDrawing,
     locale,
-    openLibraryDrawingHelpModal,
+    openLibraryDrawingHelpModalFromDock,
+    openLibraryDrawingPicker,
+    sidePanelTokens.inputBg,
+    sidePanelTokens.inputBorder,
+    sidePanelTokens.textPrimary,
+    sidePanelTokens.textSecondary,
   ]);
 
   const renderLibraryRoot = useCallback(() => (
@@ -1769,22 +1937,43 @@ export function WorkspaceChrome({
         WebkitBackdropFilter: timelineUiTokens.transportBackdrop,
       }}
     >
-      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: timelineUiTokens.transportIconBorder }}>
-        <Play className="w-3 h-3" />
-      </button>
-      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: timelineUiTokens.transportIconBorder }}>
-        <Square className="w-2.5 h-2.5" />
-      </button>
-      <span className="text-[11px] font-semibold tabular-nums">00:00.0/04:07.1</span>
-      <div className="relative">
+      <DockPortalTooltip
+        label={locale === 'en' ? (timelineMotionPlaying ? 'Pause' : 'Play') : timelineMotionPlaying ? '일시정지' : '재생'}
+        isDark={isDarkPreview}
+      >
         <button
           type="button"
-          className="h-6 px-2 rounded-[6px] border text-[10px] font-semibold"
-          style={{ borderColor: timelineUiTokens.transportRateBtnBorder, background: timelineUiTokens.transportRateBtnBg }}
-          onClick={() => setPlaybackMenuOpen((v) => !v)}
+          className="flex h-5 w-5 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent rounded-[4px]"
+          aria-label={locale === 'en' ? (timelineMotionPlaying ? 'Pause' : 'Play') : timelineMotionPlaying ? '일시정지' : '재생'}
+          onClick={() => setTimelineMotionPlaying((p) => !p)}
         >
-          x {playbackRate.toFixed(1)}
+          <SfdIconByIndex index={timelineMotionPlaying ? 167 : 166} color="currentColor" size={20} />
         </button>
+      </DockPortalTooltip>
+      <DockPortalTooltip label={locale === 'en' ? 'Stop' : '정지'} isDark={isDarkPreview}>
+        <button
+          type="button"
+          className="flex h-5 w-5 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent rounded-[4px]"
+          aria-label={locale === 'en' ? 'Stop' : '정지'}
+          onClick={() => setTimelineMotionPlaying(false)}
+        >
+          <SfdIconByIndex index={165} color="currentColor" size={20} />
+        </button>
+      </DockPortalTooltip>
+      <span className="text-[11px] font-semibold tabular-nums">00:00.0/04:07.1</span>
+      <div className="relative">
+        <DockPortalTooltip label={locale === 'en' ? 'Playback speed' : '재생 속도'} isDark={isDarkPreview}>
+          <button
+            type="button"
+            className="h-6 px-2 rounded-[6px] border text-[10px] font-semibold"
+            style={{ borderColor: timelineUiTokens.transportRateBtnBorder, background: timelineUiTokens.transportRateBtnBg }}
+            onClick={() => setPlaybackMenuOpen((v) => !v)}
+            aria-label={locale === 'en' ? 'Playback speed' : '재생 속도'}
+            aria-expanded={playbackMenuOpen}
+          >
+            x {playbackRate.toFixed(1)}
+          </button>
+        </DockPortalTooltip>
         {playbackMenuOpen && (
           <div
             className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 rounded-[8px] border p-1 flex flex-col gap-0.5 z-10"
@@ -1817,13 +2006,49 @@ export function WorkspaceChrome({
       <div className="flex-1 h-1.5 rounded-full relative" style={{ background: timelineUiTokens.scrubTrack }}>
         <div className="absolute left-[35%] top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full" style={{ background: '#ff8e2b' }} />
       </div>
-      <button type="button" className="w-5 h-5 rounded-full border flex items-center justify-center" style={{ borderColor: timelineUiTokens.transportIconBorder }}>
-        <Repeat className="w-3 h-3" />
-      </button>
+      <DockPortalTooltip
+        label={
+          locale === 'en'
+            ? timelineRepeatPlayback
+              ? 'Repeat playback (on)'
+              : 'Repeat playback (off)'
+            : timelineRepeatPlayback
+              ? '반복재생 (켜짐)'
+              : '반복재생 (꺼짐)'
+        }
+        isDark={isDarkPreview}
+      >
+        <button
+          type="button"
+          className="flex h-5 w-5 shrink-0 items-center justify-center border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent rounded-[4px]"
+          style={
+            timelineRepeatPlayback
+              ? { background: accentRgba(POINT_ORANGE, 0.22), color: POINT_ORANGE }
+              : { background: 'transparent', color: 'inherit' }
+          }
+          aria-pressed={timelineRepeatPlayback}
+          aria-label={
+            locale === 'en'
+              ? timelineRepeatPlayback
+                ? 'Repeat playback on'
+                : 'Repeat playback off'
+              : timelineRepeatPlayback
+                ? '반복재생 켜짐'
+                : '반복재생 꺼짐'
+          }
+          onClick={() => setTimelineRepeatPlayback((v) => !v)}
+        >
+          <SfdIconByIndex index={168} color="currentColor" size={20} />
+        </button>
+      </DockPortalTooltip>
     </div>
   ), [
+    isDarkPreview,
+    locale,
     playbackMenuOpen,
     playbackRate,
+    timelineMotionPlaying,
+    timelineRepeatPlayback,
     timelineUiTokens.playbackMenuBg,
     timelineUiTokens.playbackMenuBorder,
     timelineUiTokens.playbackMenuShadow,
@@ -1832,7 +2057,6 @@ export function WorkspaceChrome({
     timelineUiTokens.transportBackdrop,
     timelineUiTokens.transportBg,
     timelineUiTokens.transportBorder,
-    timelineUiTokens.transportIconBorder,
     timelineUiTokens.transportRateBtnBg,
     timelineUiTokens.transportRateBtnBorder,
     timelineUiTokens.transportText,
@@ -2078,36 +2302,27 @@ export function WorkspaceChrome({
 
   const renderCollapsedTimeline = useCallback(() => (
     <div className="h-full flex flex-col items-center justify-center gap-1.5 px-3">
-      <button
-        type="button"
-        className={`${CHROME_EDGE_TOGGLE_BTN_CLASS} relative h-6 w-12 rounded-[10px]`}
-        style={chromeEdgeToggleSurface}
-        onClick={() => setBottomOpen(true)}
-        title="클릭하여 타임라인 열기"
+      <DockPortalTooltip
+        label={locale === 'en' ? 'Expand timeline' : '클릭하여 타임라인 열기'}
+        isDark={isDarkPreview}
       >
-        <ChevronUp className="w-3.5 h-3.5" />
-        <span
-          className="pointer-events-none absolute left-1/2 top-[calc(100%+6px)] -translate-x-1/2 rounded-[6px] border px-2 py-1 text-[10px] font-medium leading-none whitespace-nowrap opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0"
-          style={{
-            borderColor: timelineUiTokens.collapsedTooltipBorder,
-            color: timelineUiTokens.collapsedTooltipText,
-            background: timelineUiTokens.collapsedTooltipBg,
-            boxShadow: timelineUiTokens.collapsedTooltipShadow,
-          }}
-          aria-hidden
+        <button
+          type="button"
+          className={`${CHROME_EDGE_TOGGLE_BTN_CLASS} h-6 w-12 rounded-[10px]`}
+          style={chromeEdgeToggleSurface}
+          onClick={() => setBottomOpen(true)}
+          aria-label={locale === 'en' ? 'Expand timeline' : '타임라인 펼치기'}
         >
-          클릭하여 타임라인 열기
-        </span>
-      </button>
+          <ChevronUp className="w-3.5 h-3.5" />
+        </button>
+      </DockPortalTooltip>
       {renderTimelineTransportBar(true)}
     </div>
   ), [
     chromeEdgeToggleSurface,
+    isDarkPreview,
+    locale,
     renderTimelineTransportBar,
-    timelineUiTokens.collapsedTooltipBg,
-    timelineUiTokens.collapsedTooltipBorder,
-    timelineUiTokens.collapsedTooltipShadow,
-    timelineUiTokens.collapsedTooltipText,
   ]);
 
   const renderTreeAreaLayout = useCallback(() => (
@@ -2275,7 +2490,7 @@ export function WorkspaceChrome({
             WebkitBackdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
           }}
         >
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col relative">
             {leftMode !== 'safetyai' && (
               <div
                 className="px-3 py-2.5 border-b flex items-center justify-between gap-2 min-w-0"
@@ -2292,8 +2507,25 @@ export function WorkspaceChrome({
                     {locale === 'en' ? modeLabel?.labelEn : modeLabel?.labelKo}
                   </span>
                 </div>
+                <div className="flex items-center gap-2 shrink-0">
+                {leftMode === 'library' && (
+                  <button
+                    type="button"
+                    className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold border transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+                    style={{
+                      borderColor: sidePanelTokens.inputBorder,
+                      background: sidePanelTokens.inputBg,
+                      color: sidePanelTokens.textPrimary,
+                    }}
+                    onClick={() => setLibraryDrawingSubModalOpen(true)}
+                    aria-haspopup="dialog"
+                    aria-expanded={libraryDrawingSubModalOpen}
+                  >
+                    {locale === 'en' ? 'Drawing upload' : '도면 업로드'}
+                  </button>
+                )}
                 {(leftMode === 'analysis' || leftMode === 'riskassessment') && (
-                  <div className="flex items-center gap-1.5 shrink-0 max-w-[min(72%,320px)]">
+                  <div className="flex items-center gap-1.5 max-w-[min(72%,320px)]">
                     <label htmlFor="ws-analysis-panel-layout" className="sr-only">
                       {analysisLayoutChrome.label}
                     </label>
@@ -2331,6 +2563,7 @@ export function WorkspaceChrome({
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             )}
             <div
@@ -2339,29 +2572,70 @@ export function WorkspaceChrome({
                   ? 'flex-1 min-h-0 overflow-hidden'
                   : leftMode === 'analysis' || leftMode === 'riskassessment'
                     ? 'flex-1 min-h-0 overflow-y-auto sfd-scroll px-2.5 py-2'
-                    : 'flex-1 min-h-0 overflow-y-auto sfd-scroll p-3'
+                    : leftMode === 'library'
+                      ? 'flex flex-1 min-h-0 flex-col relative'
+                      : 'flex-1 min-h-0 overflow-y-auto sfd-scroll p-3'
               }
             >
               {leftMode === 'library' ? (
-                <div className="flex min-h-0 flex-col gap-0">
-                  <div
-                    className="sticky top-0 z-[4] -mx-1 mb-3 space-y-3 px-2 pb-3 pt-1"
-                    style={{
-                      background: isDarkPreview
-                        ? 'linear-gradient(180deg, rgba(20,22,28,0.9) 0%, rgba(20,22,28,0.74) 100%)'
-                        : 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.84) 100%)',
-                      borderBottom: `1px solid ${isDarkPreview ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.08)'}`,
-                      boxShadow: isDarkPreview
-                        ? '0 14px 28px rgba(0,0,0,0.32), inset 0 -1px 0 rgba(255,255,255,0.04)'
-                        : '0 14px 28px rgba(15,23,42,0.1), inset 0 -1px 0 rgba(255,255,255,0.8)',
-                      backdropFilter: isDarkPreview ? 'blur(22px) saturate(145%)' : 'blur(18px) saturate(135%)',
-                      WebkitBackdropFilter: isDarkPreview ? 'blur(22px) saturate(145%)' : 'blur(18px) saturate(135%)',
-                    }}
-                  >
-                    {renderLibraryDrawingDock()}
-                  </div>
-                  {renderLibraryContent()}
-                </div>
+                <>
+                  <div className="flex-1 min-h-0 overflow-y-auto sfd-scroll p-3">{renderLibraryContent()}</div>
+                  {libraryDrawingSubModalOpen && (
+                    <div
+                      className="absolute inset-0 z-[50] flex flex-col justify-start p-2 sm:p-3"
+                      style={{
+                        background: isDarkPreview ? 'rgba(5,8,14,0.52)' : 'rgba(15,23,42,0.28)',
+                        backdropFilter: 'blur(3px)',
+                        WebkitBackdropFilter: 'blur(3px)',
+                      }}
+                      role="presentation"
+                      onClick={() => setLibraryDrawingSubModalOpen(false)}
+                    >
+                      <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="library-drawing-submodal-title"
+                        className="flex w-full min-h-0 max-h-full flex-col rounded-xl border overflow-hidden shadow-xl"
+                        style={{
+                          background: isDarkPreview
+                            ? 'rgba(26,28,36,0.98)'
+                            : sidePanelTokens.panelBg,
+                          borderColor: isDarkPreview ? 'rgba(255,255,255,0.12)' : sidePanelTokens.panelBorder,
+                          boxShadow: isDarkPreview
+                            ? '0 16px 44px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.08) inset'
+                            : sidePanelTokens.panelShadow,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div
+                          className="shrink-0 flex items-center justify-between gap-2 px-3 py-2.5 border-b"
+                          style={{
+                            borderColor: sidePanelTokens.divider,
+                            background: isDarkPreview ? 'rgba(34,36,46,0.98)' : sidePanelTokens.sectionHeaderBg,
+                          }}
+                        >
+                          <h2
+                            id="library-drawing-submodal-title"
+                            className="text-[13px] font-bold leading-tight truncate pr-2"
+                            style={{ color: sidePanelTokens.textPrimary }}
+                          >
+                            {locale === 'en' ? 'Reference drawing' : '참고 도면'}
+                          </h2>
+                          <button
+                            type="button"
+                            className="shrink-0 rounded-lg p-1.5 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+                            style={{ color: sidePanelTokens.textSecondary }}
+                            onClick={() => setLibraryDrawingSubModalOpen(false)}
+                            aria-label={locale === 'en' ? 'Close' : '닫기'}
+                          >
+                            <X className="w-4 h-4" strokeWidth={2} />
+                          </button>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto sfd-scroll px-3 py-3">{renderLibraryDrawingDock()}</div>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : leftMode === 'tree' ? (
                 renderTreeAreaLayout()
               ) : leftMode === 'analysis' || leftMode === 'riskassessment' ? (
@@ -2691,7 +2965,8 @@ export function WorkspaceChrome({
               const isActive =
                 popoverOpen ||
                 (label === 'scale' && uniformScaleByPivotActive) ||
-                (label === 'rotate' && rotationPivotEditActive);
+                (label === 'rotate' && rotationPivotEditActive) ||
+                (label === 'ruler' && rulerMeasureActive);
               const anchorRef =
                 label === 'grid'
                   ? gridToolAnchorRef
@@ -2728,11 +3003,32 @@ export function WorkspaceChrome({
                   aria-expanded={isHeaderEditPopoverKey(label) ? popoverOpen : undefined}
                   aria-haspopup={isHeaderEditPopoverKey(label) ? 'dialog' : undefined}
                   onClick={() => {
-                    if (isHeaderEditPopoverKey(label)) {
-                      setHeaderEditPopover((cur) => (cur === label ? null : label));
+                    if (!isHeaderEditPopoverKey(label)) {
+                      setHeaderEditPopover(null);
                       return;
                     }
-                    setHeaderEditPopover(null);
+                    /** rotate / scale / ruler: 꺼짐 → 모달 열림 + 모드 ON, 포커스아웃은 모달만 닫힘. 켜짐 → 헤더 재클릭으로 모드 OFF */
+                    if (label === 'rotate' || label === 'scale' || label === 'ruler') {
+                      const modeOn =
+                        label === 'scale'
+                          ? uniformScaleByPivotActive
+                          : label === 'rotate'
+                            ? rotationPivotEditActive
+                            : rulerMeasureActive;
+                      if (!modeOn) {
+                        if (label === 'scale') setUniformScaleByPivotActive(true);
+                        if (label === 'rotate') setRotationPivotEditActive(true);
+                        if (label === 'ruler') setRulerMeasureActive(true);
+                        setHeaderEditPopover(label);
+                      } else {
+                        if (label === 'scale') setUniformScaleByPivotActive(false);
+                        if (label === 'rotate') setRotationPivotEditActive(false);
+                        if (label === 'ruler') setRulerMeasureActive(false);
+                        setHeaderEditPopover((cur) => (cur === label ? null : cur));
+                      }
+                      return;
+                    }
+                    setHeaderEditPopover((cur) => (cur === label ? null : label));
                   }}
                 >
                   <SfdIconByIndex index={iconIndex} color="currentColor" size={15} />
@@ -2766,23 +3062,62 @@ export function WorkspaceChrome({
 
       {/* Bottom area (timeline / analysis) */}
       <div
-        className="fixed z-[28] rounded-[14px] overflow-hidden"
+        className="fixed rounded-[14px] overflow-hidden"
         {...{ [SFD_ONBOARDING_TARGET_ATTR]: SfdOnboardingTarget.bottomTimelineDock }}
         style={{
-          left: bottomOpen ? leftOffset : '50%',
-          right: bottomOpen ? rightReserve : undefined,
-          bottom: BOTTOM_GAP,
+          zIndex: bottomOpen && bottomDockOut ? 32 : 28,
+          ...(bottomOpen && bottomDockOut
+            ? {
+                left: leftOffset + BOTTOM_DOCK_FLOAT_MARGIN,
+                right: rightReserve + BOTTOM_DOCK_FLOAT_MARGIN,
+                bottom: BOTTOM_GAP + BOTTOM_DOCK_FLOAT_MARGIN,
+                transform: 'none',
+                width: 'auto',
+                boxShadow: isDarkPreview
+                  ? '0 20px 56px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.08) inset'
+                  : '0 18px 44px rgba(15,23,42,0.18), 0 0 0 0.5px rgba(255,255,255,0.9) inset',
+              }
+            : {
+                left: bottomOpen ? leftOffset : '50%',
+                right: bottomOpen ? rightReserve : undefined,
+                bottom: BOTTOM_GAP,
+                transform: bottomOpen ? undefined : 'translateX(-50%)',
+                width: bottomOpen ? undefined : collapsedTimelineWidth,
+                boxShadow: bottomOpen ? sidePanelTokens.panelShadow : 'none',
+              }),
           height: bottomOpen ? bottomHeight : BOTTOM_HEIGHT_COLLAPSED,
-          width: bottomOpen ? undefined : collapsedTimelineWidth,
-          transform: bottomOpen ? undefined : 'translateX(-50%)',
           background: bottomOpen ? sidePanelTokens.panelBg : 'transparent',
           border: bottomOpen ? `1px solid ${sidePanelTokens.panelBorder}` : 'none',
-          boxShadow: bottomOpen ? sidePanelTokens.panelShadow : 'none',
           backdropFilter: bottomOpen ? (isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)') : 'none',
           WebkitBackdropFilter: bottomOpen ? (isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)') : 'none',
           transition: 'height 200ms ease',
         }}
       >
+        {bottomOpen && (
+          <button
+            type="button"
+            className="absolute right-2 z-[6] rounded-md border px-2 py-0.5 text-[10px] font-semibold transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/45"
+            style={{
+              top: 6,
+              borderColor: sidePanelTokens.inputBorder,
+              background: sidePanelTokens.sectionHeaderBg,
+              color: sidePanelTokens.textSecondary,
+            }}
+            onClick={() => setBottomDockOut((v) => !v)}
+            aria-pressed={bottomDockOut}
+            title={
+              bottomDockOut
+                ? locale === 'en'
+                  ? 'Dock panel to workspace bottom'
+                  : '하단에 도크'
+                : locale === 'en'
+                  ? 'Undock panel (float)'
+                  : '도크 아웃'
+            }
+          >
+            {bottomDockOut ? (locale === 'en' ? 'Dock-In' : '도크 인') : locale === 'en' ? 'Dock-Out' : '도크 아웃'}
+          </button>
+        )}
         {!bottomOpen ? (
           renderCollapsedTimeline()
         ) : (
@@ -2799,16 +3134,18 @@ export function WorkspaceChrome({
                 timelineView === 'overview' ? renderTimelineOverview() : renderTimelineDetail()
               ) : (
                 <div
-                  className="h-full rounded-[10px] border p-3 text-[11px] leading-[18px] overflow-y-auto sfd-scroll"
+                  className="flex h-full min-h-0 flex-col overflow-hidden rounded-[10px] border p-3 text-[11px] leading-[18px]"
                   style={{
                     borderColor: sidePanelTokens.inputBorder,
                     background: sidePanelTokens.panelBg,
                     color: isDarkPreview ? '#d1d5db' : '#374151',
                   }}
                 >
-                  {locale === 'en'
-                    ? 'Analysis chart/table area. Default when Analysis mode is active.'
-                    : '분석 그래프/테이블 영역입니다. Analysis 모드 활성 시 기본 노출됩니다.'}
+                  <BottomDockAnalysisResultsPanel
+                    locale={locale}
+                    tokens={sidePanelTokens}
+                    isDark={isDarkPreview}
+                  />
                 </div>
               )}
             </div>
@@ -2817,10 +3154,10 @@ export function WorkspaceChrome({
       </div>
       {bottomOpen && (
         <div
-          className="fixed z-[29] h-8 rounded-[10px] p-1 inline-flex items-center gap-1"
+          className={`fixed h-8 rounded-[10px] p-1 inline-flex items-center gap-1 ${bottomDockOut ? 'z-[35]' : 'z-[29]'}`}
           style={{
             left: leftOffset + 8,
-            top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
+            top: `calc(100vh - ${BOTTOM_GAP + bottomHeight + (bottomDockOut ? BOTTOM_DOCK_FLOAT_MARGIN : 0)}px - 18px)`,
             transform: 'translateY(-100%)',
             background: sidePanelTokens.panelBg,
             border: `1px solid ${sidePanelTokens.panelBorder}`,
@@ -2835,19 +3172,26 @@ export function WorkspaceChrome({
           ] as const).map((tab) => {
             const active = bottomTab === tab.id;
             return (
-              <button
+              <DockPortalTooltip
                 key={tab.id}
-                type="button"
-                className="px-3 h-6 rounded-[7px] text-[11px] font-semibold"
-                style={{
-                  background: active ? accentRgba(POINT_ORANGE, 0.18) : 'transparent',
-                  color: active ? POINT_ORANGE : (isDarkPreview ? '#d1d5db' : '#4b5563'),
-                  border: active ? `1px solid ${accentRgba(POINT_ORANGE, 0.4)}` : '1px solid transparent',
-                }}
-                onClick={() => setBottomTab(tab.id)}
+                label={locale === 'en' ? tab.en : tab.ko}
+                isDark={isDarkPreview}
               >
-                {locale === 'en' ? tab.en : tab.ko}
-              </button>
+                <button
+                  type="button"
+                  className="px-3 h-6 rounded-[7px] text-[11px] font-semibold"
+                  style={{
+                    background: active ? accentRgba(POINT_ORANGE, 0.18) : 'transparent',
+                    color: active ? POINT_ORANGE : (isDarkPreview ? '#d1d5db' : '#4b5563'),
+                    border: active ? `1px solid ${accentRgba(POINT_ORANGE, 0.4)}` : '1px solid transparent',
+                  }}
+                  onClick={() => setBottomTab(tab.id)}
+                  aria-pressed={active}
+                  aria-label={locale === 'en' ? tab.en : tab.ko}
+                >
+                  {locale === 'en' ? tab.en : tab.ko}
+                </button>
+              </DockPortalTooltip>
             );
           })}
         </div>
@@ -3080,26 +3424,33 @@ export function WorkspaceChrome({
       )}
 
       {bottomOpen && (
-        <button
-          type="button"
-          className="group fixed z-[29] h-8 w-14 rounded-[10px] border transition-colors duration-150 inline-flex items-center justify-center"
+        <div
+          className={`fixed inline-flex ${bottomDockOut ? 'z-[36]' : 'z-[29]'}`}
           style={{
             left: '50%',
-            top: `calc(100vh - ${BOTTOM_GAP + bottomHeight}px - 18px)`,
+            top: `calc(100vh - ${BOTTOM_GAP + bottomHeight + (bottomDockOut ? BOTTOM_DOCK_FLOAT_MARGIN : 0)}px - 18px)`,
             transform: 'translate(-50%, -100%)',
-            borderColor: sidePanelTokens.panelBorder,
-            background: sidePanelTokens.panelBg,
-            color: isDarkPreview ? '#e5e7eb' : '#334155',
-            boxShadow: sidePanelTokens.panelShadow,
-            backdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
-            WebkitBackdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
           }}
-          onClick={() => setBottomOpen(false)}
-          aria-label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'}
         >
-          <ChevronDown className="w-3.5 h-3.5" />
-          <CustomTooltip label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'} placement="top" />
-        </button>
+          <DockPortalTooltip label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'} isDark={isDarkPreview}>
+            <button
+              type="button"
+              className="h-8 w-14 rounded-[10px] border transition-colors duration-150 inline-flex items-center justify-center"
+              style={{
+                borderColor: sidePanelTokens.panelBorder,
+                background: sidePanelTokens.panelBg,
+                color: isDarkPreview ? '#e5e7eb' : '#334155',
+                boxShadow: sidePanelTokens.panelShadow,
+                backdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+                WebkitBackdropFilter: isDarkPreview ? 'blur(28px) saturate(165%)' : 'blur(24px) saturate(180%)',
+              }}
+              onClick={() => setBottomOpen(false)}
+              aria-label={locale === 'en' ? 'Collapse timeline' : '타임라인 접기'}
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </DockPortalTooltip>
+        </div>
       )}
 
       <CriLegend visible={leftMode === 'analysis'} locale={locale} />

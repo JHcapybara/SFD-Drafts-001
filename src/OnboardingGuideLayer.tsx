@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GripVertical, Minus, Play, Plus, RotateCcw, X } from 'lucide-react';
 import { POINT_ORANGE } from './pointColorSchemes';
 import { DARK, LIGHT, type Tokens } from './PropertyPanel';
@@ -13,12 +13,72 @@ import {
   type OnboardingGuideStep,
   type OnboardingTabId,
 } from './onboardingGuideSteps';
-import { SfdOnboardingSpotlight } from './SfdOnboardingSpotlight';
+import { measureOnboardingHighlightRect, SfdOnboardingSpotlight } from './SfdOnboardingSpotlight';
 import type { SfdOnboardingTargetId } from './sfd/sfdOnboardingTargets';
 
 const CHECKLIST_WIDTH = 448;
 const TUTORIAL_WIDTH = 380;
+/** 튜토리얼 다이얼로그 높이 추정(수직 클램프용, 실제 콘텐츠와 근접) */
+const TUTORIAL_PANEL_EST_HEIGHT = 380;
 const MINIMIZED_PILL_DRAG_WIDTH = 360;
+
+const TUTORIAL_DOCK_MARGIN = 16;
+const TUTORIAL_DOCK_GAP = 12;
+
+/**
+ * 하이라이트 영역 옆에 튜토리얼 패널을 둡니다.
+ * 1) 하이라이트 **왼쪽**에 붙일 공간이 있으면 왼쪽,
+ * 2) 없으면 **오른쪽**,
+ * 3) 오른쪽도 부족하면 왼쪽에 두고 가로만 뷰포트 안으로 클램프.
+ */
+function computeTutorialPanelPosition(
+  targetId: SfdOnboardingTargetId | null,
+  panelWidth: number,
+): { left: number; top: number } {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  /** CSS `maxWidth: min(380px, calc(100vw - 16px))` 와 맞춤 */
+  const effectiveW = Math.min(panelWidth, Math.max(200, vw - 16));
+  const rect = measureOnboardingHighlightRect(targetId);
+  if (!rect) {
+    return {
+      left: Math.max(TUTORIAL_DOCK_MARGIN, (vw - effectiveW) / 2),
+      top: WORKSPACE_CONTENT_TOP_PX + 80,
+    };
+  }
+
+  const hlLeft = rect.left;
+  const hlRight = rect.left + rect.width;
+
+  const leftOfHighlight = hlLeft - TUTORIAL_DOCK_GAP - effectiveW;
+  const fitsLeft = leftOfHighlight >= TUTORIAL_DOCK_MARGIN;
+
+  const rightOfHighlight = hlRight + TUTORIAL_DOCK_GAP;
+  const fitsRight = rightOfHighlight + effectiveW <= vw - TUTORIAL_DOCK_MARGIN;
+
+  let left: number;
+  if (fitsLeft) {
+    left = leftOfHighlight;
+  } else if (fitsRight) {
+    left = rightOfHighlight;
+  } else {
+    left = Math.max(
+      TUTORIAL_DOCK_MARGIN,
+      Math.min(leftOfHighlight, vw - TUTORIAL_DOCK_MARGIN - effectiveW),
+    );
+  }
+
+  const minTop = WORKSPACE_CONTENT_TOP_PX + TUTORIAL_DOCK_MARGIN;
+  const maxTop = vh - TUTORIAL_DOCK_MARGIN - TUTORIAL_PANEL_EST_HEIGHT;
+  let top = rect.top;
+  if (maxTop >= minTop) {
+    top = Math.max(minTop, Math.min(top, maxTop));
+  } else {
+    top = minTop;
+  }
+
+  return { left, top };
+}
 const STORAGE_KEY_DISMISS = 'sfd-onboarding-guide-dismissed';
 
 type Locale = 'ko' | 'en';
@@ -116,18 +176,16 @@ export function OnboardingGuideLayer({
     [initialMinimizedLeft, initialMinimizedTop],
   );
   const minimizedDrag = useDraggablePanel(MINIMIZED_PILL_DRAG_WIDTH, getMinimizedInitialPos);
-  const getTutorialInitialPos = useCallback(
-    () => ({
-      left: Math.max(16, (window.innerWidth - TUTORIAL_WIDTH) / 2),
-      top: WORKSPACE_CONTENT_TOP_PX + 80,
-    }),
-    [],
-  );
-  const tutorialDrag = useDraggablePanel(TUTORIAL_WIDTH, getTutorialInitialPos);
 
   const [minimized, setMinimized] = useState(false);
   const [activeTab, setActiveTab] = useState<OnboardingTabId>('cell-safety');
   const [activeStep, setActiveStep] = useState<OnboardingGuideStep | null>(null);
+
+  const getTutorialInitialPos = useCallback(() => {
+    const id = activeStep?.spotlightTarget ?? null;
+    return computeTutorialPanelPosition(id, TUTORIAL_WIDTH);
+  }, [activeStep?.spotlightTarget]);
+  const tutorialDrag = useDraggablePanel(TUTORIAL_WIDTH, getTutorialInitialPos);
 
   useEffect(() => {
     if (!open) {
@@ -148,6 +206,21 @@ export function OnboardingGuideLayer({
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, [activeStep]);
+
+  /** 스텝·하이라이트 타깃이 바뀔 때 튜토리얼 패널을 하이라이트 옆으로 맞춤 (관련 UI 오픈 직후 레이아웃 반영) */
+  useLayoutEffect(() => {
+    if (!activeStep) return;
+    tutorialDrag.resetPosition();
+    const raf = requestAnimationFrame(() => tutorialDrag.resetPosition());
+    return () => cancelAnimationFrame(raf);
+  }, [activeStep?.id, activeStep?.spotlightTarget, tutorialDrag.resetPosition]);
+
+  useEffect(() => {
+    if (!activeStep) return;
+    const onResize = () => tutorialDrag.resetPosition();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [activeStep, tutorialDrag.resetPosition]);
 
   const spotlightId: SfdOnboardingTargetId | null = activeStep?.spotlightTarget ?? null;
 

@@ -3,9 +3,10 @@ import { onboardingTargetSelector, type SfdOnboardingTargetId } from './sfd/sfdO
 
 const PAD = 10;
 
-type Rect = { top: number; left: number; width: number; height: number };
+export type OnboardingHighlightRect = { top: number; left: number; width: number; height: number };
 
-function measureTarget(targetId: SfdOnboardingTargetId | null): Rect | null {
+/** 스포트라이트 구멍과 동일한 패딩·좌표계로 하이라이트 영역을 잽니다. */
+export function measureOnboardingHighlightRect(targetId: SfdOnboardingTargetId | null): OnboardingHighlightRect | null {
   if (!targetId) return null;
   const el = document.querySelector(onboardingTargetSelector(targetId));
   if (!el || !(el instanceof HTMLElement)) return null;
@@ -19,6 +20,10 @@ function measureTarget(targetId: SfdOnboardingTargetId | null): Rect | null {
   };
 }
 
+function measureTarget(targetId: SfdOnboardingTargetId | null): OnboardingHighlightRect | null {
+  return measureOnboardingHighlightRect(targetId);
+}
+
 /**
  * 뷰포트 전역 어두운 오버레이 + 타깃 주변만 비움(클릭은 구멍으로 통과).
  * 타깃은 `data-sfd-onboarding-target` 으로 찾으며, 리사이즈·스크롤 시 위치를 다시 잽니다.
@@ -30,7 +35,7 @@ export function SfdOnboardingSpotlight({
   activeTargetId: SfdOnboardingTargetId | null;
   zIndex?: number;
 }) {
-  const [rect, setRect] = useState<Rect | null>(() => measureTarget(activeTargetId));
+  const [rect, setRect] = useState<OnboardingHighlightRect | null>(() => measureTarget(activeTargetId));
 
   useLayoutEffect(() => {
     setRect(measureTarget(activeTargetId));
